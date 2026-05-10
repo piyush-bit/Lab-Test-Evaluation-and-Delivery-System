@@ -19,6 +19,7 @@ type SubmissionArchiveManifest struct {
 	OrgID         string   `json:"org_id"`
 	StudentID     string   `json:"student_id"`
 	LabID         string   `json:"lab_id"`
+	Version       string   `json:"version"`
 	CreatedAt     string   `json:"created_at"`
 	IncludedPaths []string `json:"included_paths"`
 }
@@ -147,6 +148,7 @@ func buildSubmissionArchiveManifest(manifest *ExerciseManifest, orgID string, st
 		OrgID:         orgID,
 		StudentID:     studentID,
 		LabID:         manifest.LabID,
+		Version:       manifest.Version,
 		CreatedAt:     time.Now().UTC().Format(time.RFC3339),
 		IncludedPaths: append([]string(nil), includedPaths...),
 	}, nil

@@ -9,7 +9,8 @@ import (
 func TestCreateSubmissionPackage(t *testing.T) {
 	exerciseDir := t.TempDir()
 	writeManifestForTest(t, exerciseDir, ExerciseManifest{
-		LabID: "go101-lab01",
+		LabID:   "go101-lab01",
+		Version: "1.0.0",
 		Submission: Submission{
 			IncludePaths: []string{"stack.go"},
 		},
@@ -36,6 +37,9 @@ func TestCreateSubmissionPackage(t *testing.T) {
 	}
 	if manifest.StudentID != "student-42" {
 		t.Fatalf("expected student id student-42, got %q", manifest.StudentID)
+	}
+	if manifest.Version != "1.0.0" {
+		t.Fatalf("expected version 1.0.0, got %q", manifest.Version)
 	}
 	if len(manifest.IncludedPaths) != 1 || manifest.IncludedPaths[0] != "stack.go" {
 		t.Fatalf("expected included path stack.go, got %v", manifest.IncludedPaths)
