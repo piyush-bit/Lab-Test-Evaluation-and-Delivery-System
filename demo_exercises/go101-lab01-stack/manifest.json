@@ -1,0 +1,31 @@
+{
+  "lab_id": "go101-lab01",
+  "title": "Slice-Backed Stack in Go",
+  "version": "1.1.0",
+  "language": "go",
+  "runner_image": "lab-go-runner:v1.0",
+  "local_entrypoint": "make test-public",
+  "grading": [
+    { "command": "make test-submission-lifo",        "points": 2 },
+    { "command": "make test-submission-interleaved", "points": 2 },
+    { "command": "make test-submission-size",        "points": 2 },
+    { "command": "make test-submission-pop-empty",   "points": 2 },
+    { "command": "make test-submission-peek",        "points": 2 }
+  ],
+  "submission": {
+    "include_paths": [
+      "stack.go"
+    ],
+    "private_globs": [
+      "reference/*",
+      "tests_private/*"
+    ],
+    "exclude_globs": [
+      "*.tar.gz"
+    ]
+  },
+  "limits": {
+    "memory_mb": 256,
+    "timeout_seconds": 25
+  }
+}
