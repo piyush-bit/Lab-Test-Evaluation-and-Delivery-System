@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - TDES Lab System</title>
+    <meta name="description" content="Technical documentation, CLI command reference, and manifest.json specification for TDES.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Background Grid Alignment Lines (Teachyst Style) -->
+    <div class="grid-lines-container">
+        <div class="vertical-line v-line-1"></div>
+        <div class="vertical-line v-line-2"></div>
+        <div class="vertical-line v-line-3"></div>
+    </div>
+
+    <!-- Floating Navbar -->
+    <header class="navbar-wrapper">
+        <div class="navbar-pill">
+            <a href="index.html" class="brand">
+                <div class="brand-logo-emblem"></div>
+                <span class="brand-text">TDES</span>
+            </a>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="index.html#lifecycle">How It Works</a>
+                <a href="index.html#problem">Challenges</a>
+                <a href="index.html#why-choose">Why TDES</a>
+                <a href="#" class="active">Documentation</a>
+            </nav>
+            <div class="nav-actions">
+                <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System" class="github-link-btn" aria-label="GitHub Repository" target="_blank" rel="noopener noreferrer">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                </a>
+                <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle theme">
+                    <!-- Sun Icon -->
+                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <!-- Moon Icon -->
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+                <a href="index.html" class="btn btn-secondary btn-sm">Back to Home</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Documentation Layout -->
+        <div class="docs-page-layout">
+            <!-- Table of Contents Sidebar -->
+            <aside class="docs-toc-sidebar">
+                <div class="docs-toc-sticky">
+                    <h4>On This Page</h4>
+                    <ul>
+                        <li><a href="#intro" class="toc-link active">Introduction</a></li>
+                        <li><a href="#commands" class="toc-link">CLI Command Suite</a></li>
+                        <li><a href="#schema" class="toc-link">Manifest Specification</a></li>
+                    </ul>
+                </div>
+            </aside>
+
+            <!-- Documentation Content -->
+            <div class="docs-content-area">
+                <!-- Intro Section -->
+                <section id="intro" class="docs-section-block">
+                    <div class="section-header align-left">
+                        <span class="badge">Reference Guide</span>
+                        <h2>Introduction to EUC² & TDES</h2>
+                    </div>
+                    <p class="docs-text-p">
+                        Welcome to the technical reference documentation. The <strong>Test Delivery and Evaluation System (TDES)</strong> is built to orchestrate, deliver, and grade programming exercises inside isolated container sandboxes. 
+                    </p>
+                    <p class="docs-text-p">
+                        All operations are driven via the <code>euc2</code> CLI binary. Exercises follow a standardized, declarative schema configured in a <code>manifest.json</code> file, which interfaces with a simple <code>Makefile</code> contract.
+                    </p>
+                </section>
+
+                <hr class="docs-divider">
+
+                <!-- CLI Commands section -->
+                <section id="commands" class="docs-section-block">
+                    <div class="section-header align-left">
+                        <span class="badge badge-accent">euc2 CLI</span>
+                        <h2>euc2 CLI Command Suite</h2>
+                        <p>Automate execution tasks using the <code>euc2</code> command-line tools. Click each tab below to view parameters and output examples.</p>
+                    </div>
+                    <div class="commands-layout">
+                        <div class="commands-sidebar">
+                            <button class="cmd-tab active" onclick="showCommand('init')">init</button>
+                            <button class="cmd-tab" onclick="showCommand('fetch')">fetch</button>
+                            <button class="cmd-tab" onclick="showCommand('package')">package</button>
+                            <button class="cmd-tab" onclick="showCommand('run')">run</button>
+                            <button class="cmd-tab" onclick="showCommand('submit')">submit</button>
+                            <button class="cmd-tab" onclick="showCommand('evaluate')">evaluate</button>
+                            <button class="cmd-tab" onclick="showCommand('drive')">drive</button>
+                        </div>
+                        <div class="commands-display glass-card" id="command-details">
+                            <h3>euc2 init</h3>
+                            <p class="cmd-desc">Initialize an exercise by lab ID and version from local packages into a working directory.</p>
+                            <div class="cmd-args-section">
+                                <strong>Arguments:</strong> <code>&lt;id-with-version&gt; &lt;working-directory&gt;</code>
+                            </div>
+                            <div class="code-block-header">Usage & Command Output</div>
+                            <pre><code>$ euc2 init go101-lab01@1.1.0 ./my-stack-exercise
+Exercise initialized in ./my-stack-exercise</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="docs-divider">
+
+                <!-- Manifest Spec Explorer -->
+                <section id="schema" class="docs-section-block">
+                    <div class="section-header align-left">
+                        <span class="badge">Exercise Schema</span>
+                        <h2>Interactive Manifest Spec</h2>
+                        <p>Click any highlighted key inside <code>manifest.json</code> to view its documentation and constraints.</p>
+                    </div>
+                    <div class="schema-layout">
+                        <div class="schema-json glass-card">
+                            <pre><code id="schema-code">
+{
+  "<span class="schema-key" data-target="lab_id">lab_id</span>": "go101-lab01",
+  "<span class="schema-key" data-target="title">title</span>": "Slice-Backed Stack in Go",
+  "<span class="schema-key" data-target="version">version</span>": "1.1.0",
+  "<span class="schema-key" data-target="language">language</span>": "go",
+  "<span class="schema-key" data-target="runner_image">runner_image</span>": "lab-go-runner:v1.0",
+  "<span class="schema-key" data-target="local_entrypoint">local_entrypoint</span>": "make test-public",
+  "<span class="schema-key" data-target="grading">grading</span>": [
+    {
+      "command": "make test-submission-lifo",
+      "points": 5
+    }
+  ],
+  "<span class="schema-key" data-target="submission">submission</span>": {
+    "include_paths": ["stack.go"],
+    "private_globs": ["reference/*"]
+  },
+  "<span class="schema-key" data-target="limits">limits</span>": {
+    "memory_mb": 256,
+    "timeout_seconds": 5
+  }
+}
+                            </code></pre>
+                        </div>
+                        <div class="schema-desc glass-card" id="schema-desc-panel">
+                            <h3>💡 manifest.json Schema</h3>
+                            <p>Select any highlighted key inside the JSON code block to view its documentation, restrictions, and rules.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <div class="footer-brand-logo">
+                    <div class="brand-logo-emblem"></div>
+                    <span class="footer-logo-text">TDES</span>
+                </div>
+                <p>Modernized, secure, and containerized lab delivery solutions for computer science colleges.</p>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Test Delivery and Evaluation System (TDES). All rights reserved.</p>
+                <div class="footer-links">
+                    <a href="file:///Users/piyush/Developer/Test-delivery-and-evalution-system/EXERCISE_AUTHORING_SPEC.md">Exercise Spec</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JS Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
