@@ -161,6 +161,7 @@ This document serves as a tracking sheet for the Test Delivery and Evaluation Sy
 * **Status**:
   - [ ] Implemented
   - [ ] Manually Verified
+  - [ ] **Priority**: Low (Deprioritized)
 
 ### Remote API Submission Evaluator
 * **Description**: REST API endpoint on the server to submit and grade student solutions directly over HTTP.

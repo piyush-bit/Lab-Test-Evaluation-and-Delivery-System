@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"TDES/internals/registry"
+	evaluatorcore "TDES/internals/evaluator-core"
 )
 
 type Config struct {
@@ -314,6 +315,9 @@ func main() {
 		respondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 
+	// 10. Remote Submission Evaluator
+	mux.HandleFunc("POST /v1/submissions", handleSubmissions(service, nil))
+
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: mux,
@@ -365,4 +369,74 @@ func saveTempFile(src io.Reader) (string, error) {
 		return "", err
 	}
 	return tmpFile.Name(), nil
+}
+
+type serviceArtifactProvider struct {
+	service *registry.Service
+}
+
+func (p *serviceArtifactProvider) OpenPrivateArtifact(ctx context.Context, orgID, labID, version string) (io.ReadCloser, error) {
+	ev, err := p.service.GetExerciseVersion(ctx, orgID, labID, version)
+	if err != nil {
+		return nil, err
+	}
+	handle, err := p.service.OpenArtifact(ctx, ev.PrivateArtifactSHA)
+	if err != nil {
+		return nil, err
+	}
+	return handle.File, nil
+}
+
+func handleSubmissions(service *registry.Service, runtime evaluatorcore.Runtime) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Limit body size to 64MB for safety
+		r.Body = http.MaxBytesReader(w, r.Body, 64<<20)
+		if err := r.ParseMultipartForm(32 << 20); err != nil {
+			respondError(w, http.StatusBadRequest, "failed to parse multipart form: "+err.Error())
+			return
+		}
+
+		authHeader := r.Header.Get("Authorization")
+		var token string
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			token = strings.TrimPrefix(authHeader, "Bearer ")
+		}
+		expectedToken := os.Getenv("EUC2_REMOTE_BEARER_TOKEN")
+		if expectedToken != "" && token != expectedToken {
+			respondError(w, http.StatusUnauthorized, "invalid bearer token")
+			return
+		}
+
+		submissionFile, _, err := r.FormFile("submission_package")
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "submission_package is required")
+			return
+		}
+		defer submissionFile.Close()
+
+		tempPath, err := saveTempFile(submissionFile)
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, "failed to save submission package: "+err.Error())
+			return
+		}
+		defer os.Remove(tempPath)
+
+		provider := &serviceArtifactProvider{service: service}
+		evaluator, err := evaluatorcore.NewEvaluator(provider, runtime)
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, "failed to create evaluator: "+err.Error())
+			return
+		}
+
+		result, err := evaluator.EvaluateSubmission(r.Context(), evaluatorcore.EvaluationRequest{
+			SubmissionArchivePath: tempPath,
+			DockerBinary:          os.Getenv("DOCKER_BINARY"),
+		})
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, "failed to evaluate submission: "+err.Error())
+			return
+		}
+
+		respondJSON(w, http.StatusOK, result)
+	}
 }
