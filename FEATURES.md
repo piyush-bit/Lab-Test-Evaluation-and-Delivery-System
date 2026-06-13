@@ -10,43 +10,49 @@ This document serves as a tracking sheet for the Test Delivery and Evaluation Sy
 * **Description**: Unpacks public boilerplate templates from the local cache into a target directory.
 * **Status**:
   - [x] Implemented
-  - [ ] Manually Verified
+  - [x] Manually Verified
 
 ### Run Public Tests (`euc2 run`)
 * **Description**: Mounts the workspace in Docker and executes public Makefile targets inside the sandbox.
 * **Status**:
   - [x] Implemented
-  - [ ] Manually Verified
+  - [x] Manually Verified
 
 ### Run Local Public Tests (`euc2 run --local`)
 * **Description**: Runs public tests directly on the host system without spawning Docker.
 * **Status**:
   - [x] Implemented
-  - [ ] Manually Verified
+  - [x] Manually Verified
 
 ### Package Exercise (`euc2 package`)
 * **Description**: Tests the author's reference solution, splits private/public directories using globs, and saves them locally.
 * **Status**:
   - [x] Implemented
-  - [ ] Manually Verified
+  - [x] Manually Verified
+
+### Publish Exercise (`euc2 publish`)
+* **Description**: Packages the exercise (running verification tests) and uploads it to the remote registry server.
+* **Status**:
+  - [x] Implemented
+  - [x] Manually Verified
 
 ### Fetch Exercise (`euc2 fetch`)
 * **Description**: Pulls public archives from local drive volumes or remote REST server caches.
 * **Status**:
   - [x] Implemented
-  - [ ] Manually Verified
+  - [x] Manually Verified
 
 ### Submit Solution (`euc2 submit`)
 * **Description**: Creates a submission archive, attaches student metadata, and pushes it to a local drive folder (encrypted) or remote server.
 * **Status**:
   - [x] Implemented
-  - [ ] Manually Verified
+  - [x] Manually Verified
 
 ### Evaluate Submission (`euc2 evaluate`)
 * **Description**: Grades a student's submission tar archive in a local Docker sandbox using private tests. If the private tests package is not found locally, it automatically pulls it from the configured registry server.
 * **Status**:
   - [x] Implemented
-  - [ ] Manually Verified
+  - [x] Manually Verified
   - [x] Registry Pull Integration
     * **Note**: Currently uses a simplified/dummy Bearer Token authorization header in transit, which must be replaced with proper role-based authentication later.
 
@@ -54,7 +60,7 @@ This document serves as a tracking sheet for the Test Delivery and Evaluation Sy
 * **Description**: Prepares folders with submission envelopes and configures X25519 recipient keys.
 * **Status**:
   - [x] Implemented
-  - [ ] Manually Verified
+  - [x] Manually Verified
 
 ---
 
@@ -70,7 +76,7 @@ This document serves as a tracking sheet for the Test Delivery and Evaluation Sy
 * **Description**: Accepts multipart form uploads for public/private exercise tarballs and persists them.
 * **Status**:
   - [x] Implemented
-  - [ ] Manually Verified
+  - [x] Manually Verified
 
 ### Get Version Metadata (`GET /v1/exercises/{orgID}/{exerciseID}/versions/{version}`)
 * **Description**: Retrieves exercise details, title, languages, and SHA-256 hashes of artifacts.
@@ -166,5 +172,5 @@ This document serves as a tracking sheet for the Test Delivery and Evaluation Sy
 ### Remote API Submission Evaluator
 * **Description**: REST API endpoint on the server to submit and grade student solutions directly over HTTP.
 * **Status**:
-  - [ ] Implemented
-  - [ ] Manually Verified
+  - [x] Implemented
+  - [x] Manually Verified

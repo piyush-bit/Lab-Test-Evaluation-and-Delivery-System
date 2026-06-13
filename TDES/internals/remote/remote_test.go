@@ -319,3 +319,100 @@ func TestSubmissionMultipartUsesExpectedFieldName(t *testing.T) {
 		t.Fatalf("unexpected form field %q", partReader.FormName())
 	}
 }
+
+func TestPublishRemoteUploadsCorrectly(t *testing.T) {
+	var (
+		seenOrgID          string
+		seenExID           string
+		seenVer            string
+		seenStat           string
+		seenPublicContent  string
+		seenPrivateContent string
+		seenAuthHeader     string
+	)
+
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.URL.Path != "/v1/exercises/publish" {
+			http.NotFound(writer, request)
+			return
+		}
+		if request.Method != http.MethodPost {
+			http.Error(writer, "expected POST", http.StatusMethodNotAllowed)
+			return
+		}
+
+		seenAuthHeader = request.Header.Get("Authorization")
+
+		if err := request.ParseMultipartForm(10 << 20); err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		seenOrgID = request.FormValue("org_id")
+		seenExID = request.FormValue("exercise_id")
+		seenVer = request.FormValue("version")
+		seenStat = request.FormValue("status")
+
+		publicPart, _, err := request.FormFile("public_artifact")
+		if err == nil {
+			defer publicPart.Close()
+			buf := new(bytes.Buffer)
+			_, _ = io.Copy(buf, publicPart)
+			seenPublicContent = buf.String()
+		}
+
+		privatePart, _, err := request.FormFile("private_artifact")
+		if err == nil {
+			defer privatePart.Close()
+			buf := new(bytes.Buffer)
+			_, _ = io.Copy(buf, privatePart)
+			seenPrivateContent = buf.String()
+		}
+
+		writer.WriteHeader(http.StatusOK)
+		_, _ = writer.Write([]byte("mock-publish-ok"))
+	}))
+	defer server.Close()
+
+	remoteRef := NewRemote(server.URL)
+	tempDir := t.TempDir()
+
+	// Mock the packager function to return dummy file paths containing simple contents
+	remoteRef.PackageFunc = func(path string) (string, string, error) {
+		publicFile := filepath.Join(tempDir, "mock-pub.tar")
+		privateFile := filepath.Join(tempDir, "mock-priv.tar")
+
+		if err := os.WriteFile(publicFile, []byte("mock public archive"), 0644); err != nil {
+			return "", "", err
+		}
+		if err := os.WriteFile(privateFile, []byte("mock private archive"), 0644); err != nil {
+			return "", "", err
+		}
+		return publicFile, privateFile, nil
+	}
+
+	response, err := remoteRef.PublishRemote(PublishRequest{
+		ExercisePath: tempDir,
+		OrgID:        "test-org",
+		ExerciseID:   "test-ex",
+		Version:      "2.0.0",
+		Status:       "draft",
+		BearerToken:  "test-token",
+	})
+	if err != nil {
+		t.Fatalf("PublishRemote failed: %v", err)
+	}
+
+	if response != "mock-publish-ok" {
+		t.Errorf("unexpected response: %q", response)
+	}
+	if seenOrgID != "test-org" || seenExID != "test-ex" || seenVer != "2.0.0" || seenStat != "draft" {
+		t.Errorf("incorrect form fields received: org=%q, ex=%q, ver=%q, stat=%q", seenOrgID, seenExID, seenVer, seenStat)
+	}
+	if seenPublicContent != "mock public archive" || seenPrivateContent != "mock private archive" {
+		t.Errorf("incorrect file content received: pub=%q, priv=%q", seenPublicContent, seenPrivateContent)
+	}
+	if seenAuthHeader != "Bearer test-token" {
+		t.Errorf("unexpected authorization header: %q", seenAuthHeader)
+	}
+}

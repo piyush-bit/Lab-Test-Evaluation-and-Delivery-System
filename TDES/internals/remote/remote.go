@@ -9,13 +9,16 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"TDES/internals/exercise"
 )
 
 const defaultTimeout = 30 * time.Second
 
 type Remote struct {
-	BaseURL string
-	Client  *http.Client
+	BaseURL     string
+	Client      *http.Client
+	PackageFunc func(path string) (string, string, error)
 }
 
 type ExerciseVersion struct {
@@ -27,8 +30,9 @@ type ExerciseVersion struct {
 
 func NewRemote(baseURL string) *Remote {
 	return &Remote{
-		BaseURL: baseURL,
-		Client:  &http.Client{Timeout: defaultTimeout},
+		BaseURL:     baseURL,
+		Client:      &http.Client{Timeout: defaultTimeout},
+		PackageFunc: exercise.PackageExercise,
 	}
 }
 
@@ -102,6 +106,20 @@ func (r *Remote) submissionURL() (string, error) {
 		return "", fmt.Errorf("parse remote base url: %w", err)
 	}
 	parsedURL.Path = path.Join(parsedURL.Path, "v1", "submissions")
+	return parsedURL.String(), nil
+}
+
+func (r *Remote) publishURL() (string, error) {
+	baseURL, err := r.baseURL()
+	if err != nil {
+		return "", err
+	}
+
+	parsedURL, err := url.Parse(baseURL)
+	if err != nil {
+		return "", fmt.Errorf("parse remote base url: %w", err)
+	}
+	parsedURL.Path = path.Join(parsedURL.Path, "v1", "exercises", "publish")
 	return parsedURL.String(), nil
 }
 
