@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	evaluatorcore "TDES/internals/evaluator-core"
 	exercisestore "TDES/internals/exercise_store"
+	"TDES/internals/remote"
 
 	"github.com/spf13/cobra"
 )
@@ -17,6 +19,8 @@ import (
 var evaluateOutputPath string
 var evaluatePrivateStore string
 var evaluateDockerBinary string
+var evaluateRegistryURL string
+var evaluateBearerToken string
 
 var evaluateCmd = &cobra.Command{
 	Use:   "evaluate [submission-tar]",
@@ -27,6 +31,8 @@ var evaluateCmd = &cobra.Command{
 		resultJSON, err := evaluateSubmissionFile(cmd.Context(), args[0], evaluationOptions{
 			PrivateStore: evaluatePrivateStore,
 			DockerBinary: evaluateDockerBinary,
+			RegistryURL:  evaluateRegistryURL,
+			BearerToken:  evaluateBearerToken,
 		})
 		if err != nil {
 			fmt.Fprintln(cmd.ErrOrStderr(), "Error evaluating submission:", err.Error())
@@ -50,10 +56,25 @@ var evaluateCmd = &cobra.Command{
 type evaluationOptions struct {
 	PrivateStore string
 	DockerBinary string
+	RegistryURL  string
+	BearerToken  string
 }
 
 func evaluateSubmissionFile(ctx context.Context, submissionPath string, options evaluationOptions) ([]byte, error) {
-	provider := &privateCacheArtifactProvider{storeRoot: options.PrivateStore}
+	registryURL := strings.TrimSpace(options.RegistryURL)
+	if registryURL == "" {
+		registryURL = strings.TrimSpace(os.Getenv("EUC2_REGISTRY_URL"))
+	}
+	bearerToken := strings.TrimSpace(options.BearerToken)
+	if bearerToken == "" {
+		bearerToken = strings.TrimSpace(os.Getenv(remote.BearerTokenEnvVar))
+	}
+
+	provider := &privateCacheArtifactProvider{
+		storeRoot:   options.PrivateStore,
+		registryURL: registryURL,
+		bearerToken: bearerToken,
+	}
 	evaluator, err := evaluatorcore.NewEvaluator(provider, nil)
 	if err != nil {
 		return nil, err
@@ -78,28 +99,66 @@ func evaluateSubmissionFile(ctx context.Context, submissionPath string, options 
 }
 
 type privateCacheArtifactProvider struct {
-	storeRoot string
+	storeRoot   string
+	registryURL string
+	bearerToken string
 }
 
-func (p *privateCacheArtifactProvider) OpenPrivateArtifact(_ context.Context, _, labID, version string) (io.ReadCloser, error) {
+func (p *privateCacheArtifactProvider) OpenPrivateArtifact(ctx context.Context, orgID, labID, version string) (io.ReadCloser, error) {
 	storeRoot := p.storeRoot
 	if storeRoot == "" {
 		storeRoot = exercisestore.GetPrivateCacheDir()
 	}
 
 	packagePath, err := exercisestore.ResolveExercisePath(storeRoot, labID, version)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s@%s", evaluatorcore.ErrExerciseNotFound, labID, version)
+	if err == nil {
+		if file, err := os.Open(packagePath); err == nil {
+			return file, nil
+		}
 	}
 
-	file, err := os.Open(packagePath)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, fmt.Errorf("%w: %s@%s", evaluatorcore.ErrExerciseNotFound, labID, version)
+	// Try fetching from registry if configured
+	if p.registryURL != "" {
+		fmt.Printf("Private exercise package %s@%s not found in local cache. Attempting to pull from registry...\n", labID, version)
+
+		remoteRef := remote.NewRemote(p.registryURL)
+		body, err := remoteRef.FetchPrivateFromRemote(labID, version, orgID, p.bearerToken)
+		if err != nil {
+			return nil, fmt.Errorf("pull private exercise from registry: %w", err)
 		}
-		return nil, fmt.Errorf("open private exercise package: %w", err)
+		defer body.Close()
+
+		tempFile, err := os.CreateTemp("", "remote-private-exercise-*.tar")
+		if err != nil {
+			return nil, fmt.Errorf("create temp package: %w", err)
+		}
+		tempPath := tempFile.Name()
+		defer os.Remove(tempPath)
+
+		if _, err := io.Copy(tempFile, body); err != nil {
+			tempFile.Close()
+			return nil, fmt.Errorf("write remote private package: %w", err)
+		}
+		if err := tempFile.Close(); err != nil {
+			return nil, fmt.Errorf("close temp package: %w", err)
+		}
+
+		if err := exercisestore.SavePackage(storeRoot, tempPath); err != nil {
+			return nil, fmt.Errorf("save remote private package to local cache: %w", err)
+		}
+
+		packagePath, err = exercisestore.ResolveExercisePath(storeRoot, labID, version)
+		if err != nil {
+			return nil, err
+		}
+		file, err := os.Open(packagePath)
+		if err != nil {
+			return nil, fmt.Errorf("open pulled private package: %w", err)
+		}
+		return file, nil
 	}
-	return file, nil
+
+	return nil, fmt.Errorf("%w: %s@%s", evaluatorcore.ErrExerciseNotFound, labID, version)
 }
 
 func init() {
@@ -122,5 +181,17 @@ func init() {
 		"docker-binary",
 		"",
 		"Docker binary or Docker host URI used by the evaluator runtime",
+	)
+	evaluateCmd.Flags().StringVar(
+		&evaluateRegistryURL,
+		"registry-url",
+		"",
+		"Registry server base URL to pull private exercises (falls back to EUC2_REGISTRY_URL env var)",
+	)
+	evaluateCmd.Flags().StringVar(
+		&evaluateBearerToken,
+		"bearer-token",
+		"",
+		"Bearer token used to authenticate with the registry server (falls back to EUC2_REMOTE_BEARER_TOKEN env var)",
 	)
 }

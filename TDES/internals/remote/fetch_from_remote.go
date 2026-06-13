@@ -2,11 +2,49 @@ package remote
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 
 	exercisestore "TDES/internals/exercise_store"
 )
+
+func (r *Remote) FetchPrivateFromRemote(id string, version string, orgID string, bearerToken string) (io.ReadCloser, error) {
+	baseURL, err := r.baseURL()
+	if err != nil {
+		return nil, err
+	}
+	parsedURL, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, fmt.Errorf("parse remote base url: %w", err)
+	}
+	parsedURL.Path = path.Join(parsedURL.Path, "v1", "exercises", url.PathEscape(orgID), url.PathEscape(id), "versions", url.PathEscape(version), "download")
+	q := parsedURL.Query()
+	q.Set("type", "private")
+	parsedURL.RawQuery = q.Encode()
+
+	req, err := http.NewRequest(http.MethodGet, parsedURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	if bearerToken != "" {
+		req.Header.Set("Authorization", "Bearer "+bearerToken)
+	}
+
+	resp, err := r.httpClient().Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("download private artifact: %w", err)
+	}
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		resp.Body.Close()
+		return nil, fmt.Errorf("download private artifact: remote request failed: %s", resp.Status)
+	}
+
+	return resp.Body, nil
+}
 
 func (r *Remote) FetchFromRemote(id string, version string, orgID string) error {
 	metadataURL, err := r.exerciseVersionURL(orgID, id, version)

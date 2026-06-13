@@ -43,10 +43,12 @@ This document serves as a tracking sheet for the Test Delivery and Evaluation Sy
   - [ ] Manually Verified
 
 ### Evaluate Submission (`euc2 evaluate`)
-* **Description**: Grades a student's submission tar archive in a local Docker sandbox using private tests.
+* **Description**: Grades a student's submission tar archive in a local Docker sandbox using private tests. If the private tests package is not found locally, it automatically pulls it from the configured registry server.
 * **Status**:
   - [x] Implemented
   - [ ] Manually Verified
+  - [x] Registry Pull Integration
+    * **Note**: Currently uses a simplified/dummy Bearer Token authorization header in transit, which must be replaced with proper role-based authentication later.
 
 ### Drive Setup Utilities (`euc2 drive prepare/prepare-submission`)
 * **Description**: Prepares folders with submission envelopes and configures X25519 recipient keys.
