@@ -144,3 +144,8 @@ func (s *Service) OpenArtifact(ctx context.Context, sha string) (*ArtifactHandle
 	}
 	return &ArtifactHandle{File: file, Artifact: artifact}, nil
 }
+
+// SaveEvaluation stores a student submission evaluation result in the database.
+func (s *Service) SaveEvaluation(ctx context.Context, eval SubmissionEvaluation) error {
+	return s.repo.SaveEvaluation(ctx, eval)
+}

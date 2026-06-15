@@ -428,12 +428,39 @@ func handleSubmissions(service *registry.Service, runtime evaluatorcore.Runtime)
 			return
 		}
 
+		log.Printf("Received remote submission upload for evaluation")
 		result, err := evaluator.EvaluateSubmission(r.Context(), evaluatorcore.EvaluationRequest{
 			SubmissionArchivePath: tempPath,
 			DockerBinary:          os.Getenv("DOCKER_BINARY"),
 		})
 		if err != nil {
+			log.Printf("Evaluation error: %v", err)
 			respondError(w, http.StatusInternalServerError, "failed to evaluate submission: "+err.Error())
+			return
+		}
+
+		log.Printf("Evaluation completed: OrgID=%s, StudentID=%s, LabID=%s, Version=%s, Status=%s, Score=%d/%d",
+			result.OrgID, result.StudentID, result.LabID, result.Version, result.Status, result.EarnedPoints, result.MaxPoints)
+		for _, testResult := range result.Results {
+			log.Printf("  - Command: %q -> Status: %s, Points: %d/%d",
+				testResult.Command, testResult.Status, testResult.PointsEarned, testResult.PointsPossible)
+		}
+
+		resultsBytes, _ := json.Marshal(result.Results)
+		evalRecord := registry.SubmissionEvaluation{
+			OrgID:        result.OrgID,
+			StudentID:    result.StudentID,
+			LabID:        result.LabID,
+			Version:      result.Version,
+			Status:       result.Status,
+			EarnedPoints: result.EarnedPoints,
+			MaxPoints:    result.MaxPoints,
+			ResultsJSON:  string(resultsBytes),
+		}
+
+		if err := service.SaveEvaluation(r.Context(), evalRecord); err != nil {
+			log.Printf("Failed to persist evaluation record: %v", err)
+			respondError(w, http.StatusInternalServerError, "failed to save evaluation record: "+err.Error())
 			return
 		}
 

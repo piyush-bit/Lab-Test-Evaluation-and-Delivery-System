@@ -39,3 +39,17 @@ type PublishRequest struct {
 	PublicArtifactPath  string
 	PrivateArtifactPath string
 }
+
+// SubmissionEvaluation represents a student submission evaluation result stored in the database.
+type SubmissionEvaluation struct {
+	ID           string    `json:"id"`
+	OrgID        string    `json:"org_id"`
+	StudentID    string    `json:"student_id"`
+	LabID        string    `json:"lab_id"`
+	Version      string    `json:"version"`
+	Status       string    `json:"status"`
+	EarnedPoints int       `json:"earned_points"`
+	MaxPoints    int       `json:"max_points"`
+	ResultsJSON  string    `json:"results_json"`
+	CreatedAt    time.Time `json:"created_at"`
+}

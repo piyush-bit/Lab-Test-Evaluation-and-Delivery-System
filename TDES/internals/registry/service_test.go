@@ -198,3 +198,67 @@ func TestRegistryService(t *testing.T) {
 		t.Errorf("Expected ErrNotFound after deletion, got %v", err)
 	}
 }
+
+func TestSaveEvaluation(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "tdes-evaluation-test-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	dbPath := filepath.Join(tempDir, "test.db")
+	repo, err := NewSQLiteRepository(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer repo.Close()
+
+	storePath := filepath.Join(tempDir, "objects")
+	store, err := NewDiskArtifactStore(storePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	service, err := NewService(repo, store)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+
+	eval := SubmissionEvaluation{
+		ID:           "test-eval-id",
+		OrgID:        "acme",
+		StudentID:    "student-1",
+		LabID:        "go101-lab01",
+		Version:      "1.1.0",
+		Status:       "completed",
+		EarnedPoints: 8,
+		MaxPoints:    10,
+		ResultsJSON:  `[{"command":"make test-submission-1","points_possible":5,"points_earned":5,"status":"pass"}]`,
+	}
+
+	err = service.SaveEvaluation(ctx, eval)
+	if err != nil {
+		t.Fatalf("SaveEvaluation failed: %v", err)
+	}
+
+	// Verify database record by directly querying the repo's db
+	var count int
+	err = repo.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM submissions WHERE id = ?", "test-eval-id").Scan(&count)
+	if err != nil {
+		t.Fatalf("query submissions: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("Expected 1 submission record, got %d", count)
+	}
+
+	var storedEarnedPoints int
+	err = repo.db.QueryRowContext(ctx, "SELECT earned_points FROM submissions WHERE id = ?", "test-eval-id").Scan(&storedEarnedPoints)
+	if err != nil {
+		t.Fatalf("query earned_points: %v", err)
+	}
+	if storedEarnedPoints != 8 {
+		t.Errorf("Expected earned_points to be 8, got %d", storedEarnedPoints)
+	}
+}

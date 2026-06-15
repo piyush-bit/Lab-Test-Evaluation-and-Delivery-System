@@ -208,6 +208,15 @@ func TestHandleSubmissions(t *testing.T) {
 	if len(executedCommands) != 2 || executedCommands[0] != "make test-submission-1" || executedCommands[1] != "make test-submission-2" {
 		t.Errorf("unexpected grading commands executed: %v", executedCommands)
 	}
+
+	// 7. Verify database entry was persisted
+	count, err := repo.GetSubmissionsCountForTesting(context.Background())
+	if err != nil {
+		t.Fatalf("get submissions count failed: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("expected 1 submission record in database, got %d", count)
+	}
 }
 
 func TestHandleSubmissionsTokenCheck(t *testing.T) {

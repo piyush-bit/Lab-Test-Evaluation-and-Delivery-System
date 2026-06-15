@@ -57,4 +57,7 @@ type Repository interface {
 
 	// DeleteExerciseVersion removes an exercise version metadata entry.
 	DeleteExerciseVersion(ctx context.Context, orgID, exerciseID, version string) error
+
+	// SaveEvaluation stores a student submission evaluation result in the database.
+	SaveEvaluation(ctx context.Context, eval SubmissionEvaluation) error
 }

@@ -73,6 +73,19 @@ CREATE TABLE IF NOT EXISTS exercise_versions (
 	FOREIGN KEY (public_artifact_sha256) REFERENCES artifacts(sha256),
 	FOREIGN KEY (private_artifact_sha256) REFERENCES artifacts(sha256)
 );
+
+CREATE TABLE IF NOT EXISTS submissions (
+	id TEXT PRIMARY KEY,
+	org_id TEXT NOT NULL,
+	student_id TEXT NOT NULL,
+	lab_id TEXT NOT NULL,
+	version TEXT NOT NULL,
+	status TEXT NOT NULL,
+	earned_points INTEGER NOT NULL,
+	max_points INTEGER NOT NULL,
+	results_json TEXT NOT NULL,
+	created_at TEXT NOT NULL
+);
 `
 	if _, err := r.db.ExecContext(ctx, schema); err != nil {
 		return err
@@ -366,4 +379,37 @@ func sameExerciseVersion(current, candidate ExerciseVersion) bool {
 		current.PublicArtifactSHA == candidate.PublicArtifactSHA &&
 		current.PrivateArtifactSHA == candidate.PrivateArtifactSHA &&
 		string(currBytes) == string(candBytes)
+}
+
+func (r *SQLiteRepository) SaveEvaluation(ctx context.Context, eval SubmissionEvaluation) error {
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	if eval.ID == "" {
+		eval.ID = uuid.NewString()
+	}
+	_, err := r.db.ExecContext(
+		ctx,
+		`INSERT INTO submissions (id, org_id, student_id, lab_id, version, status, earned_points, max_points, results_json, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		eval.ID,
+		eval.OrgID,
+		eval.StudentID,
+		eval.LabID,
+		eval.Version,
+		eval.Status,
+		eval.EarnedPoints,
+		eval.MaxPoints,
+		eval.ResultsJSON,
+		now,
+	)
+	if err != nil {
+		return fmt.Errorf("db save evaluation: %w", err)
+	}
+	return nil
+}
+
+// GetSubmissionsCountForTesting returns the total count of submissions. For testing purposes only.
+func (r *SQLiteRepository) GetSubmissionsCountForTesting(ctx context.Context) (int, error) {
+	var count int
+	err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM submissions").Scan(&count)
+	return count, err
 }
