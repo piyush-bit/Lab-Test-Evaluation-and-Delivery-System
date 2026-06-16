@@ -149,3 +149,8 @@ func (s *Service) OpenArtifact(ctx context.Context, sha string) (*ArtifactHandle
 func (s *Service) SaveEvaluation(ctx context.Context, eval SubmissionEvaluation) error {
 	return s.repo.SaveEvaluation(ctx, eval)
 }
+
+// ListSubmissions retrieves student submission evaluations from the repository.
+func (s *Service) ListSubmissions(ctx context.Context, orgID, labID string) ([]SubmissionEvaluation, error) {
+	return s.repo.ListSubmissions(ctx, orgID, labID)
+}

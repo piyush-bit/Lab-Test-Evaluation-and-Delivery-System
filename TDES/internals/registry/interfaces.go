@@ -60,4 +60,7 @@ type Repository interface {
 
 	// SaveEvaluation stores a student submission evaluation result in the database.
 	SaveEvaluation(ctx context.Context, eval SubmissionEvaluation) error
+
+	// ListSubmissions queries submission evaluations, optionally filtering by orgID and labID.
+	ListSubmissions(ctx context.Context, orgID, labID string) ([]SubmissionEvaluation, error)
 }

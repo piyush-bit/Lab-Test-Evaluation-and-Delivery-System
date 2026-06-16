@@ -390,3 +390,103 @@ func appendFileToTar(t *testing.T, tarPath string, name string, content string) 
 		t.Fatalf("overwrite tar file: %v", err)
 	}
 }
+
+func TestGetSubmissions(t *testing.T) {
+	tempDir := t.TempDir()
+	dbPath := filepath.Join(tempDir, "test.db")
+	repo, err := registry.NewSQLiteRepository(dbPath)
+	if err != nil {
+		t.Fatalf("new sqlite repository: %v", err)
+	}
+	defer repo.Close()
+
+	store, err := registry.NewDiskArtifactStore(filepath.Join(tempDir, "objects"))
+	if err != nil {
+		t.Fatalf("new artifact store: %v", err)
+	}
+
+	service, err := registry.NewService(repo, store)
+	if err != nil {
+		t.Fatalf("new service: %v", err)
+	}
+
+	// Set test token
+	const testToken = "super-secret-token"
+	t.Setenv("EUC2_REMOTE_BEARER_TOKEN", testToken)
+
+	// Seed database
+	ctx := context.Background()
+	_ = service.SaveEvaluation(ctx, registry.SubmissionEvaluation{
+		ID:           "eval-1",
+		OrgID:        "org-acme",
+		StudentID:    "student-1",
+		LabID:        "lab-1",
+		Version:      "1.0",
+		Status:       "completed",
+		EarnedPoints: 9,
+		MaxPoints:    10,
+		ResultsJSON:  "[]",
+	})
+	_ = service.SaveEvaluation(ctx, registry.SubmissionEvaluation{
+		ID:           "eval-2",
+		OrgID:        "org-acme",
+		StudentID:    "student-2",
+		LabID:        "lab-2",
+		Version:      "1.0",
+		Status:       "completed",
+		EarnedPoints: 5,
+		MaxPoints:    10,
+		ResultsJSON:  "[]",
+	})
+
+	handler := handleGetSubmissions(service)
+
+	// 1. Test unauthorized request
+	req, _ := http.NewRequest("GET", "/v1/submissions", nil)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusUnauthorized {
+		t.Errorf("expected status 401, got %d", rr.Code)
+	}
+
+	// 2. Test authorized request (JSON by default)
+	req, _ = http.NewRequest("GET", "/v1/submissions", nil)
+	req.Header.Set("Authorization", "Bearer "+testToken)
+	rr = httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", rr.Code)
+	}
+
+	var jsonResults []registry.SubmissionEvaluation
+	if err := json.Unmarshal(rr.Body.Bytes(), &jsonResults); err != nil {
+		t.Fatalf("failed to decode JSON response: %v", err)
+	}
+	if len(jsonResults) != 2 {
+		t.Errorf("expected 2 submissions, got %d", len(jsonResults))
+	}
+
+	// 3. Test authorized request (CSV)
+	req, _ = http.NewRequest("GET", "/v1/submissions?format=csv", nil)
+	req.Header.Set("Authorization", "Bearer "+testToken)
+	rr = httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", rr.Code)
+	}
+	contentType := rr.Header().Get("Content-Type")
+	if contentType != "text/csv" {
+		t.Errorf("expected Content-Type text/csv, got %q", contentType)
+	}
+	bodyStr := rr.Body.String()
+	if !bytes.Contains([]byte(bodyStr), []byte("student-1")) {
+		t.Errorf("expected body to contain student-1, got %q", bodyStr)
+	}
+	if !bytes.Contains([]byte(bodyStr), []byte("student-2")) {
+		t.Errorf("expected body to contain student-2, got %q", bodyStr)
+	}
+	if !bytes.Contains([]byte(bodyStr), []byte("id,org_id,student_id,lab_id,version,status,earned_points,max_points,created_at")) {
+		t.Errorf("expected body to contain CSV header, got %q", bodyStr)
+	}
+}
+

@@ -413,3 +413,55 @@ func (r *SQLiteRepository) GetSubmissionsCountForTesting(ctx context.Context) (i
 	err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM submissions").Scan(&count)
 	return count, err
 }
+
+func (r *SQLiteRepository) ListSubmissions(ctx context.Context, orgID, labID string) ([]SubmissionEvaluation, error) {
+	var query string
+	var args []any
+
+	if orgID != "" && labID != "" {
+		query = "SELECT id, org_id, student_id, lab_id, version, status, earned_points, max_points, results_json, created_at FROM submissions WHERE org_id = ? AND lab_id = ? ORDER BY created_at DESC"
+		args = []any{orgID, labID}
+	} else if orgID != "" {
+		query = "SELECT id, org_id, student_id, lab_id, version, status, earned_points, max_points, results_json, created_at FROM submissions WHERE org_id = ? ORDER BY created_at DESC"
+		args = []any{orgID}
+	} else if labID != "" {
+		query = "SELECT id, org_id, student_id, lab_id, version, status, earned_points, max_points, results_json, created_at FROM submissions WHERE lab_id = ? ORDER BY created_at DESC"
+		args = []any{labID}
+	} else {
+		query = "SELECT id, org_id, student_id, lab_id, version, status, earned_points, max_points, results_json, created_at FROM submissions ORDER BY created_at DESC"
+	}
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("db query submissions: %w", err)
+	}
+	defer rows.Close()
+
+	var evals []SubmissionEvaluation
+	for rows.Next() {
+		var ev SubmissionEvaluation
+		var createdAt string
+		if err := rows.Scan(
+			&ev.ID,
+			&ev.OrgID,
+			&ev.StudentID,
+			&ev.LabID,
+			&ev.Version,
+			&ev.Status,
+			&ev.EarnedPoints,
+			&ev.MaxPoints,
+			&ev.ResultsJSON,
+			&createdAt,
+		); err != nil {
+			return nil, fmt.Errorf("db scan submission: %w", err)
+		}
+
+		parsedTime, err := time.Parse(time.RFC3339Nano, createdAt)
+		if err != nil {
+			parsedTime, _ = time.Parse(time.RFC3339, createdAt)
+		}
+		ev.CreatedAt = parsedTime
+		evals = append(evals, ev)
+	}
+	return evals, nil
+}

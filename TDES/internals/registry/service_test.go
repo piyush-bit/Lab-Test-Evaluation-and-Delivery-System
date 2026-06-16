@@ -262,3 +262,110 @@ func TestSaveEvaluation(t *testing.T) {
 		t.Errorf("Expected earned_points to be 8, got %d", storedEarnedPoints)
 	}
 }
+
+func TestListSubmissions(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "tdes-list-submissions-test-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	dbPath := filepath.Join(tempDir, "test.db")
+	repo, err := NewSQLiteRepository(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer repo.Close()
+
+	storePath := filepath.Join(tempDir, "objects")
+	store, err := NewDiskArtifactStore(storePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	service, err := NewService(repo, store)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+
+	// Insert test data
+	eval1 := SubmissionEvaluation{
+		ID:           "id-1",
+		OrgID:        "org-acme",
+		StudentID:    "student-a",
+		LabID:        "lab-1",
+		Version:      "1.0",
+		Status:       "completed",
+		EarnedPoints: 10,
+		MaxPoints:    10,
+		ResultsJSON:  "[]",
+	}
+	eval2 := SubmissionEvaluation{
+		ID:           "id-2",
+		OrgID:        "org-acme",
+		StudentID:    "student-b",
+		LabID:        "lab-2",
+		Version:      "1.0",
+		Status:       "completed",
+		EarnedPoints: 5,
+		MaxPoints:    10,
+		ResultsJSON:  "[]",
+	}
+	eval3 := SubmissionEvaluation{
+		ID:           "id-3",
+		OrgID:        "org-other",
+		StudentID:    "student-c",
+		LabID:        "lab-1",
+		Version:      "1.0",
+		Status:       "completed",
+		EarnedPoints: 8,
+		MaxPoints:    10,
+		ResultsJSON:  "[]",
+	}
+
+	_ = service.SaveEvaluation(ctx, eval1)
+	_ = service.SaveEvaluation(ctx, eval2)
+	_ = service.SaveEvaluation(ctx, eval3)
+
+	// 1. Test List All
+	all, err := service.ListSubmissions(ctx, "", "")
+	if err != nil {
+		t.Fatalf("ListSubmissions failed: %v", err)
+	}
+	if len(all) != 3 {
+		t.Errorf("expected 3 submissions, got %d", len(all))
+	}
+
+	// 2. Test Filter by Org
+	orgAcme, err := service.ListSubmissions(ctx, "org-acme", "")
+	if err != nil {
+		t.Fatalf("ListSubmissions org filter failed: %v", err)
+	}
+	if len(orgAcme) != 2 {
+		t.Errorf("expected 2 acme submissions, got %d", len(orgAcme))
+	}
+
+	// 3. Test Filter by Lab
+	lab1, err := service.ListSubmissions(ctx, "", "lab-1")
+	if err != nil {
+		t.Fatalf("ListSubmissions lab filter failed: %v", err)
+	}
+	if len(lab1) != 2 {
+		t.Errorf("expected 2 lab-1 submissions, got %d", len(lab1))
+	}
+
+	// 4. Test Filter by both
+	both, err := service.ListSubmissions(ctx, "org-acme", "lab-1")
+	if err != nil {
+		t.Fatalf("ListSubmissions both filter failed: %v", err)
+	}
+	if len(both) != 1 {
+		t.Errorf("expected 1 submission matching both filters, got %d", len(both))
+	}
+	if both[0].ID != "id-1" {
+		t.Errorf("expected id-1, got %s", both[0].ID)
+	}
+}
+

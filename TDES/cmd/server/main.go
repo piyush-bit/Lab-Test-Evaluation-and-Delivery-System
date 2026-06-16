@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"io"
@@ -318,6 +319,9 @@ func main() {
 	// 10. Remote Submission Evaluator
 	mux.HandleFunc("POST /v1/submissions", handleSubmissions(service, nil))
 
+	// 11. Get/Export Submissions
+	mux.HandleFunc("GET /v1/submissions", handleGetSubmissions(service))
+
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: mux,
@@ -467,3 +471,65 @@ func handleSubmissions(service *registry.Service, runtime evaluatorcore.Runtime)
 		respondJSON(w, http.StatusOK, result)
 	}
 }
+
+func handleGetSubmissions(service *registry.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		var token string
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			token = strings.TrimPrefix(authHeader, "Bearer ")
+		}
+		expectedToken := os.Getenv("EUC2_REMOTE_BEARER_TOKEN")
+		if expectedToken != "" && token != expectedToken {
+			respondError(w, http.StatusUnauthorized, "invalid bearer token")
+			return
+		}
+
+		orgID := r.URL.Query().Get("org_id")
+		labID := r.URL.Query().Get("lab_id")
+		format := strings.ToLower(r.URL.Query().Get("format"))
+
+		submissions, err := service.ListSubmissions(r.Context(), orgID, labID)
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, "failed to query submissions: "+err.Error())
+			return
+		}
+
+		if format == "csv" {
+			w.Header().Set("Content-Type", "text/csv")
+			w.Header().Set("Content-Disposition", `attachment; filename="submissions.csv"`)
+			w.WriteHeader(http.StatusOK)
+
+			writer := csv.NewWriter(w)
+			defer writer.Flush()
+
+			header := []string{"id", "org_id", "student_id", "lab_id", "version", "status", "earned_points", "max_points", "created_at"}
+			if err := writer.Write(header); err != nil {
+				log.Printf("Error writing CSV header: %v", err)
+				return
+			}
+
+			for _, s := range submissions {
+				row := []string{
+					s.ID,
+					s.OrgID,
+					s.StudentID,
+					s.LabID,
+					s.Version,
+					s.Status,
+					strconv.Itoa(s.EarnedPoints),
+					strconv.Itoa(s.MaxPoints),
+					s.CreatedAt.Format(time.RFC3339),
+				}
+				if err := writer.Write(row); err != nil {
+					log.Printf("Error writing CSV row: %v", err)
+					return
+				}
+			}
+			return
+		}
+
+		respondJSON(w, http.StatusOK, submissions)
+	}
+}
+
