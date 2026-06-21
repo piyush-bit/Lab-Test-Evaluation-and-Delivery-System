@@ -20,6 +20,8 @@ type SubmitRequest struct {
 	OrgID        string
 	StudentID    string
 	BearerToken  string
+	Pin          string
+	NewPin       string
 }
 
 func (r *Remote) SubmitRemote(request SubmitRequest) (string, error) {
@@ -67,6 +69,17 @@ func (r *Remote) SubmitRemote(request SubmitRequest) (string, error) {
 	}
 	if err := submissionPackage.Close(); err != nil {
 		return "", fmt.Errorf("close submission package: %w", err)
+	}
+
+	if request.Pin != "" {
+		if err := writer.WriteField("pin", request.Pin); err != nil {
+			return "", fmt.Errorf("write pin field: %w", err)
+		}
+	}
+	if request.NewPin != "" {
+		if err := writer.WriteField("new_pin", request.NewPin); err != nil {
+			return "", fmt.Errorf("write new_pin field: %w", err)
+		}
 	}
 
 	if err := writer.Close(); err != nil {

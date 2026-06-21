@@ -63,4 +63,10 @@ type Repository interface {
 
 	// ListSubmissions queries submission evaluations, optionally filtering by orgID and labID.
 	ListSubmissions(ctx context.Context, orgID, labID string) ([]SubmissionEvaluation, error)
+
+	// GetStudentCredential retrieves a student's credential by orgID and studentID. Returns ErrNotFound if missing.
+	GetStudentCredential(ctx context.Context, orgID, studentID string) (StudentCredential, error)
+
+	// SaveStudentCredential inserts or updates a student's credential (e.g. updating the pin_hash or creating a roster entry).
+	SaveStudentCredential(ctx context.Context, cred StudentCredential) error
 }

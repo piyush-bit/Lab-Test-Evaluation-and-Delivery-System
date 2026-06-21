@@ -86,6 +86,15 @@ CREATE TABLE IF NOT EXISTS submissions (
 	results_json TEXT NOT NULL,
 	created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS student_credentials (
+	org_id TEXT NOT NULL,
+	student_id TEXT NOT NULL,
+	pin_hash TEXT,
+	created_at TEXT NOT NULL,
+	updated_at TEXT NOT NULL,
+	PRIMARY KEY (org_id, student_id)
+);
 `
 	if _, err := r.db.ExecContext(ctx, schema); err != nil {
 		return err
@@ -464,4 +473,52 @@ func (r *SQLiteRepository) ListSubmissions(ctx context.Context, orgID, labID str
 		evals = append(evals, ev)
 	}
 	return evals, nil
+}
+
+func (r *SQLiteRepository) GetStudentCredential(ctx context.Context, orgID, studentID string) (StudentCredential, error) {
+	row := r.db.QueryRowContext(
+		ctx,
+		"SELECT org_id, student_id, pin_hash, created_at, updated_at FROM student_credentials WHERE org_id = ? AND student_id = ?",
+		orgID,
+		studentID,
+	)
+	var cred StudentCredential
+	var pinHash sql.NullString
+	var createdAt, updatedAt string
+	if err := row.Scan(&cred.OrgID, &cred.StudentID, &pinHash, &createdAt, &updatedAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return StudentCredential{}, ErrNotFound
+		}
+		return StudentCredential{}, fmt.Errorf("db scan student credential: %w", err)
+	}
+	if pinHash.Valid {
+		cred.PinHash = pinHash.String
+	}
+	cred.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+	cred.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
+	return cred, nil
+}
+
+func (r *SQLiteRepository) SaveStudentCredential(ctx context.Context, cred StudentCredential) error {
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	var pinHash sql.NullString
+	if cred.PinHash != "" {
+		pinHash.String = cred.PinHash
+		pinHash.Valid = true
+	}
+	_, err := r.db.ExecContext(
+		ctx,
+		`INSERT INTO student_credentials (org_id, student_id, pin_hash, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?)
+		 ON CONFLICT(org_id, student_id) DO UPDATE SET pin_hash = excluded.pin_hash, updated_at = excluded.updated_at`,
+		cred.OrgID,
+		cred.StudentID,
+		pinHash,
+		now,
+		now,
+	)
+	if err != nil {
+		return fmt.Errorf("db save student credential: %w", err)
+	}
+	return nil
 }

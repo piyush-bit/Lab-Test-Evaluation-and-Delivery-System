@@ -53,3 +53,12 @@ type SubmissionEvaluation struct {
 	ResultsJSON  string    `json:"results_json"`
 	CreatedAt    time.Time `json:"created_at"`
 }
+
+// StudentCredential represents a student's private credentials stored in the database.
+type StudentCredential struct {
+	OrgID     string    `json:"org_id"`
+	StudentID string    `json:"student_id"`
+	PinHash   string    `json:"pin_hash"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}

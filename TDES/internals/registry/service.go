@@ -154,3 +154,13 @@ func (s *Service) SaveEvaluation(ctx context.Context, eval SubmissionEvaluation)
 func (s *Service) ListSubmissions(ctx context.Context, orgID, labID string) ([]SubmissionEvaluation, error) {
 	return s.repo.ListSubmissions(ctx, orgID, labID)
 }
+
+// GetStudentCredential retrieves a student's credential by orgID and studentID.
+func (s *Service) GetStudentCredential(ctx context.Context, orgID, studentID string) (StudentCredential, error) {
+	return s.repo.GetStudentCredential(ctx, orgID, studentID)
+}
+
+// SaveStudentCredential saves a student's credential (e.g. updating the pin_hash or creating a roster entry).
+func (s *Service) SaveStudentCredential(ctx context.Context, cred StudentCredential) error {
+	return s.repo.SaveStudentCredential(ctx, cred)
+}

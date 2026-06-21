@@ -1,10 +1,14 @@
 package main
 
 import (
+	"archive/tar"
 	"context"
+	"crypto/sha256"
 	"encoding/csv"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -83,6 +87,16 @@ func main() {
 
 	// 2. Publish
 	mux.HandleFunc("POST /v1/exercises/publish", func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		var token string
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			token = strings.TrimPrefix(authHeader, "Bearer ")
+		}
+		if !isInstructorTokenValid(token) {
+			respondError(w, http.StatusUnauthorized, "invalid bearer token")
+			return
+		}
+
 		// Limit body size to 64MB for safety
 		r.Body = http.MaxBytesReader(w, r.Body, 64<<20)
 		if err := r.ParseMultipartForm(32 << 20); err != nil {
@@ -425,6 +439,61 @@ func handleSubmissions(service *registry.Service, runtime evaluatorcore.Runtime)
 		}
 		defer os.Remove(tempPath)
 
+		// PIN & TOFU Verification
+		studentID, orgID, err := readSubmissionIdentity(tempPath)
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "invalid submission package: "+err.Error())
+			return
+		}
+
+		pin := strings.TrimSpace(r.FormValue("pin"))
+		newPin := strings.TrimSpace(r.FormValue("new_pin"))
+
+		cred, err := service.GetStudentCredential(r.Context(), orgID, studentID)
+		if err != nil {
+			if errors.Is(err, registry.ErrNotFound) {
+				respondError(w, http.StatusForbidden, fmt.Sprintf("student %s not registered in roster for org %s", studentID, orgID))
+				return
+			}
+			respondError(w, http.StatusInternalServerError, "failed to check student roster: "+err.Error())
+			return
+		}
+
+		if cred.PinHash == "" {
+			// TOFU Activation phase
+			if len(pin) < 4 {
+				respondError(w, http.StatusBadRequest, "PIN must be at least 4 characters long")
+				return
+			}
+			cred.PinHash = hashPin(studentID, pin)
+			if err := service.SaveStudentCredential(r.Context(), cred); err != nil {
+				respondError(w, http.StatusInternalServerError, "failed to register student PIN: "+err.Error())
+				return
+			}
+			log.Printf("Student %s/%s registered PIN successfully", orgID, studentID)
+		} else {
+			// Validation phase
+			expectedHash := hashPin(studentID, pin)
+			if cred.PinHash != expectedHash {
+				respondError(w, http.StatusUnauthorized, "invalid student PIN")
+				return
+			}
+
+			// PIN Update phase
+			if newPin != "" {
+				if len(newPin) < 4 {
+					respondError(w, http.StatusBadRequest, "new PIN must be at least 4 characters long")
+					return
+				}
+				cred.PinHash = hashPin(studentID, newPin)
+				if err := service.SaveStudentCredential(r.Context(), cred); err != nil {
+					respondError(w, http.StatusInternalServerError, "failed to update student PIN: "+err.Error())
+					return
+				}
+				log.Printf("Student %s/%s updated PIN successfully", orgID, studentID)
+			}
+		}
+
 		provider := &serviceArtifactProvider{service: service}
 		evaluator, err := evaluatorcore.NewEvaluator(provider, runtime)
 		if err != nil {
@@ -479,8 +548,7 @@ func handleGetSubmissions(service *registry.Service) http.HandlerFunc {
 		if strings.HasPrefix(authHeader, "Bearer ") {
 			token = strings.TrimPrefix(authHeader, "Bearer ")
 		}
-		expectedToken := os.Getenv("EUC2_REMOTE_BEARER_TOKEN")
-		if expectedToken != "" && token != expectedToken {
+		if !isInstructorTokenValid(token) {
 			respondError(w, http.StatusUnauthorized, "invalid bearer token")
 			return
 		}
@@ -531,5 +599,166 @@ func handleGetSubmissions(service *registry.Service) http.HandlerFunc {
 
 		respondJSON(w, http.StatusOK, submissions)
 	}
+}
+
+func isInstructorTokenValid(token string) bool {
+	instructorTokensStr := os.Getenv("EUC2_INSTRUCTOR_TOKENS")
+	if instructorTokensStr == "" {
+		// Fallback to EUC2_REMOTE_BEARER_TOKEN if instructor tokens are not configured
+		fallback := os.Getenv("EUC2_REMOTE_BEARER_TOKEN")
+		return fallback == "" || token == fallback
+	}
+
+	tokens := strings.Split(instructorTokensStr, ",")
+	for _, t := range tokens {
+		if token == strings.TrimSpace(t) {
+			return true
+		}
+	}
+	return false
+}
+
+func handleAdminOnboard(service *registry.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		var token string
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			token = strings.TrimPrefix(authHeader, "Bearer ")
+		}
+		if !isInstructorTokenValid(token) {
+			respondError(w, http.StatusUnauthorized, "invalid bearer token")
+			return
+		}
+
+		var reader io.Reader
+		// Try parsing as multipart form first
+		if err := r.ParseMultipartForm(32 << 20); err == nil {
+			file, _, err := r.FormFile("roster_csv")
+			if err != nil {
+				respondError(w, http.StatusBadRequest, "roster_csv file is required in multipart form")
+				return
+			}
+			defer file.Close()
+			reader = file
+		} else {
+			// Fallback to reading raw body
+			reader = r.Body
+		}
+
+		csvReader := csv.NewReader(reader)
+		records, err := csvReader.ReadAll()
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "failed to parse CSV: "+err.Error())
+			return
+		}
+
+		if len(records) < 2 {
+			respondError(w, http.StatusBadRequest, "CSV roster is empty or missing headers")
+			return
+		}
+
+		header := records[0]
+		studentIDCol := -1
+		orgIDCol := -1
+
+		for idx, h := range header {
+			hClean := strings.TrimSpace(strings.ToLower(h))
+			if hClean == "student_id" || hClean == "studentid" || hClean == "student" {
+				studentIDCol = idx
+			}
+			if hClean == "org_id" || hClean == "orgid" || hClean == "org" || hClean == "organization" {
+				orgIDCol = idx
+			}
+		}
+
+		if studentIDCol == -1 {
+			respondError(w, http.StatusBadRequest, "missing student_id column in CSV header")
+			return
+		}
+
+		onboardedCount := 0
+		for i := 1; i < len(records); i++ {
+			row := records[i]
+			if len(row) <= studentIDCol {
+				continue
+			}
+			studentID := strings.TrimSpace(row[studentIDCol])
+			if studentID == "" {
+				continue
+			}
+
+			orgID := "default"
+			if orgIDCol != -1 && len(row) > orgIDCol {
+				cleanedOrg := strings.TrimSpace(row[orgIDCol])
+				if cleanedOrg != "" {
+					orgID = cleanedOrg
+				}
+			}
+
+			existing, err := service.GetStudentCredential(r.Context(), orgID, studentID)
+			if err != nil {
+				if errors.Is(err, registry.ErrNotFound) {
+					err = service.SaveStudentCredential(r.Context(), registry.StudentCredential{
+						OrgID:     orgID,
+						StudentID: studentID,
+					})
+					if err != nil {
+						log.Printf("Failed to onboard student %s/%s: %v", orgID, studentID, err)
+						continue
+					}
+					onboardedCount++
+				} else {
+					log.Printf("Error checking student credential %s/%s: %v", orgID, studentID, err)
+				}
+			} else {
+				log.Printf("Student %s/%s already rostered, skipping", orgID, studentID)
+				_ = existing
+			}
+		}
+
+		respondJSON(w, http.StatusOK, map[string]any{
+			"status":    "ok",
+			"onboarded": onboardedCount,
+		})
+	}
+}
+
+func readSubmissionIdentity(path string) (studentID, orgID string, err error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", "", err
+	}
+	defer file.Close()
+
+	tr := tar.NewReader(file)
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", "", err
+		}
+		if header.Typeflag == tar.TypeReg && filepath.Base(header.Name) == "submission-manifest.json" {
+			var manifest struct {
+				OrgID     string `json:"org_id"`
+				StudentID string `json:"student_id"`
+			}
+			if err := json.NewDecoder(tr).Decode(&manifest); err != nil {
+				return "", "", err
+			}
+			return manifest.StudentID, manifest.OrgID, nil
+		}
+	}
+	return "", "", errors.New("submission-manifest.json not found in archive")
+}
+
+func hashPin(studentID, pin string) string {
+	salt := os.Getenv("EUC2_PIN_SALT")
+	if salt == "" {
+		salt = "default-tdes-salt-value-for-security"
+	}
+	hash := sha256.Sum256([]byte(studentID + ":" + pin + ":" + salt))
+	return hex.EncodeToString(hash[:])
 }
 
