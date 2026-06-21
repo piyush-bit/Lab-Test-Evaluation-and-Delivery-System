@@ -336,6 +336,9 @@ func main() {
 	// 11. Get/Export Submissions
 	mux.HandleFunc("GET /v1/submissions", handleGetSubmissions(service))
 
+	// 12. Onboard Students
+	mux.HandleFunc("POST /v1/admin/onboard", handleAdminOnboard(service))
+
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: mux,
