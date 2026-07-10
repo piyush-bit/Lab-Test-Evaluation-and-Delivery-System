@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentation - TDES Lab System</title>
-    <meta name="description" content="Technical documentation, CLI command reference, and manifest.json specification for TDES.">
+    <title>euc2 CLI Command Reference - TDES Docs</title>
+    <meta name="description" content="Official command line tool reference page for euc2, packaging, caching, initializing, and running coding exercises in TDES.">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,9 +18,10 @@
         <div class="vertical-line v-line-1"></div>
         <div class="vertical-line v-line-2"></div>
         <div class="vertical-line v-line-3"></div>
+        <div class="horizontal-line h-line-1"></div>
     </div>
 
-    <!-- Floating Navbar -->
+    <!-- Floating Navbar (Teachyst Pill Style) -->
     <header class="navbar-wrapper">
         <div class="navbar-pill">
             <a href="index.html" class="brand">
@@ -28,7 +29,6 @@
                 <span class="brand-text">TDES</span>
             </a>
             <nav class="nav-links">
-                <a href="index.html">Home</a>
                 <a href="index.html#lifecycle">How It Works</a>
                 <a href="index.html#problem">Challenges</a>
                 <a href="index.html#why-choose">Why TDES</a>
@@ -44,119 +44,833 @@
                     <!-- Moon Icon -->
                     <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                 </button>
-                <a href="index.html" class="btn btn-secondary btn-sm">Back to Home</a>
+                <a href="index.html#commands" class="btn btn-primary btn-sm">Get Started</a>
             </div>
         </div>
     </header>
 
-    <main class="main-content">
-        <!-- Documentation Layout -->
+    <!-- Main Container -->
+    <div class="docs-layout-container">
         <div class="docs-page-layout">
-            <!-- Table of Contents Sidebar -->
+            <!-- Sidebar Table of Contents -->
             <aside class="docs-toc-sidebar">
                 <div class="docs-toc-sticky">
-                    <h4>On This Page</h4>
+                    <h4>Reference Guide</h4>
                     <ul>
-                        <li><a href="#intro" class="toc-link active">Introduction</a></li>
-                        <li><a href="#commands" class="toc-link">CLI Command Suite</a></li>
-                        <li><a href="#schema" class="toc-link">Manifest Specification</a></li>
+                        <li><a href="#intro" class="toc-link active">Command line tool (euc2)</a></li>
+                        <li><a href="#syntax" class="toc-link">Syntax</a></li>
+                        <li><a href="#config" class="toc-link">Config & Overrides</a></li>
+                        <li><a href="#operations" class="toc-link">Operations</a></li>
+                        <li><a href="#resources" class="toc-link">Resource Types</a></li>
+                        <li><a href="#output" class="toc-link">Output Options</a></li>
+                        <li><a href="#examples" class="toc-link">Common Examples</a></li>
+                        <li><a href="#strategies" class="toc-link">Grading Strategies</a></li>
                     </ul>
                 </div>
             </aside>
 
-            <!-- Documentation Content -->
-            <div class="docs-content-area">
+            <!-- Main Content Area -->
+            <main class="docs-content-area align-left">
+                
                 <!-- Intro Section -->
                 <section id="intro" class="docs-section-block">
-                    <div class="section-header align-left">
-                        <span class="badge">Reference Guide</span>
-                        <h2>Introduction to EUC² & TDES</h2>
-                    </div>
+                    <h1>Command line tool (<code>euc2</code>)</h1>
                     <p class="docs-text-p">
-                        Welcome to the technical reference documentation. The <strong>Test Delivery and Evaluation System (TDES)</strong> is built to orchestrate, deliver, and grade programming exercises inside isolated container sandboxes. 
-                    </p>
-                    <p class="docs-text-p">
-                        All operations are driven via the <code>euc2</code> CLI binary. Exercises follow a standardized, declarative schema configured in a <code>manifest.json</code> file, which interfaces with a simple <code>Makefile</code> contract.
+                        The <code>euc2</code> command-line tool packages, caches, initializes, and runs coding exercises for the Test Delivery and Evaluation System (TDES). It operates in both online (registry-backed) and offline (physical drive-backed) modes to deliver lab tests and evaluate submissions securely.
                     </p>
                 </section>
 
                 <hr class="docs-divider">
 
-                <!-- CLI Commands section -->
-                <section id="commands" class="docs-section-block">
-                    <div class="section-header align-left">
-                        <span class="badge badge-accent">euc2 CLI</span>
-                        <h2>euc2 CLI Command Suite</h2>
-                        <p>Automate execution tasks using the <code>euc2</code> command-line tools. Click each tab below to view parameters and output examples.</p>
-                    </div>
-                    <div class="commands-layout">
-                        <div class="commands-sidebar">
-                            <button class="cmd-tab active" onclick="showCommand('init')">init</button>
-                            <button class="cmd-tab" onclick="showCommand('fetch')">fetch</button>
-                            <button class="cmd-tab" onclick="showCommand('package')">package</button>
-                            <button class="cmd-tab" onclick="showCommand('run')">run</button>
-                            <button class="cmd-tab" onclick="showCommand('submit')">submit</button>
-                            <button class="cmd-tab" onclick="showCommand('evaluate')">evaluate</button>
-                            <button class="cmd-tab" onclick="showCommand('drive')">drive</button>
+                <!-- Syntax Section -->
+                <section id="syntax" class="docs-section-block">
+                    <h2>Syntax</h2>
+                    <p>Use the following syntax to run <code>euc2</code> commands from your terminal window:</p>
+                    
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>BASH</span>
                         </div>
-                        <div class="commands-display glass-card" id="command-details">
-                            <h3>euc2 init</h3>
-                            <p class="cmd-desc">Initialize an exercise by lab ID and version from local packages into a working directory.</p>
-                            <div class="cmd-args-section">
-                                <strong>Arguments:</strong> <code>&lt;id-with-version&gt; &lt;working-directory&gt;</code>
+                        <pre><code>euc2 [command] [ARGS] [flags]</code></pre>
+                    </div>
+
+                    <p>where <code>command</code>, <code>ARGS</code>, and <code>flags</code> are:</p>
+                    <ul>
+                        <li><strong><code>command</code></strong>: Specifies the operation that you want to perform, for example <code>init</code>, <code>run</code>, <code>submit</code>, <code>fetch</code>, or a command group like <code>drive</code> or <code>admin</code>.</li>
+                        <li><strong><code>ARGS</code></strong>: Specifies arguments unique to the subcommand, such as <code>&lt;lab-id&gt;[@version]</code>, <code>&lt;working-directory&gt;</code>, <code>&lt;exercise-directory&gt;</code>, <code>&lt;submission-tar&gt;</code>, or <code>&lt;envelope-json-path&gt;</code>.</li>
+                        <li><strong><code>flags</code></strong>: Specifies optional flags. For example, you can use the <code>-r</code> or <code>--remote</code> flags to specify the registry server URL, or <code>-d</code> or <code>--drive</code> to specify a physical drive path.</li>
+                    </ul>
+
+                    <div class="docs-callout caution">
+                        <div class="docs-callout-title">
+                            Caution
+                        </div>
+                        <p>Flags that you specify from the command line override default values and any corresponding environment variables or configuration file values.</p>
+                    </div>
+
+                    <p>If you need help, run <code>euc2 --help</code> or <code>euc2 [command] --help</code> from the terminal window.</p>
+                </section>
+
+                <hr class="docs-divider">
+
+                <!-- Config & Overrides Section -->
+                <section id="config" class="docs-section-block">
+                    <h2>In-Workstation Configuration and Environment Overrides</h2>
+                    <p>The <code>euc2</code> tool manages a local student profile and respects several environment variables for connection and security overrides.</p>
+
+                    <h3>Student Profile Configuration (<code>~/.euc2/config.json</code>)</h3>
+                    <p>For student operations (such as <code>submit</code>), <code>euc2</code> looks for a student profile configuration file at <code>~/.euc2/config.json</code>. This file caches student identifiers to avoid repeated prompt entries:</p>
+
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>JSON</span>
+                        </div>
+                        <pre><code>{
+  "student_id": "student-12345",
+  "org_id": "default",
+  "pin": "9876"
+}</code></pre>
+                    </div>
+
+                    <ul>
+                        <li><strong><code>student_id</code></strong>: The candidate's unique identifier.</li>
+                        <li><strong><code>org_id</code></strong>: The organization or course identifier (defaults to <code>default</code>).</li>
+                        <li><strong><code>pin</code></strong>: The cached Trust-On-First-Use (TOFU) PIN. Used to authenticate subsequent submissions.</li>
+                    </ul>
+
+                    <h3>Environment Variables</h3>
+                    <div class="docs-table-wrapper">
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Variable Name</th>
+                                    <th>Description</th>
+                                    <th>Subcommands Affected</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>EUC2_REGISTRY_URL</code></td>
+                                    <td>Specifies the default registry server URL.</td>
+                                    <td><code>fetch</code>, <code>publish</code>, <code>submit</code>, <code>evaluate</code>, <code>drive evaluate-batch</code>, <code>admin onboard-students</code>, <code>admin get-grades</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>EUC2_REMOTE_BEARER_TOKEN</code></td>
+                                    <td>Specifies the Bearer auth token for authenticating registry uploads or admin tasks.</td>
+                                    <td><code>publish</code>, <code>evaluate</code>, <code>drive evaluate-batch</code>, <code>admin onboard-students</code>, <code>admin get-grades</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>EUC2_PRIVATE_STORE_DIR</code></td>
+                                    <td>Overrides the path to the private exercise package store.</td>
+                                    <td><code>evaluate</code>, <code>drive evaluate-batch</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <hr class="docs-divider">
+
+                <!-- Operations Section -->
+                <section id="operations" class="docs-section-block">
+                    <h2>Operations</h2>
+                    <p>Operations are grouped logically by workflow categories.</p>
+
+                    <h3>Student Core Workflow</h3>
+                    <div class="docs-table-wrapper">
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Command</th>
+                                    <th>Usage</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>init</code></td>
+                                    <td><code>euc2 init &lt;lab-id&gt;[@version] &lt;working-dir&gt;</code></td>
+                                    <td>Initializes an exercise from the local cache into a working workspace.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>run</code></td>
+                                    <td><code>euc2 run [exercise-dir]</code></td>
+                                    <td>Runs the public test suite for the exercise in Docker or locally.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>submit</code></td>
+                                    <td><code>euc2 submit</code></td>
+                                    <td>Packages and submits the candidate's files.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>fetch</code></td>
+                                    <td><code>euc2 fetch &lt;lab-id&gt;</code></td>
+                                    <td>Pulls public exercise templates from a drive or registry.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3>Authoring Workflow (Exercise Setters)</h3>
+                    <div class="docs-table-wrapper">
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Command</th>
+                                    <th>Usage</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>package</code></td>
+                                    <td><code>euc2 package &lt;exercise-dir&gt;</code></td>
+                                    <td>Runs verification tests and splits private/public packages locally.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>publish</code></td>
+                                    <td><code>euc2 publish &lt;exercise-dir&gt;</code></td>
+                                    <td>Packages and uploads the exercise to the remote registry.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3>Offline/Drive Workflow (Examiners)</h3>
+                    <div class="docs-table-wrapper">
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Command</th>
+                                    <th>Usage</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>drive prepare</code></td>
+                                    <td><code>euc2 drive prepare &lt;drive-path&gt;</code></td>
+                                    <td>Scaffolds directories on physical media for offline exams.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>drive prepare-submission</code></td>
+                                    <td><code>euc2 drive prepare-submission &lt;drive-path&gt;</code></td>
+                                    <td>Registers the instructor's public key on a drive to enable encrypted uploads.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>drive decrypt-submission</code></td>
+                                    <td><code>euc2 drive decrypt-submission &lt;envelope-json-path&gt;</code></td>
+                                    <td>Decrypts an encrypted JSON submission envelope to plaintext tar.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>drive evaluate-batch</code></td>
+                                    <td><code>euc2 drive evaluate-batch &lt;drive-path&gt;</code></td>
+                                    <td>Decrypts and grades all student drive submissions in batch.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3>Registry Administration Workflow</h3>
+                    <div class="docs-table-wrapper">
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Command</th>
+                                    <th>Usage</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>admin onboard-students</code></td>
+                                    <td><code>euc2 admin onboard-students &lt;roster-csv-path&gt;</code></td>
+                                    <td>Uploads the candidate roster to pre-register student IDs.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>admin get-grades</code></td>
+                                    <td><code>euc2 admin get-grades</code></td>
+                                    <td>Pulls graded submissions from the registry server.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <hr class="docs-divider">
+
+                    <h3><code>euc2 init</code></h3>
+                    <p>Initialize an exercise into a working directory.</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>USAGE</span>
+                        </div>
+                        <pre><code>euc2 init &lt;lab-id&gt;[@version] &lt;working-directory&gt;</code></pre>
+                    </div>
+                    <p><strong>Arguments:</strong></p>
+                    <ul>
+                        <li><code>&lt;lab-id&gt;[@version]</code>: The identifier of the lab to extract. An optional version can be specified using <code>@version</code>. Defaults to the latest cached version.</li>
+                        <li><code>&lt;working-directory&gt;</code>: The target path where the student workspace files will be unpacked.</li>
+                    </ul>
+                    <p><strong>Examples:</strong></p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>TERMINAL</span>
+                        </div>
+                        <pre><code><span class="docs-code-comment"># Initialize a Go stack exercise into the stack-workspace folder</span>
+euc2 init go101-lab01@1.1.0 ./stack-workspace</code></pre>
+                    </div>
+
+                    <hr class="docs-divider">
+
+                    <h3><code>euc2 run</code></h3>
+                    <p>Run public tests for the current exercise.</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>USAGE</span>
+                        </div>
+                        <pre><code>euc2 run [exercise-directory] [flags]</code></pre>
+                    </div>
+                    <p><strong>Flags:</strong></p>
+                    <ul>
+                        <li><code>--local</code>: Run the public test suite entrypoint directly on the host machine instead of inside an isolated Docker sandbox container.</li>
+                    </ul>
+                    <p><strong>Examples:</strong></p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>TERMINAL</span>
+                        </div>
+                        <pre><code><span class="docs-code-comment"># Run public tests inside the default Docker sandbox container</span>
+euc2 run ./stack-workspace
+
+<span class="docs-code-comment"># Run public tests directly on the local host machine</span>
+euc2 run ./stack-workspace --local</code></pre>
+                    </div>
+
+                    <hr class="docs-divider">
+
+                    <h3><code>euc2 submit</code></h3>
+                    <p>Submit the candidate's solution files.</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>USAGE</span>
+                        </div>
+                        <pre><code>euc2 submit [flags]</code></pre>
+                    </div>
+                    <p><strong>Flags:</strong></p>
+                    <ul>
+                        <li><code>-d, --drive &lt;path&gt;</code>: Local physical drive path (used to save the encrypted submission envelope offline).</li>
+                        <li><code>-r, --remote &lt;url&gt;</code>: Remote registry server URL (used to post the submission online).</li>
+                        <li><code>--org-id &lt;id&gt;</code>: Identifies the organization/course. Overrides cached configuration.</li>
+                        <li><code>--student-id &lt;id&gt;</code>: Identifies the candidate. Overrides cached configuration.</li>
+                        <li><code>--pin &lt;pin&gt;</code>: Candidate authentication PIN. Overrides cached configuration.</li>
+                        <li><code>--update-pin &lt;new-pin&gt;</code>: Updates the current student PIN to a new value on successful submission.</li>
+                    </ul>
+                    
+                    <div class="docs-callout note">
+                        <div class="docs-callout-title">
+                            Note
+                        </div>
+                        <p>During online remote submission, if no PIN is found on the workstation, the tool prompts the student to create a new secure PIN (TOFU) to lock their student ID.</p>
+                    </div>
+
+                    <p><strong>Examples:</strong></p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>TERMINAL</span>
+                        </div>
+                        <pre><code><span class="docs-code-comment"># Submit online to a registry server (prompts for Student ID/PIN if not cached)</span>
+euc2 submit --remote http://localhost:8080 --org-id default
+
+<span class="docs-code-comment"># Submit offline to a prepared USB drive (creates an encrypted envelope)</span>
+euc2 submit --drive /Volumes/ExamUSB --student-id student123 --org-id default</code></pre>
+                    </div>
+
+                    <hr class="docs-divider">
+
+                    <h3><code>euc2 fetch</code></h3>
+                    <p>Fetch a public exercise package.</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>USAGE</span>
+                        </div>
+                        <pre><code>euc2 fetch &lt;lab-id&gt;[@version] [flags]</code></pre>
+                    </div>
+                    <p><strong>Flags:</strong></p>
+                    <ul>
+                        <li><code>-d, --drive &lt;path&gt;</code>: Local drive path containing the exercise repository.</li>
+                        <li><code>-r, --remote &lt;url&gt;</code>: Registry server URL to retrieve the public package.</li>
+                        <li><code>--org-id &lt;id&gt;</code>: Organization identifier (required if fetching from a remote server).</li>
+                    </ul>
+                    <p><strong>Examples:</strong></p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>TERMINAL</span>
+                        </div>
+                        <pre><code><span class="docs-code-comment"># Fetch from a physical drive path</span>
+euc2 fetch go101-lab01 --drive /Volumes/ExamUSB
+
+<span class="docs-code-comment"># Fetch from a remote registry server</span>
+euc2 fetch go101-lab01 --remote http://localhost:8080 --org-id default</code></pre>
+                    </div>
+
+                    <hr class="docs-divider">
+
+                    <h3><code>euc2 package</code></h3>
+                    <p>(For Exercise Setters) Package an exercise locally for validation.</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>USAGE</span>
+                        </div>
+                        <pre><code>euc2 package &lt;exercise-directory&gt;</code></pre>
+                    </div>
+                    
+                    <div class="docs-callout important">
+                        <div class="docs-callout-title">
+                            Important
+                        </div>
+                        <p>The <code>package</code> command executes the public and private test suites against the author's reference solution. It fails if any tests fail, ensuring only passing exercise packages are built.</p>
+                    </div>
+
+                    <p><strong>Examples:</strong></p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>TERMINAL</span>
+                        </div>
+                        <pre><code><span class="docs-code-comment"># Validate and package the stack exercise</span>
+euc2 package ./go101-lab01-stack</code></pre>
+                    </div>
+
+                    <hr class="docs-divider">
+
+                    <h3><code>euc2 publish</code></h3>
+                    <p>(For Exercise Setters) Package and publish an exercise to the remote registry.</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>USAGE</span>
+                        </div>
+                        <pre><code>euc2 publish &lt;exercise-directory&gt; [flags]</code></pre>
+                    </div>
+                    <p><strong>Flags:</strong></p>
+                    <ul>
+                        <li><code>-r, --remote &lt;url&gt;</code>: Remote registry base URL.</li>
+                        <li><code>--org-id &lt;id&gt;</code>: Organization ID.</li>
+                        <li><code>--exercise-id &lt;id&gt;</code>: Optional override for the exercise identifier.</li>
+                        <li><code>--version &lt;version&gt;</code>: Optional override for the exercise version.</li>
+                        <li><code>--status &lt;status&gt;</code>: Optional override for the release status (defaults to <code>published</code>).</li>
+                    </ul>
+                    <p><strong>Examples:</strong></p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>TERMINAL</span>
+                        </div>
+                        <pre><code><span class="docs-code-comment"># Publish an exercise to the server registry</span>
+euc2 publish ./go101-lab01-stack --remote http://localhost:8080 --org-id default</code></pre>
+                    </div>
+
+                    <hr class="docs-divider">
+
+                    <h3><code>euc2 evaluate</code></h3>
+                    <p>Evaluate a student submission package locally.</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>USAGE</span>
+                        </div>
+                        <pre><code>euc2 evaluate &lt;submission-tar&gt; [flags]</code></pre>
+                    </div>
+                    <p><strong>Flags:</strong></p>
+                    <ul>
+                        <li><code>-o, --output &lt;path&gt;</code>: Writes the evaluation JSON result to the specified file.</li>
+                        <li><code>--private-store &lt;path&gt;</code>: Path to the private exercise package store (defaults to the local cache).</li>
+                        <li><code>--docker-binary &lt;path/URI&gt;</code>: Docker command binary or socket URI used for the grading sandbox.</li>
+                        <li><code>--registry-url &lt;url&gt;</code>: Registry base URL to pull private exercises if missing from local cache.</li>
+                        <li><code>--bearer-token &lt;token&gt;</code>: Bearer token to authorize private exercise pulls.</li>
+                    </ul>
+                    <p><strong>Examples:</strong></p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>TERMINAL</span>
+                        </div>
+                        <pre><code><span class="docs-code-comment"># Grade a student tar package and save grading details to result.json</span>
+euc2 evaluate ./submission-student123.tar -o result.json</code></pre>
+                    </div>
+
+                    <hr class="docs-divider">
+
+                    <h3><code>euc2 drive prepare</code></h3>
+                    <p>Prepare a drive directory for offline exercise distribution.</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>USAGE</span>
+                        </div>
+                        <pre><code>euc2 drive prepare &lt;drive-path&gt;</code></pre>
+                    </div>
+                    <p><strong>Examples:</strong></p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>TERMINAL</span>
+                        </div>
+                        <pre><code><span class="docs-code-comment"># Prepare a USB drive folder structure</span>
+euc2 drive prepare /Volumes/ExamUSB</code></pre>
+                    </div>
+
+                    <hr class="docs-divider">
+
+                    <h3><code>euc2 drive prepare-submission</code></h3>
+                    <p>Prepare a drive directory for encrypted submissions.</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>USAGE</span>
+                        </div>
+                        <pre><code>euc2 drive prepare-submission &lt;drive-path&gt; [flags]</code></pre>
+                    </div>
+                    <p><strong>Flags:</strong></p>
+                    <ul>
+                        <li><code>--recipient-public-key &lt;base64-key&gt;</code>: <strong>(Required)</strong> Base64 encoded X25519 public key.</li>
+                    </ul>
+                    <p><strong>Examples:</strong></p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>TERMINAL</span>
+                        </div>
+                        <pre><code><span class="docs-code-comment"># Configure a drive for encrypted uploads using an instructor's public key</span>
+euc2 drive prepare-submission /Volumes/ExamUSB --recipient-public-key MCowBQYDK2VuAyEA...</code></pre>
+                    </div>
+
+                    <hr class="docs-divider">
+
+                    <h3><code>euc2 drive decrypt-submission</code></h3>
+                    <p>Decrypt an encrypted JSON submission envelope.</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>USAGE</span>
+                        </div>
+                        <pre><code>euc2 drive decrypt-submission &lt;envelope-json-path&gt; [flags]</code></pre>
+                    </div>
+                    <p><strong>Flags:</strong></p>
+                    <ul>
+                        <li><code>-o, --output &lt;path&gt;</code>: <strong>(Required)</strong> Path where the decrypted <code>.tar</code> file should be written.</li>
+                        <li><code>--recipient-private-key &lt;base64-key&gt;</code>: <strong>(Required)</strong> Base64 encoded X25519 private key.</li>
+                    </ul>
+                    <p><strong>Examples:</strong></p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>TERMINAL</span>
+                        </div>
+                        <pre><code><span class="docs-code-comment"># Decrypt a student's envelope to a grading archive</span>
+euc2 drive decrypt-submission /Volumes/ExamUSB/submissions/go101-lab01/envelope_student123.json -o ./student123.tar --recipient-private-key MC4CAQAwBQYDK2VuBCIE...</code></pre>
+                    </div>
+
+                    <hr class="docs-divider">
+
+                    <h3><code>euc2 drive evaluate-batch</code></h3>
+                    <p>Decrypt and evaluate all student submissions on a drive in batch.</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>USAGE</span>
+                        </div>
+                        <pre><code>euc2 drive evaluate-batch &lt;drive-path&gt; [flags]</code></pre>
+                    </div>
+                    <p><strong>Flags:</strong></p>
+                    <ul>
+                        <li><code>--recipient-private-key &lt;base64-key&gt;</code>: <strong>(Required)</strong> Base64 encoded X25519 private key.</li>
+                        <li><code>--csv &lt;path&gt;</code>: Path to write a summary CSV grading report.</li>
+                        <li><code>--json &lt;path&gt;</code>: Path to write a summary JSON grading report.</li>
+                        <li><code>--output-dir &lt;dir&gt;</code>: Directory where individual student detailed evaluation results (JSON) will be saved.</li>
+                        <li><code>--private-store &lt;path&gt;</code>: Private exercise store directory.</li>
+                        <li><code>--docker-binary &lt;path/URI&gt;</code>: Docker socket or binary path.</li>
+                        <li><code>--registry-url &lt;url&gt;</code>: Registry URL to fetch missing private test archives.</li>
+                        <li><code>--bearer-token &lt;token&gt;</code>: Registry authorization token.</li>
+                    </ul>
+                    <p><strong>Examples:</strong></p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>TERMINAL</span>
+                        </div>
+                        <pre><code><span class="docs-code-comment"># Decrypt and grade all submissions on a USB drive in batch</span>
+euc2 drive evaluate-batch /Volumes/ExamUSB --recipient-private-key MC4CAQAwBQYDK2VuBCIE... --csv report.csv --output-dir results/</code></pre>
+                    </div>
+
+                    <hr class="docs-divider">
+
+                    <h3><code>euc2 admin onboard-students</code></h3>
+                    <p>Onboard candidate student IDs to the registry server course roster.</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>USAGE</span>
+                        </div>
+                        <pre><code>euc2 admin onboard-students &lt;roster-csv-path&gt; [flags]</code></pre>
+                    </div>
+                    <p><strong>Flags:</strong></p>
+                    <ul>
+                        <li><code>-r, --remote &lt;url&gt;</code>: Registry base URL.</li>
+                        <li><code>--bearer-token &lt;token&gt;</code>: Instructor authorization token.</li>
+                    </ul>
+                    <p><strong>Examples:</strong></p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>TERMINAL</span>
+                        </div>
+                        <pre><code><span class="docs-code-comment"># Pre-register a class roster of student IDs on the registry server</span>
+euc2 admin onboard-students ./cs101-roster.csv --remote http://localhost:8080</code></pre>
+                    </div>
+
+                    <hr class="docs-divider">
+
+                    <h3><code>euc2 admin get-grades</code></h3>
+                    <p>Retrieve student grades from the registry server.</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>USAGE</span>
+                        </div>
+                        <pre><code>euc2 admin get-grades [flags]</code></pre>
+                    </div>
+                    <p><strong>Flags:</strong></p>
+                    <ul>
+                        <li><code>-r, --remote &lt;url&gt;</code>: Registry base URL.</li>
+                        <li><code>--bearer-token &lt;token&gt;</code>: Instructor authorization token.</li>
+                        <li><code>--org-id &lt;id&gt;</code>: Filter results by organization.</li>
+                        <li><code>--lab-id &lt;id&gt;</code>: Filter results by lab.</li>
+                        <li><code>--csv &lt;path&gt;</code>: Save the grades directly to a CSV file.</li>
+                        <li><code>--json &lt;path&gt;</code>: Save the grades directly to a JSON file.</li>
+                    </ul>
+                    <p><strong>Examples:</strong></p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>TERMINAL</span>
+                        </div>
+                        <pre><code><span class="docs-code-comment"># Fetch and print all grades for lab01 to the console</span>
+euc2 admin get-grades --remote http://localhost:8080 --lab-id go101-lab01
+
+<span class="docs-code-comment"># Fetch and save organization grades to a CSV file</span>
+euc2 admin get-grades --remote http://localhost:8080 --org-id default --csv course-grades.csv</code></pre>
+                    </div>
+                </section>
+
+                <hr class="docs-divider">
+
+                <!-- Resource Types Section -->
+                <section id="resources" class="docs-section-block">
+                    <h2>Resource Types</h2>
+                    <p>In TDES, the primary managed resource is the <strong>Exercise (Lab Unit)</strong>.</p>
+
+                    <h3>The Exercise Philosophy</h3>
+                    <p>An Exercise is self-contained and self-verifying. It contains public test suites for candidate validation and private test targets for final grading.</p>
+
+                    <h3>Directory Structure of an Exercise</h3>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>DIRECTORY LAYOUT</span>
+                        </div>
+                        <pre><code>&lt;exercise-root&gt;/
+├── manifest.json              ← Machine-readable metadata (schema, limits, image runner)
+├── README.md                  ← Problem description and specifications
+├── Makefile                   ← Entry points for tests (test-public, test-submission-*)
+├── run                        ← Executable wrapper script
+├── reference/                 ← Solution slot (contains author's passing solution files)
+└── &lt;source & test files&gt;      ← Source code files and test files</code></pre>
+                    </div>
+
+                    <h3><code>manifest.json</code> Schema Specification</h3>
+                    <div class="docs-table-wrapper">
+                        <table class="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Property</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>lab_id</code></td>
+                                    <td><code>string</code></td>
+                                    <td>Unique exercise identifier matching folder prefix.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>title</code></td>
+                                    <td><code>string</code></td>
+                                    <td>Human-readable title of the exercise.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>version</code></td>
+                                    <td><code>string</code></td>
+                                    <td>Semantic versioning (<code>semver</code>).</td>
+                                </tr>
+                                <tr>
+                                    <td><code>language</code></td>
+                                    <td><code>string</code></td>
+                                    <td>Programming language (e.g., <code>go</code>, <code>python</code>, <code>c</code>).</td>
+                                </tr>
+                                <tr>
+                                    <td><code>runner_image</code></td>
+                                    <td><code>string</code></td>
+                                    <td>Docker image name in registry used for sandboxed execution.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>local_entrypoint</code></td>
+                                    <td><code>string</code></td>
+                                    <td>Command run locally by students (always <code>make test-public</code>).</td>
+                                </tr>
+                                <tr>
+                                    <td><code>grading</code></td>
+                                    <td><code>array</code></td>
+                                    <td>List of objects containing <code>command</code> and <code>points</code> pairs.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>submission</code></td>
+                                    <td><code>object</code></td>
+                                    <td>Specifies <code>include_paths</code> (files to package) and globs.</td>
+                                </tr>
+                                <tr>
+                                    <td><code>limits</code></td>
+                                    <td><code>object</code></td>
+                                    <td>Specifies <code>memory_mb</code> and <code>timeout_seconds</code> per test command.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <hr class="docs-divider">
+
+                <!-- Output Options Section -->
+                <section id="output" class="docs-section-block">
+                    <h2>Output Options</h2>
+                    <p>The <code>euc2</code> CLI outputs structured information for machines and clean console interfaces for users.</p>
+
+                    <h3>Format Options</h3>
+                    <ul>
+                        <li>
+                            <p><strong>JSON Grading Result (<code>euc2 evaluate</code>)</strong></p>
+                            <p>Grading outputs an evaluation summary schema:</p>
+                            <div class="docs-code-container">
+                                <div class="docs-code-header">
+                                    <span>JSON</span>
+                                </div>
+                                <pre><code>{
+  "student_id": "student-12345",
+  "lab_id": "go101-lab01",
+  "version": "1.1.0",
+  "status": "success",
+  "earned_points": 8,
+  "max_points": 10
+}</code></pre>
                             </div>
-                            <div class="code-block-header">Usage & Command Output</div>
-                            <pre><code>$ euc2 init go101-lab01@1.1.0 ./my-stack-exercise
-Exercise initialized in ./my-stack-exercise</code></pre>
+                        </li>
+                        <li>
+                            <p><strong>CSV Grading Report (<code>euc2 drive evaluate-batch</code> or <code>euc2 admin get-grades</code>)</strong></p>
+                            <p>Tabulates student scores into standard comma-separated fields:</p>
+                            <div class="docs-code-container">
+                                <div class="docs-code-header">
+                                    <span>CSV</span>
+                                </div>
+                                <pre><code>student_id,lab_id,version,earned_points,max_points,status,envelope_file,error</code></pre>
+                            </div>
+                        </li>
+                    </ul>
+                </section>
+
+                <hr class="docs-divider">
+
+                <!-- Common Examples Section -->
+                <section id="examples" class="docs-section-block">
+                    <h2>Examples: Common Operations</h2>
+                    <p>Familiarize yourself with typical workflow cycles using the following examples:</p>
+
+                    <h3>Student Workflow Cycle</h3>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>BASH</span>
                         </div>
+                        <pre><code><span class="docs-code-comment"># 1. Fetch the public lab package from USB drive</span>
+euc2 fetch go101-lab01 --drive /Volumes/ExamUSB
+
+<span class="docs-code-comment"># 2. Extract and initialize workspace stack-lab</span>
+euc2 init go101-lab01@1.1.0 ./stack-lab
+
+<span class="docs-code-comment"># 3. Solve the exercise and run local public tests</span>
+cd ./stack-lab
+euc2 run --local
+
+<span class="docs-code-comment"># 4. Submit the completed solution offline to the USB drive</span>
+euc2 submit --drive /Volumes/ExamUSB --student-id student-12345</code></pre>
+                    </div>
+
+                    <h3>Exercise Setter Workflow Cycle</h3>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>BASH</span>
+                        </div>
+                        <pre><code><span class="docs-code-comment"># 1. Package and validate reference solution locally</span>
+euc2 package ./go101-lab01-stack
+
+<span class="docs-code-comment"># 2. Publish exercise to the remote registry</span>
+euc2 publish ./go101-lab01-stack --remote http://localhost:8080 --org-id default</code></pre>
+                    </div>
+
+                    <h3>Administrator Offline Grading Cycle</h3>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>BASH</span>
+                        </div>
+                        <pre><code><span class="docs-code-comment"># 1. Decrypt student envelope to plaintext tar</span>
+euc2 drive decrypt-submission /Volumes/ExamUSB/submissions/go101-lab01/envelope_student123.json -o ./student123.tar --recipient-private-key MC4CAQAwBQYDK2VuBCIE...
+
+<span class="docs-code-comment"># 2. Evaluate decrypted package in sandbox container</span>
+euc2 evaluate ./student123.tar -o result.json</code></pre>
                     </div>
                 </section>
 
                 <hr class="docs-divider">
 
-                <!-- Manifest Spec Explorer -->
-                <section id="schema" class="docs-section-block">
-                    <div class="section-header align-left">
-                        <span class="badge">Exercise Schema</span>
-                        <h2>Interactive Manifest Spec</h2>
-                        <p>Click any highlighted key inside <code>manifest.json</code> to view its documentation and constraints.</p>
+                <!-- Grading Strategies Section -->
+                <section id="strategies" class="docs-section-block">
+                    <h2>Examples: Implementing Grading Strategies</h2>
+                    <p>Exercise designers use different strategies in the lab's <code>Makefile</code> to evaluate student code placed in the <code>reference/</code> folder.</p>
+
+                    <h3>Strategy A: Compile directly from <code>reference/</code></h3>
+                    <p>Pass the files in <code>reference/</code> directly to the compiler command:</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>MAKEFILE</span>
+                        </div>
+                        <pre><code>test-submission-group1:
+	$(CC) $(CFLAGS) reference/src/solution.c tests/private_group1.c -o bin/test_group1
+	@./bin/test_group1</code></pre>
                     </div>
-                    <div class="schema-layout">
-                        <div class="schema-json glass-card">
-                            <pre><code id="schema-code">
-{
-  "<span class="schema-key" data-target="lab_id">lab_id</span>": "go101-lab01",
-  "<span class="schema-key" data-target="title">title</span>": "Slice-Backed Stack in Go",
-  "<span class="schema-key" data-target="version">version</span>": "1.1.0",
-  "<span class="schema-key" data-target="language">language</span>": "go",
-  "<span class="schema-key" data-target="runner_image">runner_image</span>": "lab-go-runner:v1.0",
-  "<span class="schema-key" data-target="local_entrypoint">local_entrypoint</span>": "make test-public",
-  "<span class="schema-key" data-target="grading">grading</span>": [
-    {
-      "command": "make test-submission-lifo",
-      "points": 5
-    }
-  ],
-  "<span class="schema-key" data-target="submission">submission</span>": {
-    "include_paths": ["stack.go"],
-    "private_globs": ["reference/*"]
-  },
-  "<span class="schema-key" data-target="limits">limits</span>": {
-    "memory_mb": 256,
-    "timeout_seconds": 5
-  }
-}
-                            </code></pre>
+
+                    <h3>Strategy B: Inject and restore</h3>
+                    <p>Copy the file from <code>reference/</code> into the live code path, run tests, and restore the original workspace state:</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>MAKEFILE</span>
                         </div>
-                        <div class="schema-desc glass-card" id="schema-desc-panel">
-                            <h3>💡 manifest.json Schema</h3>
-                            <p>Select any highlighted key inside the JSON code block to view its documentation, restrictions, and rules.</p>
+                        <pre><code>define _grade
+	@cp src/solution.go src/solution.go.bak
+	@cp reference/src/solution.go src/solution.go
+	@go test -v -run $(1); EXIT=$$?; \
+	cp src/solution.go.bak src/solution.go; \
+	rm -f src/solution.go.bak; exit $$EXIT
+endef
+
+test-submission-lifo:
+	$(call _grade,TestStackLifo)</code></pre>
+                    </div>
+
+                    <h3>Strategy C: Environment variable injection</h3>
+                    <p>Provide the solution file path dynamically via an environment variable:</p>
+                    <div class="docs-code-container">
+                        <div class="docs-code-header">
+                            <span>MAKEFILE</span>
                         </div>
+                        <pre><code>test-submission-group1:
+	SUBMISSION=reference/src/solution.py python3 tests/private_group1.py</code></pre>
                     </div>
                 </section>
-            </div>
+
+            </main>
         </div>
-    </main>
+    </div>
 
     <!-- Footer -->
     <footer class="main-footer">
@@ -171,7 +885,7 @@ Exercise initialized in ./my-stack-exercise</code></pre>
             <div class="footer-bottom">
                 <p>&copy; 2026 Test Delivery and Evaluation System (TDES). All rights reserved.</p>
                 <div class="footer-links">
-                    <a href="file:///Users/piyush/Developer/Test-delivery-and-evalution-system/EXERCISE_AUTHORING_SPEC.md">Exercise Spec</a>
+                    <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System/blob/main/EXERCISE_AUTHORING_SPEC.md" target="_blank" rel="noopener noreferrer">Exercise Spec</a>
                 </div>
             </div>
         </div>

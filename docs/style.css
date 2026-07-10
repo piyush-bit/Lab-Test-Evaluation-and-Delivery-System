@@ -628,7 +628,7 @@ html.dark .navbar-pill {
     background-color: var(--border-color);
     padding: 3px 8px;
     border-radius: 4px;
-    color: var(--secondary);
+    color: var(--text-primary);
 }
 .code-block-header {
     background-color: #07090d;
@@ -983,14 +983,17 @@ html.dark .navbar-pill {
 
 /* --- Documentation Page Split Layout --- */
 .docs-page-layout {
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 48px;
+    display: flex;
+    justify-content: space-between;
     align-items: start;
+    gap: 48px;
+    width: 100%;
     padding-top: 20px;
 }
 .docs-toc-sidebar {
-    display: block;
+    flex: 0 0 220px;
+    width: 220px;
+    align-self: stretch;
 }
 .docs-toc-sticky {
     position: sticky;
@@ -1022,8 +1025,20 @@ html.dark .navbar-pill {
     transform: translateX(2px);
 }
 .docs-content-area {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
+    background-color: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 40px 48px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
+}
+html.dark .docs-content-area {
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 .docs-section-block {
     scroll-margin-top: 100px;
@@ -1055,10 +1070,13 @@ html.dark .navbar-pill {
 
 @media (max-width: 992px) {
     .docs-page-layout {
-        grid-template-columns: 1fr;
+        flex-direction: column;
     }
     .docs-toc-sidebar {
         display: none; /* Hide sidebar Table of Contents on mobile */
+    }
+    .docs-content-area {
+        padding: 30px 24px;
     }
 }
 
@@ -1159,3 +1177,196 @@ html.dark .why-choose-grid {
         grid-template-columns: 1fr;
     }
 }
+
+/* --- Documentation Specific Elements (Kubectl Style) --- */
+.docs-content-area h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    margin-bottom: 16px;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+}
+.docs-content-area h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-top: 40px;
+    margin-bottom: 18px;
+    letter-spacing: -0.012em;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+.docs-content-area h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-top: 28px;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+.docs-content-area p {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.65;
+    margin-bottom: 18px;
+}
+.docs-content-area code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background-color: var(--border-color);
+    padding: 3px 6px;
+    border-radius: 4px;
+    color: var(--text-primary);
+}
+.docs-content-area ul, .docs-content-area ol {
+    margin-bottom: 18px;
+    padding-left: 24px;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+.docs-content-area li {
+    margin-bottom: 10px;
+}
+
+/* Callouts / Alerts (Minimal Left-Bar Accent Style) */
+.docs-callout {
+    padding: 6px 0 6px 16px;
+    margin-bottom: 28px;
+    border: none;
+    border-left: 3px solid var(--primary);
+    background-color: transparent !important;
+    border-radius: 0;
+    box-shadow: none;
+}
+.docs-callout.note {
+    border-left-color: var(--primary);
+}
+.docs-callout.caution {
+    border-left-color: var(--accent-red);
+}
+.docs-callout.important {
+    border-left-color: var(--accent);
+}
+
+.docs-callout-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+}
+.docs-callout.note .docs-callout-title { color: var(--primary); }
+.docs-callout.caution .docs-callout-title { color: var(--accent-red); }
+.docs-callout.important .docs-callout-title { color: var(--accent); }
+.docs-callout p {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    padding-left: 0;
+}
+
+/* Tables */
+.docs-table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 28px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-card);
+}
+.docs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    text-align: left;
+}
+.docs-table th {
+    background-color: var(--border-color);
+    color: var(--text-primary);
+    font-weight: 600;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border-color);
+}
+.docs-table td {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    vertical-align: top;
+    line-height: 1.5;
+}
+.docs-table tr:last-child td {
+    border-bottom: none;
+}
+.docs-table code {
+    font-size: 0.82em;
+}
+
+/* Code Blocks Styling */
+.docs-code-container {
+    margin-top: 16px;
+    margin-bottom: 28px;
+}
+.docs-code-header {
+    background-color: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    padding: 8px 16px;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    font-family: var(--font-sans);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+}
+.docs-code-container pre {
+    background-color: #ffffff;
+    border: 1px solid var(--border-color);
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    padding: 18px;
+    overflow-x: auto;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--text-primary);
+    margin: 0;
+    font-family: var(--font-mono);
+}
+
+html.dark .docs-code-header {
+    background-color: #0d1117;
+}
+html.dark .docs-code-container pre {
+    background-color: var(--bg-terminal);
+    color: #e2e8f0;
+}
+.docs-code-comment {
+    color: var(--text-muted);
+}
+.docs-highlight-word {
+    color: var(--primary);
+    font-weight: 600;
+}
+.docs-toc-sticky ul {
+    border-left: 1px solid var(--border-color);
+    padding-left: 16px;
+}
+.toc-link.active {
+    border-left: 2px solid var(--primary);
+    padding-left: 8px;
+    margin-left: -18px;
+    color: var(--primary);
+}
+.docs-content-area section:first-of-type {
+    padding-top: 10px;
+}
+.docs-layout-container {
+    width: 100%;
+    max-width: 1210px; /* 1.1 times the 1100px navbar width */
+    margin: 0 auto;
+    padding: 120px 24px 60px 24px;
+}
+
