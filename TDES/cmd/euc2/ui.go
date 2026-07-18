@@ -138,9 +138,18 @@ var uiCmd = &cobra.Command{
 			_, mErr := os.Stat(manifestPath)
 			isValid := (mErr == nil)
 
+			var manifestData any
+			if isValid {
+				mFile, mReadErr := os.ReadFile(manifestPath)
+				if mReadErr == nil {
+					_ = json.Unmarshal(mFile, &manifestData)
+				}
+			}
+
 			respondJSON(w, http.StatusOK, map[string]any{
-				"valid": isValid,
-				"path":  absPath,
+				"valid":    isValid,
+				"path":     absPath,
+				"manifest": manifestData,
 			})
 		})
 
