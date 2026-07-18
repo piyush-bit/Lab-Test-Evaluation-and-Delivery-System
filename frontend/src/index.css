@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Light Mode Palette */
+  --bg-main: #fcfcfd;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-card-hover: rgba(255, 255, 255, 0.95);
+  --bg-terminal: #0d1117;
+  
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  
+  --border-color: rgba(15, 23, 26, 0.08);
+  --border-hover: rgba(15, 23, 26, 0.16);
+  --grid-line-color: rgba(15, 23, 26, 0.03);
+  
+  /* Buttons (Light Mode: Light Grey Background) */
+  --btn-primary-bg: #eaeaea;
+  --btn-primary-text: #0f172a;
+  --btn-primary-hover: #dcdcdc;
+  
+  --btn-secondary-bg: transparent;
+  --btn-secondary-text: #0f172a;
+  
+  /* Accents */
+  --primary: #4f46e5;
+  --secondary: #9333ea;
+  --accent: #059669; /* Green */
+  --accent-red: #e11d48; /* Red */
+  
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'Fira Code', source-code-pro, Menlo, Monaco, Consolas, monospace;
+  --glass-blur: blur(14px);
+}
+
+html.dark {
+  /* Dark Mode Palette (Teachyst Style) */
+  --bg-main: #000000;
+  --bg-card: rgba(10, 10, 10, 0.7);
+  --bg-card-hover: rgba(18, 18, 18, 0.85);
+  --bg-terminal: #07090e;
+  
+  --text-primary: #ffffff;
+  --text-secondary: #a3a3a3;
+  --text-muted: #525252;
+  
+  --border-color: rgba(255, 255, 255, 0.12);
+  --border-hover: rgba(255, 255, 255, 0.22);
+  --grid-line-color: rgba(255, 255, 255, 0.04);
+  
+  /* Buttons (Dark Mode: Dark Grey Background) */
+  --btn-primary-bg: #222222;
+  --btn-primary-text: #ffffff;
+  --btn-primary-hover: #2e2e2e;
+  
+  --btn-secondary-bg: transparent;
+  --btn-secondary-text: #ffffff;
+}
+
+/* Base Rules */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  overflow-x: hidden;
+  position: relative;
+  min-height: 100vh;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}

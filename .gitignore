@@ -1,3 +1,5 @@
 .gocache
 *.tar.gz
-euc2/euc2
+TDES/euc2
+ui_dist
+experiment-dir
