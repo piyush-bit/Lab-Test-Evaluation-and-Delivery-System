@@ -13,7 +13,9 @@ export default function Welcome() {
     targetPath,
     currentCwd,
     triggerQuickOpen,
-    handleOpenWorkspace
+    handleOpenWorkspace,
+    triggerExercisePicker,
+    handleInitWorkspace
   } = useStudent();
 
   return (
@@ -54,7 +56,17 @@ export default function Welcome() {
                 className="vscode-action-item" 
                 onClick={() => {
                   setValidationError('');
-                  navigate('/create');
+                  triggerExercisePicker((selectedExercise) => {
+                    // Step 2: Open directory picker to choose where to unpack it
+                    triggerQuickOpen(currentCwd || '~/', (targetFolder) => {
+                      const separator = targetFolder.includes('/') ? '/' : '\\';
+                      const cleanFolder = targetFolder.endsWith(separator) ? targetFolder : targetFolder + separator;
+                      const finalDir = cleanFolder + selectedExercise.lab_id;
+                      
+                      // Step 3: Run initialization
+                      handleInitWorkspace(selectedExercise.lab_id, selectedExercise.version, finalDir);
+                    });
+                  });
                 }}
               >
                 <span className="action-icon"><CreateIcon /></span>

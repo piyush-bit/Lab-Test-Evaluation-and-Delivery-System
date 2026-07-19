@@ -23,6 +23,49 @@ export const StudentProvider = ({ children }) => {
   const [quickOpenCallback, setQuickOpenCallback] = useState(null);
   const [quickOpenActiveManifest, setQuickOpenActiveManifest] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [quickOpenMode, setQuickOpenMode] = useState('browse'); // 'browse', 'select_source', 'input_remote', 'input_drive'
+
+  const [recentRemotes, setRecentRemotes] = useState(() => {
+    try {
+      const stored = localStorage.getItem('recent_remotes');
+      return stored ? JSON.parse(stored) : ['http://localhost:8080'];
+    } catch {
+      return ['http://localhost:8080'];
+    }
+  });
+
+  const [recentDrives, setRecentDrives] = useState(() => {
+    try {
+      const stored = localStorage.getItem('recent_drives');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Cached exercises list state
+  const [quickOpenExercises, setQuickOpenExercises] = useState([]);
+
+  // Fetch Wizard State
+  const [fetchSelectedSourceType, setFetchSelectedSourceType] = useState('remote');
+  const [fetchSelectedSourceValue, setFetchSelectedSourceValue] = useState('');
+  const [fetchInputExerciseID, setFetchInputExerciseID] = useState('');
+  const [fetchInputVersion, setFetchInputVersion] = useState('');
+  const [driveExercisesList, setDriveExercisesList] = useState([]);
+
+  const addRemoteToRecents = (url) => {
+    if (!url) return;
+    const updated = [url, ...recentRemotes.filter(r => r !== url)].slice(0, 5);
+    setRecentRemotes(updated);
+    localStorage.setItem('recent_remotes', JSON.stringify(updated));
+  };
+
+  const addDriveToRecents = (path) => {
+    if (!path) return;
+    const updated = [path, ...recentDrives.filter(d => d !== path)].slice(0, 5);
+    setRecentDrives(updated);
+    localStorage.setItem('recent_drives', JSON.stringify(updated));
+  };
 
   // Recents Storage
   const [recents, setRecents] = useState(() => {
@@ -136,17 +179,18 @@ export const StudentProvider = ({ children }) => {
 
   // Detect baseDir transitions to fetch directories, ignoring typing filtering queries
   useEffect(() => {
-    if (!showQuickOpen) return;
+    if (!showQuickOpen || quickOpenMode !== 'browse') return;
 
     const { baseDir } = getPathParts(quickOpenPath);
     if (baseDir && baseDir !== lastFetchedBaseDirRef.current) {
       lastFetchedBaseDirRef.current = baseDir;
       fetchQuickOpenDirs(baseDir);
     }
-  }, [quickOpenPath, showQuickOpen]);
+  }, [quickOpenPath, showQuickOpen, quickOpenMode]);
 
   // Trigger folder picker modal (Quick Open style)
   const triggerQuickOpen = (initialPath, callbackFn) => {
+    setQuickOpenMode('browse');
     const startPath = initialPath || currentCwd || '~/';
     setQuickOpenPath(startPath);
     
@@ -154,6 +198,48 @@ export const StudentProvider = ({ children }) => {
     lastFetchedBaseDirRef.current = baseDir;
     fetchQuickOpenDirs(baseDir);
     
+    setQuickOpenCallback(() => callbackFn);
+    setShowQuickOpen(true);
+  };
+
+  // Trigger cached exercises list modal
+  const triggerExercisePicker = async (callbackFn) => {
+    setQuickOpenPath('');
+    setQuickOpenActiveManifest(null);
+    setQuickOpenMode('exercises');
+    setSelectedIndex(0);
+
+    try {
+      const res = await fetch('/api/exercises');
+      if (res.ok) {
+        const data = await res.json();
+        const list = [];
+        Object.entries(data).forEach(([labId, entry]) => {
+          Object.entries(entry.versions).forEach(([ver, hash]) => {
+            list.push({
+              lab_id: labId,
+              version: ver,
+              label: `${labId} (v${ver})`,
+              latest: ver === entry.latest
+            });
+          });
+        });
+        setQuickOpenExercises(list);
+      }
+    } catch {
+      setQuickOpenExercises([]);
+    }
+
+    setQuickOpenCallback(() => callbackFn);
+    setShowQuickOpen(true);
+  };
+
+  // Trigger source repository/drive selection flow
+  const triggerInitializeFlow = (callbackFn) => {
+    setQuickOpenPath('');
+    setQuickOpenActiveManifest(null);
+    setQuickOpenMode('select_source');
+    setSelectedIndex(0);
     setQuickOpenCallback(() => callbackFn);
     setShowQuickOpen(true);
   };
@@ -182,7 +268,7 @@ export const StudentProvider = ({ children }) => {
 
   // Debounced check of workspace manifest when typing paths
   useEffect(() => {
-    if (!showQuickOpen || !quickOpenPath) {
+    if (!showQuickOpen || !quickOpenPath || quickOpenMode !== 'browse') {
       setQuickOpenActiveManifest(null);
       return;
     }
@@ -192,7 +278,7 @@ export const StudentProvider = ({ children }) => {
     }, 200);
 
     return () => clearTimeout(delayDebounce);
-  }, [quickOpenPath, showQuickOpen]);
+  }, [quickOpenPath, showQuickOpen, quickOpenMode]);
 
   const handleQuickOpenNavigate = (newPath) => {
     setQuickOpenPath(newPath);
@@ -211,11 +297,200 @@ export const StudentProvider = ({ children }) => {
     }
   };
 
-  const handleConfirmQuickOpen = () => {
-    if (quickOpenCallback) {
-      quickOpenCallback(quickOpenPath);
+  const handleLoadExercisesFromDrive = async (drivePath) => {
+    setValidationError('');
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/drive-exercises?path=${encodeURIComponent(drivePath)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const list = [];
+        Object.entries(data).forEach(([labId, entry]) => {
+          Object.entries(entry.versions).forEach(([ver, hash]) => {
+            list.push({
+              lab_id: labId,
+              version: ver,
+              label: `${labId} (v${ver})`,
+              latest: ver === entry.latest
+            });
+          });
+        });
+        setDriveExercisesList(list);
+        setFetchSelectedSourceType('drive');
+        setFetchSelectedSourceValue(drivePath);
+        setQuickOpenMode('drive_exercises');
+        setSelectedIndex(0);
+        setQuickOpenPath('');
+        setShowQuickOpen(true);
+      } else {
+        const errData = await res.json();
+        setValidationError(`Failed to load drive: ${errData.error || 'Check path'}`);
+        setQuickOpenMode('select_source');
+        setQuickOpenPath('');
+        setShowQuickOpen(true);
+      }
+    } catch (err) {
+      setValidationError("Error reading drive: " + err.message);
+      setQuickOpenMode('select_source');
+      setQuickOpenPath('');
+      setShowQuickOpen(true);
     }
-    setShowQuickOpen(false);
+    setLoading(false);
+  };
+
+  const handleExecuteFetchInline = async (exerciseId, versionVal, sourceType, sourceValue) => {
+    setValidationError('');
+    setLoading(true);
+
+    try {
+      const body = {
+        exercise_id: exerciseId,
+        version: versionVal,
+        org_id: 'default'
+      };
+      if (sourceType === 'remote') {
+        body.remote_url = sourceValue;
+      } else {
+        body.drive_path = sourceValue;
+      }
+
+      const res = await fetch('/api/fetch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setValidationError(data.error || 'Fetch failed');
+        setLoading(false);
+        return;
+      }
+
+      // Success: refresh cached list and go back to exercises selection screen
+      await triggerExercisePicker(quickOpenCallback);
+    } catch (err) {
+      setValidationError("Connection error: " + err.message);
+    }
+    setLoading(false);
+  };
+
+  const handleConfirmQuickOpen = () => {
+    if (!quickOpenCallback) {
+      setShowQuickOpen(false);
+      return;
+    }
+
+    if (quickOpenMode === 'exercises') {
+      const item = selectableItems[selectedIndex];
+      if (item) {
+        if (item.type === 'action' && item.action === 'fetch_new') {
+          setValidationError('');
+          setQuickOpenMode('select_source');
+          setQuickOpenPath('');
+          setSelectedIndex(0);
+        } else if (item.type === 'exercise') {
+          quickOpenCallback(item.data);
+          setShowQuickOpen(false);
+        }
+      }
+    } else if (quickOpenMode === 'drive_exercises') {
+      const item = selectableItems[selectedIndex];
+      if (item && item.type === 'exercise') {
+        handleExecuteFetchInline(item.data.lab_id, item.data.version, 'drive', fetchSelectedSourceValue);
+      }
+    } else if (quickOpenMode === 'select_source') {
+      const item = selectableItems[selectedIndex];
+      if (item) {
+        if (item.type === 'action') {
+          if (item.action === 'new_remote') {
+            setQuickOpenMode('input_remote');
+            setQuickOpenPath('');
+            setSelectedIndex(0);
+          } else if (item.action === 'new_drive') {
+            setValidationError('');
+            triggerQuickOpen(currentCwd || '~/', async (chosenPath) => {
+              setLoading(true);
+              setValidationError('');
+              try {
+                const res = await fetch(`/api/validate-drive?path=${encodeURIComponent(chosenPath)}`);
+                if (res.ok) {
+                  const data = await res.json();
+                  if (data.valid) {
+                    addDriveToRecents(chosenPath);
+                    await handleLoadExercisesFromDrive(chosenPath);
+                  } else {
+                    setValidationError(`Invalid drive manifest at "${chosenPath}": ${data.error || 'Check manifest.json'}`);
+                    setQuickOpenMode('select_source');
+                    setQuickOpenPath('');
+                    setShowQuickOpen(true);
+                  }
+                } else {
+                  setValidationError("Failed to validate drive folder");
+                  setQuickOpenMode('select_source');
+                  setQuickOpenPath('');
+                  setShowQuickOpen(true);
+                }
+              } catch (err) {
+                setValidationError("Connection error: " + err.message);
+                setQuickOpenMode('select_source');
+                setQuickOpenPath('');
+                setShowQuickOpen(true);
+              }
+              setLoading(false);
+            });
+          }
+        } else if (item.type === 'recent_source') {
+          setValidationError('');
+          if (item.sourceType === 'drive') {
+            handleLoadExercisesFromDrive(item.value);
+          } else {
+            setFetchSelectedSourceType('remote');
+            setFetchSelectedSourceValue(item.value);
+            setQuickOpenMode('input_exercise_id');
+            setQuickOpenPath('');
+            setSelectedIndex(0);
+          }
+        }
+      }
+    } else if (quickOpenMode === 'input_remote') {
+      if (quickOpenPath.trim()) {
+        const val = quickOpenPath.trim();
+        addRemoteToRecents(val);
+        setValidationError('');
+        setFetchSelectedSourceType('remote');
+        setFetchSelectedSourceValue(val);
+        setQuickOpenMode('input_exercise_id');
+        setQuickOpenPath('');
+        setSelectedIndex(0);
+      }
+    } else if (quickOpenMode === 'input_drive') {
+      if (quickOpenPath.trim()) {
+        const val = quickOpenPath.trim();
+        addDriveToRecents(val);
+        setValidationError('');
+        setFetchSelectedSourceType('drive');
+        setFetchSelectedSourceValue(val);
+        setQuickOpenMode('input_exercise_id');
+        setQuickOpenPath('');
+        setSelectedIndex(0);
+      }
+    } else if (quickOpenMode === 'input_exercise_id') {
+      if (quickOpenPath.trim()) {
+        const val = quickOpenPath.trim();
+        setValidationError('');
+        setFetchInputExerciseID(val);
+        setQuickOpenMode('input_exercise_version');
+        setQuickOpenPath('');
+        setSelectedIndex(0);
+      }
+    } else if (quickOpenMode === 'input_exercise_version') {
+      const ver = quickOpenPath.trim();
+      handleExecuteFetchInline(fetchInputExerciseID, ver, fetchSelectedSourceType, fetchSelectedSourceValue);
+    } else {
+      quickOpenCallback(quickOpenPath);
+      setShowQuickOpen(false);
+    }
   };
 
   const addWorkspaceToRecents = (path, manifest) => {
@@ -324,29 +599,77 @@ export const StudentProvider = ({ children }) => {
     dir.toLowerCase().includes(filterQuery.toLowerCase())
   );
 
-  // Flatten selectable items list
+  // Flatten selectable items list based on active mode
   const selectableItems = [];
   let manifestIdx = -1;
   let upIdx = -1;
   const dirIndices = [];
 
-  if (quickOpenActiveManifest) {
-    manifestIdx = selectableItems.length;
-    selectableItems.push({ type: 'manifest', data: quickOpenActiveManifest });
+  if (quickOpenMode === 'exercises') {
+    selectableItems.push({
+      type: 'action',
+      action: 'fetch_new',
+      label: '+ Fetch new exercise from Remote/Drive...'
+    });
+
+    const filteredExercises = quickOpenExercises.filter(ex => 
+      ex.label.toLowerCase().includes(quickOpenPath.toLowerCase())
+    );
+    filteredExercises.forEach((ex) => {
+      selectableItems.push({ type: 'exercise', data: ex });
+    });
+  } else if (quickOpenMode === 'select_source') {
+    const q = quickOpenPath.toLowerCase();
+    if (!q || "+ New Remote Registry URL...".toLowerCase().includes(q)) {
+      selectableItems.push({ type: 'action', action: 'new_remote', label: '+ New Remote Registry URL...' });
+    }
+    if (!q || "+ New Drive Path...".toLowerCase().includes(q)) {
+      selectableItems.push({ type: 'action', action: 'new_drive', label: '+ New Drive Path...' });
+    }
+    recentRemotes.forEach(url => {
+      if (!q || url.toLowerCase().includes(q)) {
+        selectableItems.push({ type: 'recent_source', sourceType: 'remote', value: url, label: url });
+      }
+    });
+    recentDrives.forEach(path => {
+      if (!q || path.toLowerCase().includes(q)) {
+        selectableItems.push({ type: 'recent_source', sourceType: 'drive', value: path, label: path });
+      }
+    });
+  } else if (quickOpenMode === 'drive_exercises') {
+    const filteredExercises = driveExercisesList.filter(ex => 
+      ex.label.toLowerCase().includes(quickOpenPath.toLowerCase())
+    );
+    filteredExercises.forEach((ex) => {
+      selectableItems.push({ type: 'exercise', data: ex });
+    });
+  } else if (quickOpenMode === 'input_remote') {
+    selectableItems.push({ type: 'input_confirm', label: quickOpenPath.trim() ? `Connect Registry: ${quickOpenPath}` : 'Type Registry URL and press Enter...' });
+  } else if (quickOpenMode === 'input_drive') {
+    selectableItems.push({ type: 'input_confirm', label: quickOpenPath.trim() ? `Connect Drive Folder: ${quickOpenPath}` : 'Type Drive folder path and press Enter...' });
+  } else if (quickOpenMode === 'input_exercise_id') {
+    selectableItems.push({ type: 'input_confirm', label: quickOpenPath.trim() ? `Confirm Exercise ID: ${quickOpenPath}` : 'Type Exercise ID (e.g. go101-lab01) and press Enter...' });
+  } else if (quickOpenMode === 'input_exercise_version') {
+    selectableItems.push({ type: 'input_confirm', label: quickOpenPath.trim() ? `Confirm Version: ${quickOpenPath}` : 'Type Version (or press Enter for Latest)...' });
+  } else {
+    if (quickOpenActiveManifest) {
+      manifestIdx = selectableItems.length;
+      selectableItems.push({ type: 'manifest', data: quickOpenActiveManifest });
+    }
+    if (quickOpenParent) {
+      upIdx = selectableItems.length;
+      selectableItems.push({ type: 'up' });
+    }
+    filteredDirs.forEach((dir) => {
+      dirIndices.push(selectableItems.length);
+      selectableItems.push({ type: 'dir', name: dir });
+    });
   }
-  if (quickOpenParent) {
-    upIdx = selectableItems.length;
-    selectableItems.push({ type: 'up' });
-  }
-  filteredDirs.forEach((dir) => {
-    dirIndices.push(selectableItems.length);
-    selectableItems.push({ type: 'dir', name: dir });
-  });
 
   // Reset focus when elements list changes
   useEffect(() => {
     setSelectedIndex(0);
-  }, [filteredDirs.length, quickOpenActiveManifest, quickOpenParent]);
+  }, [filteredDirs.length, quickOpenActiveManifest, quickOpenParent, recentRemotes.length, recentDrives.length, driveExercisesList.length, quickOpenMode, quickOpenPath]);
 
   // Keyboard navigation inside Command Palette input
   const handleQuickOpenKeyDown = (e) => {
@@ -367,18 +690,123 @@ export const StudentProvider = ({ children }) => {
       e.preventDefault();
       const item = selectableItems[selectedIndex];
       if (item) {
-        if (item.type === 'manifest') {
+        if (quickOpenMode === 'exercises' || quickOpenMode === 'drive_exercises') {
+          if (item.type === 'action' && item.action === 'fetch_new') {
+            setValidationError('');
+            setQuickOpenMode('select_source');
+            setQuickOpenPath('');
+            setSelectedIndex(0);
+          } else if (item.type === 'exercise') {
+            handleConfirmQuickOpen();
+          }
+        } else if (quickOpenMode === 'select_source') {
+          if (item.type === 'action') {
+            if (item.action === 'new_remote') {
+              setQuickOpenMode('input_remote');
+              setQuickOpenPath('');
+              setSelectedIndex(0);
+            } else if (item.action === 'new_drive') {
+              handleConfirmQuickOpen();
+            }
+          } else if (item.type === 'recent_source') {
+            handleConfirmQuickOpen();
+          }
+        } else if (quickOpenMode === 'input_remote' || quickOpenMode === 'input_drive' || quickOpenMode === 'input_exercise_id' || quickOpenMode === 'input_exercise_version') {
           handleConfirmQuickOpen();
-        } else if (item.type === 'up') {
-          handleGoUp();
-        } else if (item.type === 'dir') {
-          const { baseDir, sep } = getPathParts(quickOpenPath);
-          handleQuickOpenNavigate(baseDir + item.name + sep);
+        } else {
+          if (item.type === 'manifest') {
+            handleConfirmQuickOpen();
+          } else if (item.type === 'up') {
+            handleGoUp();
+          } else if (item.type === 'dir') {
+            const { baseDir, sep } = getPathParts(quickOpenPath);
+            handleQuickOpenNavigate(baseDir + item.name + sep);
+          }
         }
       } else {
         handleConfirmQuickOpen();
       }
     }
+  };
+
+  // Fetch Exercise from Remote/Drive
+  const handleExecuteFetch = async () => {
+    setValidationError('');
+    setLoading(true);
+
+    try {
+      const body = {
+        exercise_id: fetchLabID,
+        version: fetchVersion,
+        org_id: fetchOrgID
+      };
+      if (fetchSourceType === 'remote') {
+        body.remote_url = fetchRemoteURL;
+      } else {
+        body.drive_path = fetchDrivePath;
+      }
+
+      const res = await fetch('/api/fetch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setValidationError(data.error || 'Fetch failed');
+        setLoading(false);
+        return;
+      }
+
+      // Success: refresh cached list and go back to selection screen
+      await triggerExercisePicker(quickOpenCallback);
+    } catch (err) {
+      setValidationError("Connection error: " + err.message);
+    }
+    setLoading(false);
+  };
+
+  // Initialize Workspace from selected Cached Exercise
+  const handleInitWorkspace = async (labId, ver, targetDir) => {
+    setValidationError('');
+    setLoading(true);
+
+    try {
+      const initRes = await fetch('/api/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          exercise_id: labId,
+          version: ver,
+          target_dir: targetDir
+        })
+      });
+
+      if (!initRes.ok) {
+        const initErr = await initRes.json();
+        setValidationError(`Initialization failed: ${initErr.error || 'Server error'}`);
+        setLoading(false);
+        return;
+      }
+
+      // Check targetPath validation to retrieve the parsed manifest details
+      const valRes = await fetch(`/api/validate-workspace?path=${encodeURIComponent(targetDir)}`);
+      let manifest = null;
+      if (valRes.ok) {
+        const valData = await valRes.json();
+        if (valData.valid) {
+          manifest = valData.manifest;
+        }
+      }
+
+      setActiveWorkspacePath(targetDir);
+      addWorkspaceToRecents(targetDir, manifest);
+      navigate('/workspace');
+    } catch (err) {
+      setValidationError("Connection error: " + err.message);
+    }
+    setLoading(false);
   };
 
   return (
@@ -405,6 +833,7 @@ export const StudentProvider = ({ children }) => {
       quickOpenRef,
       getPathParts,
       triggerQuickOpen,
+      triggerInitializeFlow,
       handleQuickOpenNavigate,
       handleGoUp,
       handleConfirmQuickOpen,
@@ -415,7 +844,16 @@ export const StudentProvider = ({ children }) => {
       dirIndices,
       filteredDirs,
       handleOpenWorkspace,
-      handleCreateWorkspace
+      handleCreateWorkspace,
+      handleInitWorkspace,
+      quickOpenMode,
+      setQuickOpenMode,
+      recentRemotes,
+      recentDrives,
+      triggerExercisePicker,
+      quickOpenExercises,
+      driveExercisesList,
+      handleLoadExercisesFromDrive
     }}>
       {children}
     </StudentContext.Provider>

@@ -429,7 +429,6 @@ input[type="text"]:focus {
   max-width: 90vw;
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-top: 3px solid var(--primary); /* premium status bar top highlight */
   border-radius: 8px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
   z-index: 501;
@@ -441,8 +440,7 @@ input[type="text"]:focus {
 .quick-open-input-row {
   display: flex;
   align-items: stretch;
-  padding: 10px;
-  border-bottom: 1px solid var(--border-color);
+  padding: 0;
   background-color: var(--bg-card);
 }
 
@@ -450,40 +448,18 @@ input[type="text"]:focus {
   flex-grow: 1;
   background-color: var(--bg-main) !important;
   color: var(--text-primary) !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 4px !important;
-  padding: 8px 12px !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  border-radius: 0 !important;
+  padding: 14px 16px !important;
   font-family: var(--font-mono) !important;
-  font-size: 0.85rem !important;
+  font-size: 0.88rem !important;
 }
 
 .quick-open-input:focus {
   outline: none !important;
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15) !important;
-}
-
-.quick-open-confirm-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: transparent;
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  padding: 0 16px;
-  margin-left: 10px;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 700;
-  cursor: pointer;
-  letter-spacing: 0.5px;
-  transition: all 0.15s ease-out;
-}
-
-.quick-open-confirm-btn:hover {
-  background-color: var(--bg-card-hover);
-  border-color: var(--border-hover);
+  border-bottom: 1px solid var(--border-hover) !important;
+  box-shadow: none !important;
 }
 
 .quick-open-results-list {

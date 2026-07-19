@@ -2,6 +2,8 @@ package main
 
 import (
 	initMod "TDES/internals/init"
+	exercisestore "TDES/internals/exercise_store"
+	drive "TDES/internals/drive"
 	"embed"
 	"encoding/json"
 	"io/fs"
@@ -151,6 +153,60 @@ var uiCmd = &cobra.Command{
 				"path":     absPath,
 				"manifest": manifestData,
 			})
+		})
+
+		// 4b. API: List Cached Exercises
+		mux.HandleFunc("GET /api/exercises", func(w http.ResponseWriter, r *http.Request) {
+			index, err := exercisestore.LoadIndex(exercisestore.GetPublicCacheDir())
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			respondJSON(w, http.StatusOK, index)
+		})
+
+		// 4c. API: Validate Drive Path
+		mux.HandleFunc("GET /api/validate-drive", func(w http.ResponseWriter, r *http.Request) {
+			path := r.URL.Query().Get("path")
+			if path == "" {
+				respondError(w, http.StatusBadRequest, "path parameter is required")
+				return
+			}
+			absPath, err := filepath.Abs(path)
+			if err != nil {
+				respondJSON(w, http.StatusOK, map[string]any{"valid": false, "error": err.Error()})
+				return
+			}
+			manifest, err := drive.ReadManifest(absPath)
+			if err != nil {
+				respondJSON(w, http.StatusOK, map[string]any{"valid": false, "error": err.Error()})
+				return
+			}
+			respondJSON(w, http.StatusOK, map[string]any{
+				"valid":    true,
+				"path":     absPath,
+				"manifest": manifest,
+			})
+		})
+
+		// 4d. API: List Exercises on a Drive
+		mux.HandleFunc("GET /api/drive-exercises", func(w http.ResponseWriter, r *http.Request) {
+			path := r.URL.Query().Get("path")
+			if path == "" {
+				respondError(w, http.StatusBadRequest, "path parameter is required")
+				return
+			}
+			absPath, err := filepath.Abs(path)
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			index, err := exercisestore.LoadIndex(filepath.Join(absPath, "exercise"))
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			respondJSON(w, http.StatusOK, index)
 		})
 
 		// 5. API: Fetch Exercise (Required for creating workspace)

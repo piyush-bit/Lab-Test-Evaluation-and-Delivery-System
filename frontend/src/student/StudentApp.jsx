@@ -2,7 +2,6 @@ import React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { StudentProvider } from './StudentContext';
 import Welcome from './pages/Welcome';
-import CreateWorkspace from './pages/CreateWorkspace';
 import ActiveWorkspace from './pages/ActiveWorkspace';
 import CommandPalette from './components/CommandPalette';
 
@@ -22,7 +21,6 @@ export default function StudentApp() {
           <main className="main-viewport-content">
             <Routes>
               <Route path="/" element={<Welcome />} />
-              <Route path="/create" element={<CreateWorkspace />} />
               <Route path="/workspace" element={<ActiveWorkspace />} />
             </Routes>
           </main>

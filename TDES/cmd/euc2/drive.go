@@ -96,11 +96,30 @@ var driveDecryptSubmissionCmd = &cobra.Command{
 	},
 }
 
+var driveAddExerciseCmd = &cobra.Command{
+	Use:   "add-exercise [drive-path] [exercise-id] [version]",
+	Short: "Add an exercise from the local cache to the drive",
+	Args:  cobra.ExactArgs(3),
+	Run: func(cmd *cobra.Command, args []string) {
+		drivePath := args[0]
+		exerciseID := args[1]
+		version := args[2]
+
+		d := &drive.Drive{Path: drivePath}
+		if err := d.AddExerciseFromID(exerciseID, version); err != nil {
+			fmt.Println("Error adding exercise to drive:", err.Error())
+			return
+		}
+		fmt.Printf("Successfully added exercise %s version %s to drive %s\n", exerciseID, version, drivePath)
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(driveCmd)
 	driveCmd.AddCommand(drivePrepareCmd)
 	driveCmd.AddCommand(drivePrepareSubmissionCmd)
 	driveCmd.AddCommand(driveDecryptSubmissionCmd)
+	driveCmd.AddCommand(driveAddExerciseCmd)
 
 	drivePrepareSubmissionCmd.Flags().StringVar(
 		&driveRecipientPublicKey,
