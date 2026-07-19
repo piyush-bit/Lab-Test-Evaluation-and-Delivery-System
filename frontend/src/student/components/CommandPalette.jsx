@@ -25,7 +25,8 @@ export default function CommandPalette() {
     selectableItems,
     validationError,
     setValidationError,
-    loading
+    loading,
+    quickOpenSelectedExercise
   } = useStudent();
 
   if (!showQuickOpen) return null;
@@ -44,7 +45,10 @@ export default function CommandPalette() {
   let placeholder = "Search folders...";
   let headerLabel = "";
 
-  if (isExercises) {
+  if (isBrowse && quickOpenSelectedExercise) {
+    placeholder = "Select target folder to initialize exercise...";
+    headerLabel = "CHOOSE INITIALIZATION DIRECTORY";
+  } else if (isExercises) {
     placeholder = "Search cached exercises...";
     headerLabel = "SELECT EXERCISE TO INITIALIZE";
   } else if (isSelectSource) {
@@ -85,6 +89,28 @@ export default function CommandPalette() {
                 )}
               </svg>
               <span>{headerLabel}</span>
+            </div>
+          </div>
+        )}
+
+        {quickOpenSelectedExercise && (
+          <div className="quick-open-selected-exercise-row" style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', textAlign: 'left' }}>
+            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Selected Exercise
+            </div>
+            <div className="recent-details">
+              <span className="recent-name" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+                {quickOpenSelectedExercise.lab_id}
+                {quickOpenSelectedExercise.language && (
+                  <span className="recent-lab-id" style={{ color: 'var(--primary)', backgroundColor: 'rgba(79, 70, 229, 0.05)', border: '1px solid rgba(79, 70, 229, 0.12)', textTransform: 'uppercase' }}>
+                    {quickOpenSelectedExercise.language}
+                  </span>
+                )}
+                {quickOpenSelectedExercise.latest && <span className="recent-lab-id" style={{ color: 'var(--accent)', backgroundColor: 'rgba(5, 150, 105, 0.05)', border: '1px solid rgba(5, 150, 105, 0.12)' }}>LATEST</span>}
+              </span>
+              <span className="recent-path" style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px', display: 'block' }}>
+                Version: {quickOpenSelectedExercise.version} {quickOpenSelectedExercise.title && `| ${quickOpenSelectedExercise.title}`}
+              </span>
             </div>
           </div>
         )}

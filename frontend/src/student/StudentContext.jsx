@@ -17,6 +17,7 @@ export const StudentProvider = ({ children }) => {
 
   // VS Code-style Command Palette folder picker
   const [showQuickOpen, setShowQuickOpen] = useState(false);
+  const [quickOpenSelectedExercise, setQuickOpenSelectedExercise] = useState(null);
   const [quickOpenPath, setQuickOpenPath] = useState('');
   const [quickOpenDirs, setQuickOpenDirs] = useState([]);
   const [quickOpenParent, setQuickOpenParent] = useState('');
@@ -137,11 +138,13 @@ export const StudentProvider = ({ children }) => {
     function handleClickOutside(event) {
       if (quickOpenRef.current && !quickOpenRef.current.contains(event.target)) {
         setShowQuickOpen(false);
+        setQuickOpenSelectedExercise(null);
       }
     }
     function handleEscKey(event) {
       if (event.key === 'Escape') {
         setShowQuickOpen(false);
+        setQuickOpenSelectedExercise(null);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -205,6 +208,7 @@ export const StudentProvider = ({ children }) => {
 
   // Trigger cached exercises list modal
   const triggerExercisePicker = async (callbackFn) => {
+    setQuickOpenSelectedExercise(null);
     setQuickOpenPath('');
     setQuickOpenActiveManifest(null);
     setQuickOpenMode('exercises');
@@ -246,7 +250,7 @@ export const StudentProvider = ({ children }) => {
   };
 
   const checkWorkspaceManifest = async (path) => {
-    if (!path) {
+    if (!path || quickOpenSelectedExercise) {
       setQuickOpenActiveManifest(null);
       return;
     }
@@ -269,7 +273,7 @@ export const StudentProvider = ({ children }) => {
 
   // Debounced check of workspace manifest when typing paths
   useEffect(() => {
-    if (!showQuickOpen || !quickOpenPath || quickOpenMode !== 'browse') {
+    if (!showQuickOpen || !quickOpenPath || quickOpenMode !== 'browse' || quickOpenSelectedExercise) {
       setQuickOpenActiveManifest(null);
       return;
     }
@@ -279,7 +283,7 @@ export const StudentProvider = ({ children }) => {
     }, 200);
 
     return () => clearTimeout(delayDebounce);
-  }, [quickOpenPath, showQuickOpen, quickOpenMode]);
+  }, [quickOpenPath, showQuickOpen, quickOpenMode, quickOpenSelectedExercise]);
 
   // Debounced search of remote exercises when typing queries
   useEffect(() => {
@@ -404,7 +408,9 @@ export const StudentProvider = ({ children }) => {
     setLoading(false);
   };
 
-  const handleExecuteFetchInline = async (exerciseId, versionVal, sourceType, sourceValue) => {
+  const handleExecuteFetchInline = async (selectedExercise, sourceType, sourceValue) => {
+    const exerciseId = selectedExercise.lab_id;
+    const versionVal = selectedExercise.version;
     setValidationError('');
     setLoading(true);
 
@@ -433,8 +439,12 @@ export const StudentProvider = ({ children }) => {
         return;
       }
 
-      // Success: refresh cached list and go back to exercises selection screen
-      await triggerExercisePicker(quickOpenCallback);
+      // Success: automatically select this exercise and complete the selection flow
+      setQuickOpenSelectedExercise(selectedExercise);
+      setShowQuickOpen(false);
+      if (quickOpenCallback) {
+        quickOpenCallback(selectedExercise);
+      }
     } catch (err) {
       setValidationError("Connection error: " + err.message);
     }
@@ -456,19 +466,20 @@ export const StudentProvider = ({ children }) => {
           setQuickOpenPath('');
           setSelectedIndex(0);
         } else if (item.type === 'exercise') {
-          quickOpenCallback(item.data);
+          setQuickOpenSelectedExercise(item.data);
           setShowQuickOpen(false);
+          quickOpenCallback(item.data);
         }
       }
     } else if (quickOpenMode === 'drive_exercises') {
       const item = selectableItems[selectedIndex];
       if (item && item.type === 'exercise') {
-        handleExecuteFetchInline(item.data.lab_id, item.data.version, 'drive', fetchSelectedSourceValue);
+        handleExecuteFetchInline(item.data, 'drive', fetchSelectedSourceValue);
       }
     } else if (quickOpenMode === 'remote_exercises') {
       const item = selectableItems[selectedIndex];
       if (item && item.type === 'exercise') {
-        handleExecuteFetchInline(item.data.lab_id, item.data.version, 'remote', fetchSelectedSourceValue);
+        handleExecuteFetchInline(item.data, 'remote', fetchSelectedSourceValue);
       }
     } else if (quickOpenMode === 'select_source') {
       const item = selectableItems[selectedIndex];
@@ -548,10 +559,16 @@ export const StudentProvider = ({ children }) => {
       }
     } else if (quickOpenMode === 'input_exercise_version') {
       const ver = quickOpenPath.trim();
-      handleExecuteFetchInline(fetchInputExerciseID, ver, fetchSelectedSourceType, fetchSelectedSourceValue);
+      const manualEx = {
+        lab_id: fetchInputExerciseID,
+        version: ver,
+        label: `${fetchInputExerciseID} (v${ver})`,
+        latest: true
+      };
+      handleExecuteFetchInline(manualEx, fetchSelectedSourceType, fetchSelectedSourceValue);
     } else {
-      quickOpenCallback(quickOpenPath);
       setShowQuickOpen(false);
+      quickOpenCallback(quickOpenPath);
     }
   };
 
@@ -868,6 +885,7 @@ export const StudentProvider = ({ children }) => {
 
       setActiveWorkspacePath(targetDir);
       addWorkspaceToRecents(targetDir, manifest);
+      setQuickOpenSelectedExercise(null);
       navigate('/workspace');
     } catch (err) {
       setValidationError("Connection error: " + err.message);
@@ -921,7 +939,9 @@ export const StudentProvider = ({ children }) => {
       driveExercisesList,
       handleLoadExercisesFromDrive,
       remoteExercisesList,
-      handleLoadExercisesFromRemote
+      handleLoadExercisesFromRemote,
+      quickOpenSelectedExercise,
+      setQuickOpenSelectedExercise
     }}>
       {children}
     </StudentContext.Provider>
