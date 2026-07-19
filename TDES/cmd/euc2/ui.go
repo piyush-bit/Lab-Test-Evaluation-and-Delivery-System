@@ -312,6 +312,65 @@ var uiCmd = &cobra.Command{
 			respondJSON(w, http.StatusOK, map[string]string{"message": "Workspace initialized successfully"})
 		})
 
+		// 7. API: Get Workspace File Tree
+		mux.HandleFunc("GET /api/workspace/files", func(w http.ResponseWriter, r *http.Request) {
+			dirPath := r.URL.Query().Get("path")
+			if dirPath == "" {
+				respondError(w, http.StatusBadRequest, "path parameter is required")
+				return
+			}
+
+			tree, err := buildFileTree(dirPath)
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+
+			respondJSON(w, http.StatusOK, tree)
+		})
+
+		// 8. API: Get Workspace File Content
+		mux.HandleFunc("GET /api/workspace/file", func(w http.ResponseWriter, r *http.Request) {
+			filePath := r.URL.Query().Get("path")
+			if filePath == "" {
+				respondError(w, http.StatusBadRequest, "path parameter is required")
+				return
+			}
+
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+
+			respondJSON(w, http.StatusOK, map[string]string{"content": string(content)})
+		})
+
+		// 9. API: Save Workspace File Content
+		mux.HandleFunc("POST /api/workspace/file", func(w http.ResponseWriter, r *http.Request) {
+			var req struct {
+				Path    string `json:"path"`
+				Content string `json:"content"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid request JSON")
+				return
+			}
+
+			if req.Path == "" {
+				respondError(w, http.StatusBadRequest, "path is required")
+				return
+			}
+
+			err := os.WriteFile(req.Path, []byte(req.Content), 0644)
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+
+			respondJSON(w, http.StatusOK, map[string]string{"message": "File saved successfully"})
+		})
+
 		serverAddr := uiHost + ":" + uiPort
 		log.Printf("Starting TDES Web Console on http://%s ...", serverAddr)
 
@@ -323,6 +382,49 @@ var uiCmd = &cobra.Command{
 			log.Fatalf("Server stopped with error: %v", err)
 		}
 	},
+}
+
+type FileNode struct {
+	Name     string     `json:"name"`
+	Path     string     `json:"path"`
+	IsDir    bool       `json:"isDir"`
+	Children []FileNode `json:"children,omitempty"`
+}
+
+func buildFileTree(dirPath string) ([]FileNode, error) {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var nodes []FileNode
+	for _, entry := range entries {
+		name := entry.Name()
+		if strings.HasPrefix(name, ".") || name == "node_modules" {
+			continue
+		}
+
+		fullPath := filepath.Join(dirPath, name)
+		node := FileNode{
+			Name:  name,
+			Path:  fullPath,
+			IsDir: entry.IsDir(),
+		}
+
+		if entry.IsDir() {
+			children, err := buildFileTree(fullPath)
+			if err != nil {
+				return nil, err
+			}
+			node.Children = children
+		}
+		nodes = append(nodes, node)
+	}
+
+	if nodes == nil {
+		nodes = []FileNode{}
+	}
+	return nodes, nil
 }
 
 func checkDockerStatus() bool {
