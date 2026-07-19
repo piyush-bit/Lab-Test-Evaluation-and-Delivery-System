@@ -110,9 +110,9 @@ func (s *Service) GetExerciseVersion(ctx context.Context, orgID, exerciseID, ver
 	return s.repo.GetExerciseVersion(ctx, orgID, exerciseID, version)
 }
 
-// ListExercises lists all registered exercises, optionally filtered by orgID and status.
-func (s *Service) ListExercises(ctx context.Context, orgID, status string) ([]ExerciseVersion, error) {
-	return s.repo.ListExercises(ctx, orgID, status)
+// ListExercises lists all registered exercises, optionally filtered by orgID, status, and search query.
+func (s *Service) ListExercises(ctx context.Context, orgID, status, search string) ([]ExerciseVersion, error) {
+	return s.repo.ListExercises(ctx, orgID, status, search)
 }
 
 // ListExerciseVersions lists all versions of a specific exercise.

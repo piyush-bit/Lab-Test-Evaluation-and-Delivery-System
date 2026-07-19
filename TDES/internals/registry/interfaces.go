@@ -46,8 +46,8 @@ type Repository interface {
 	// GetExerciseVersion retrieves exercise version metadata. Returns ErrNotFound if missing.
 	GetExerciseVersion(ctx context.Context, orgID, exerciseID, version string) (ExerciseVersion, error)
 
-	// ListExercises lists all registered exercise versions, optionally filtered by orgID and status (if not empty).
-	ListExercises(ctx context.Context, orgID, status string) ([]ExerciseVersion, error)
+	// ListExercises lists all registered exercise versions, optionally filtered by orgID, status, and search query.
+	ListExercises(ctx context.Context, orgID, status, search string) ([]ExerciseVersion, error)
 
 	// ListExerciseVersions lists all versions of a specific exercise.
 	ListExerciseVersions(ctx context.Context, orgID, exerciseID string) ([]ExerciseVersion, error)

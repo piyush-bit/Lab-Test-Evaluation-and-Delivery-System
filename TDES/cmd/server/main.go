@@ -254,8 +254,9 @@ func main() {
 	mux.HandleFunc("GET /v1/exercises", func(w http.ResponseWriter, r *http.Request) {
 		orgID := r.URL.Query().Get("org_id")
 		status := r.URL.Query().Get("status")
+		search := r.URL.Query().Get("q")
 
-		list, err := service.ListExercises(r.Context(), orgID, status)
+		list, err := service.ListExercises(r.Context(), orgID, status, search)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, err.Error())
 			return

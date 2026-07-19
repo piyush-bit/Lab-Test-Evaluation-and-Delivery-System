@@ -38,6 +38,7 @@ export default function CommandPalette() {
   const isInputExerciseID = quickOpenMode === 'input_exercise_id';
   const isInputExerciseVersion = quickOpenMode === 'input_exercise_version';
   const isDriveExercises = quickOpenMode === 'drive_exercises';
+  const isRemoteExercises = quickOpenMode === 'remote_exercises';
 
   // Determine placeholder and header labels based on current mode
   let placeholder = "Search folders...";
@@ -58,6 +59,9 @@ export default function CommandPalette() {
   } else if (isDriveExercises) {
     placeholder = "Search exercises on drive...";
     headerLabel = "SELECT EXERCISE TO FETCH FROM DRIVE";
+  } else if (isRemoteExercises) {
+    placeholder = "Search exercises on remote...";
+    headerLabel = "SELECT EXERCISE TO FETCH FROM REMOTE";
   } else if (isInputExerciseID) {
     placeholder = "Enter Exercise ID to fetch (e.g. go101-lab01)...";
     headerLabel = "TYPE EXERCISE ID AND HIT ENTER";
@@ -74,7 +78,7 @@ export default function CommandPalette() {
           <div className="quick-open-wizard-header" style={{ padding: '8px 14px', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-card)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.8 }}>
-                {isExercises ? (
+                {isExercises || isDriveExercises || isRemoteExercises ? (
                   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                 ) : (
                   <path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 0 1 9-9" />
@@ -216,11 +220,18 @@ export default function CommandPalette() {
                     onMouseEnter={() => setSelectedIndex(idx)}
                   >
                     <div className="recent-details">
-                      <span className="recent-name" style={{ fontSize: '0.85rem' }}>
+                      <span className="recent-name" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {item.data.lab_id}
+                        {item.data.language && (
+                          <span className="recent-lab-id" style={{ color: 'var(--primary)', backgroundColor: 'rgba(79, 70, 229, 0.05)', border: '1px solid rgba(79, 70, 229, 0.12)', textTransform: 'uppercase' }}>
+                            {item.data.language}
+                          </span>
+                        )}
                         {item.data.latest && <span className="recent-lab-id" style={{ color: 'var(--accent)', backgroundColor: 'rgba(5, 150, 105, 0.05)', border: '1px solid rgba(5, 150, 105, 0.12)' }}>LATEST</span>}
                       </span>
-                      <span className="recent-path" style={{ fontSize: '0.72rem' }}>Version: {item.data.version}</span>
+                      <span className="recent-path" style={{ fontSize: '0.72rem' }}>
+                        Version: {item.data.version} {item.data.title && `| ${item.data.title}`}
+                      </span>
                     </div>
                   </div>
                 );

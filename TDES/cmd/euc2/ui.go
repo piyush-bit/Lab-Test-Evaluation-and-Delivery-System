@@ -6,11 +6,15 @@ import (
 	drive "TDES/internals/drive"
 	"embed"
 	"encoding/json"
+	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -207,6 +211,52 @@ var uiCmd = &cobra.Command{
 				return
 			}
 			respondJSON(w, http.StatusOK, index)
+		})
+
+		// 4e. API: List Exercises on a Remote Registry
+		mux.HandleFunc("GET /api/remote-exercises", func(w http.ResponseWriter, r *http.Request) {
+			remoteURL := r.URL.Query().Get("remote_url")
+			orgID := r.URL.Query().Get("org_id")
+			search := r.URL.Query().Get("q")
+			if remoteURL == "" {
+				respondError(w, http.StatusBadRequest, "remote_url parameter is required")
+				return
+			}
+			if orgID == "" {
+				orgID = "default"
+			}
+
+			parsedURL, err := url.Parse(remoteURL)
+			if err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid remote URL: "+err.Error())
+				return
+			}
+			parsedURL.Path = path.Join(parsedURL.Path, "v1", "exercises")
+
+			q := parsedURL.Query()
+			q.Set("org_id", orgID)
+			q.Set("status", "published")
+			if search != "" {
+				q.Set("q", search)
+			}
+			parsedURL.RawQuery = q.Encode()
+
+			resp, err := http.Get(parsedURL.String())
+			if err != nil {
+				respondError(w, http.StatusBadGateway, "Failed to connect to remote registry: "+err.Error())
+				return
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				bodyBytes, _ := io.ReadAll(resp.Body)
+				respondError(w, resp.StatusCode, fmt.Sprintf("Remote registry returned error (%d): %s", resp.StatusCode, string(bodyBytes)))
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = io.Copy(w, resp.Body)
 		})
 
 		// 5. API: Fetch Exercise (Required for creating workspace)

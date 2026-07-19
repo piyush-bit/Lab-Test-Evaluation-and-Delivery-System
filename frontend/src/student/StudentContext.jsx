@@ -52,6 +52,7 @@ export const StudentProvider = ({ children }) => {
   const [fetchInputExerciseID, setFetchInputExerciseID] = useState('');
   const [fetchInputVersion, setFetchInputVersion] = useState('');
   const [driveExercisesList, setDriveExercisesList] = useState([]);
+  const [remoteExercisesList, setRemoteExercisesList] = useState([]);
 
   const addRemoteToRecents = (url) => {
     if (!url) return;
@@ -280,6 +281,33 @@ export const StudentProvider = ({ children }) => {
     return () => clearTimeout(delayDebounce);
   }, [quickOpenPath, showQuickOpen, quickOpenMode]);
 
+  // Debounced search of remote exercises when typing queries
+  useEffect(() => {
+    if (!showQuickOpen || quickOpenMode !== 'remote_exercises') return;
+
+    const delayDebounce = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/remote-exercises?remote_url=${encodeURIComponent(fetchSelectedSourceValue)}&org_id=default&q=${encodeURIComponent(quickOpenPath)}`);
+        if (res.ok) {
+          const data = await res.json();
+          const list = (data || []).map(ex => ({
+            lab_id: ex.exercise_id,
+            version: ex.version,
+            title: ex.title || '',
+            language: ex.language || '',
+            label: `${ex.exercise_id} (v${ex.version}) - ${ex.title || ''}`,
+            latest: true
+          }));
+          setRemoteExercisesList(list);
+        }
+      } catch {
+        // silent fail during typing
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [quickOpenPath, showQuickOpen, quickOpenMode, fetchSelectedSourceValue]);
+
   const handleQuickOpenNavigate = (newPath) => {
     setQuickOpenPath(newPath);
     const { baseDir } = getPathParts(newPath);
@@ -331,6 +359,44 @@ export const StudentProvider = ({ children }) => {
       }
     } catch (err) {
       setValidationError("Error reading drive: " + err.message);
+      setQuickOpenMode('select_source');
+      setQuickOpenPath('');
+      setShowQuickOpen(true);
+    }
+    setLoading(false);
+  };
+
+  const handleLoadExercisesFromRemote = async (remoteUrl) => {
+    setValidationError('');
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/remote-exercises?remote_url=${encodeURIComponent(remoteUrl)}&org_id=default`);
+      if (res.ok) {
+        const data = await res.json();
+        const list = (data || []).map(ex => ({
+          lab_id: ex.exercise_id,
+          version: ex.version,
+          title: ex.title || '',
+          language: ex.language || '',
+          label: `${ex.exercise_id} (v${ex.version}) - ${ex.title || ''}`,
+          latest: true
+        }));
+        setRemoteExercisesList(list);
+        setFetchSelectedSourceType('remote');
+        setFetchSelectedSourceValue(remoteUrl);
+        setQuickOpenMode('remote_exercises');
+        setSelectedIndex(0);
+        setQuickOpenPath('');
+        setShowQuickOpen(true);
+      } else {
+        const errData = await res.json();
+        setValidationError(`Failed to load remote exercises: ${errData.error || 'Check registry URL'}`);
+        setQuickOpenMode('select_source');
+        setQuickOpenPath('');
+        setShowQuickOpen(true);
+      }
+    } catch (err) {
+      setValidationError("Error reading remote registry: " + err.message);
       setQuickOpenMode('select_source');
       setQuickOpenPath('');
       setShowQuickOpen(true);
@@ -399,6 +465,11 @@ export const StudentProvider = ({ children }) => {
       if (item && item.type === 'exercise') {
         handleExecuteFetchInline(item.data.lab_id, item.data.version, 'drive', fetchSelectedSourceValue);
       }
+    } else if (quickOpenMode === 'remote_exercises') {
+      const item = selectableItems[selectedIndex];
+      if (item && item.type === 'exercise') {
+        handleExecuteFetchInline(item.data.lab_id, item.data.version, 'remote', fetchSelectedSourceValue);
+      }
     } else if (quickOpenMode === 'select_source') {
       const item = selectableItems[selectedIndex];
       if (item) {
@@ -445,11 +516,7 @@ export const StudentProvider = ({ children }) => {
           if (item.sourceType === 'drive') {
             handleLoadExercisesFromDrive(item.value);
           } else {
-            setFetchSelectedSourceType('remote');
-            setFetchSelectedSourceValue(item.value);
-            setQuickOpenMode('input_exercise_id');
-            setQuickOpenPath('');
-            setSelectedIndex(0);
+            handleLoadExercisesFromRemote(item.value);
           }
         }
       }
@@ -457,12 +524,7 @@ export const StudentProvider = ({ children }) => {
       if (quickOpenPath.trim()) {
         const val = quickOpenPath.trim();
         addRemoteToRecents(val);
-        setValidationError('');
-        setFetchSelectedSourceType('remote');
-        setFetchSelectedSourceValue(val);
-        setQuickOpenMode('input_exercise_id');
-        setQuickOpenPath('');
-        setSelectedIndex(0);
+        handleLoadExercisesFromRemote(val);
       }
     } else if (quickOpenMode === 'input_drive') {
       if (quickOpenPath.trim()) {
@@ -643,6 +705,10 @@ export const StudentProvider = ({ children }) => {
     filteredExercises.forEach((ex) => {
       selectableItems.push({ type: 'exercise', data: ex });
     });
+  } else if (quickOpenMode === 'remote_exercises') {
+    remoteExercisesList.forEach((ex) => {
+      selectableItems.push({ type: 'exercise', data: ex });
+    });
   } else if (quickOpenMode === 'input_remote') {
     selectableItems.push({ type: 'input_confirm', label: quickOpenPath.trim() ? `Connect Registry: ${quickOpenPath}` : 'Type Registry URL and press Enter...' });
   } else if (quickOpenMode === 'input_drive') {
@@ -669,7 +735,7 @@ export const StudentProvider = ({ children }) => {
   // Reset focus when elements list changes
   useEffect(() => {
     setSelectedIndex(0);
-  }, [filteredDirs.length, quickOpenActiveManifest, quickOpenParent, recentRemotes.length, recentDrives.length, driveExercisesList.length, quickOpenMode, quickOpenPath]);
+  }, [filteredDirs.length, quickOpenActiveManifest, quickOpenParent, recentRemotes.length, recentDrives.length, driveExercisesList.length, remoteExercisesList.length, quickOpenMode, quickOpenPath]);
 
   // Keyboard navigation inside Command Palette input
   const handleQuickOpenKeyDown = (e) => {
@@ -690,7 +756,7 @@ export const StudentProvider = ({ children }) => {
       e.preventDefault();
       const item = selectableItems[selectedIndex];
       if (item) {
-        if (quickOpenMode === 'exercises' || quickOpenMode === 'drive_exercises') {
+        if (quickOpenMode === 'exercises' || quickOpenMode === 'drive_exercises' || quickOpenMode === 'remote_exercises') {
           if (item.type === 'action' && item.action === 'fetch_new') {
             setValidationError('');
             setQuickOpenMode('select_source');
@@ -853,7 +919,9 @@ export const StudentProvider = ({ children }) => {
       triggerExercisePicker,
       quickOpenExercises,
       driveExercisesList,
-      handleLoadExercisesFromDrive
+      handleLoadExercisesFromDrive,
+      remoteExercisesList,
+      handleLoadExercisesFromRemote
     }}>
       {children}
     </StudentContext.Provider>

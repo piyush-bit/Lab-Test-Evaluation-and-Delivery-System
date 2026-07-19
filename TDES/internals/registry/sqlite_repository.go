@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"TDES/internals/exercise"
@@ -219,22 +220,28 @@ func (r *SQLiteRepository) GetExerciseVersion(ctx context.Context, orgID, exerci
 	return r.scanVersion(row)
 }
 
-// ListExercises lists all registered exercise versions, optionally filtered by orgID and status (if not empty).
-func (r *SQLiteRepository) ListExercises(ctx context.Context, orgID, status string) ([]ExerciseVersion, error) {
+// ListExercises lists all registered exercise versions, optionally filtered by orgID, status, and case-insensitive keyword search query.
+func (r *SQLiteRepository) ListExercises(ctx context.Context, orgID, status, search string) ([]ExerciseVersion, error) {
+	searchQuery := ""
+	if search != "" {
+		searchQuery = "%" + strings.ToLower(search) + "%"
+	}
 	query := `
 		SELECT id, org_id, exercise_id, version, title, language, status, manifest_json,
 		        public_artifact_sha256, private_artifact_sha256, created_at, updated_at
 		   FROM exercise_versions
-		  WHERE (? = '' OR org_id = ?) AND (? = '' OR status = ?)
+		  WHERE (? = '' OR org_id = ?)
+		    AND (? = '' OR status = ?)
+		    AND (? = '' OR LOWER(title) LIKE ? OR LOWER(exercise_id) LIKE ? OR LOWER(language) LIKE ?)
 		  ORDER BY org_id, exercise_id, created_at DESC
 	`
-	rows, err := r.db.QueryContext(ctx, query, orgID, orgID, status, status)
+	rows, err := r.db.QueryContext(ctx, query, orgID, orgID, status, status, searchQuery, searchQuery, searchQuery, searchQuery)
 	if err != nil {
 		return nil, fmt.Errorf("db list exercises: %w", err)
 	}
 	defer rows.Close()
 
-	var versions []ExerciseVersion
+	versions := []ExerciseVersion{}
 	for rows.Next() {
 		ev, err := r.scanVersion(rows)
 		if err != nil {

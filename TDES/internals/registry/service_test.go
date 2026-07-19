@@ -165,7 +165,7 @@ func TestRegistryService(t *testing.T) {
 	}
 
 	// 8. List exercises
-	list, err := service.ListExercises(ctx, "org1", "published")
+	list, err := service.ListExercises(ctx, "org1", "published", "")
 	if err != nil {
 		t.Fatalf("ListExercises failed: %v", err)
 	}
@@ -173,7 +173,7 @@ func TestRegistryService(t *testing.T) {
 		t.Errorf("Expected 1 exercise in list, got %d", len(list))
 	}
 
-	listEmpty, _ := service.ListExercises(ctx, "org1", "draft")
+	listEmpty, _ := service.ListExercises(ctx, "org1", "draft", "")
 	if len(listEmpty) != 0 {
 		t.Errorf("Expected 0 exercises in list, got %d", len(listEmpty))
 	}
