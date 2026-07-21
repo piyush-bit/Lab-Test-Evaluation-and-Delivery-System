@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -55,6 +57,38 @@ func (e *Exercise) TestExercise() error {
 
 	if err := e.Manifest.ValidateExerciseContract(); err != nil {
 		return err
+	}
+
+	// 1. Back up original files
+	backups := make(map[string][]byte)
+	for _, relPath := range e.Manifest.Submission.IncludePaths {
+		livePath := filepath.Join(e.Path, relPath)
+		data, err := os.ReadFile(livePath)
+		if err == nil {
+			backups[relPath] = data
+		}
+	}
+
+	// Restore backups on completion
+	defer func() {
+		for relPath, data := range backups {
+			livePath := filepath.Join(e.Path, relPath)
+			_ = os.WriteFile(livePath, data, 0644)
+		}
+	}()
+
+	// 2. Copy reference files to live paths so tests run against the solved reference package
+	for _, relPath := range e.Manifest.Submission.IncludePaths {
+		refPath := filepath.Join(e.Path, "reference", relPath)
+		livePath := filepath.Join(e.Path, relPath)
+		refData, err := os.ReadFile(refPath)
+		if err != nil {
+			return fmt.Errorf("failed to read reference file %s: %w", refPath, err)
+		}
+		err = os.WriteFile(livePath, refData, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to write live file %s: %w", livePath, err)
+		}
 	}
 
 	timeout := time.Duration(e.Manifest.Limits.TimeoutSeconds) * time.Second

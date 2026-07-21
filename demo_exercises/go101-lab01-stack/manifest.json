@@ -6,11 +6,12 @@
   "runner_image": "lab-go-runner:v1.0",
   "local_entrypoint": "make test-public",
   "grading": [
-    { "command": "make test-submission-lifo",        "points": 2 },
-    { "command": "make test-submission-interleaved", "points": 2 },
-    { "command": "make test-submission-size",        "points": 2 },
-    { "command": "make test-submission-pop-empty",   "points": 2 },
-    { "command": "make test-submission-peek",        "points": 2 }
+    { "command": "make test-public",                  "points": 0, "public": true },
+    { "command": "make test-submission-lifo",        "points": 2, "public": false },
+    { "command": "make test-submission-interleaved", "points": 2, "public": false },
+    { "command": "make test-submission-size",        "points": 2, "public": false },
+    { "command": "make test-submission-pop-empty",   "points": 2, "public": false },
+    { "command": "make test-submission-peek",        "points": 2, "public": false }
   ],
   "submission": {
     "include_paths": [

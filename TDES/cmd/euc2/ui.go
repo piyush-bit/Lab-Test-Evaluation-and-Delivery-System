@@ -4,6 +4,7 @@ import (
 	initMod "TDES/internals/init"
 	exercisestore "TDES/internals/exercise_store"
 	drive "TDES/internals/drive"
+	runtests "TDES/internals/run"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -371,6 +372,36 @@ var uiCmd = &cobra.Command{
 			respondJSON(w, http.StatusOK, map[string]string{"message": "File saved successfully"})
 		})
 
+		// 10. API: Run Workspace Tests
+		mux.HandleFunc("POST /api/workspace/run", func(w http.ResponseWriter, r *http.Request) {
+			var req struct {
+				Path    string `json:"path"`
+				Mode    string `json:"mode"`    // "docker" or "local"
+				Command string `json:"command"` // optional, to run a single test command
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid request JSON")
+				return
+			}
+
+			if req.Path == "" {
+				respondError(w, http.StatusBadRequest, "path parameter is required")
+				return
+			}
+
+			config := runtests.Config{
+				ExercisePath: req.Path,
+			}
+
+			result, err := runtests.RunGradingTests(config, req.Mode == "local", req.Command)
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+
+			respondJSON(w, http.StatusOK, result)
+		})
+
 		serverAddr := uiHost + ":" + uiPort
 		log.Printf("Starting TDES Web Console on http://%s ...", serverAddr)
 
@@ -426,6 +457,7 @@ func buildFileTree(dirPath string) ([]FileNode, error) {
 	}
 	return nodes, nil
 }
+
 
 func checkDockerStatus() bool {
 	cmd := exec.Command("docker", "info")

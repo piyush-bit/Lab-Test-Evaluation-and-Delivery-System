@@ -50,6 +50,7 @@ type exerciseManifest struct {
 type gradingEntry struct {
 	Command string `json:"command"`
 	Points  int    `json:"points"`
+	Public  bool   `json:"public"`
 }
 
 type submissionSpec struct {
@@ -216,8 +217,8 @@ func validateManifest(manifest exerciseManifest) error {
 		if strings.TrimSpace(entry.Command) == "" {
 			return fmt.Errorf("manifest grading[%d].command is required", i)
 		}
-		if entry.Points <= 0 {
-			return fmt.Errorf("manifest grading[%d].points must be greater than zero", i)
+		if entry.Points < 0 {
+			return fmt.Errorf("manifest grading[%d].points must be non-negative", i)
 		}
 	}
 	return nil

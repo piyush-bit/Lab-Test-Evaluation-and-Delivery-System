@@ -55,6 +55,15 @@ export const StudentProvider = ({ children }) => {
   const [driveExercisesList, setDriveExercisesList] = useState([]);
   const [remoteExercisesList, setRemoteExercisesList] = useState([]);
 
+  // Test Runner states
+  const [runMode, setRunMode] = useState('docker'); // 'docker' | 'local'
+  const [runStatus, setRunStatus] = useState('idle'); // 'idle' | 'running' | 'success' | 'error'
+  const [runResults, setRunResults] = useState([]);
+  const [runOutput, setRunOutput] = useState('');
+  const [showRunPanel, setShowRunPanel] = useState(false);
+  const [earnedPoints, setEarnedPoints] = useState(0);
+  const [maxPoints, setMaxPoints] = useState(0);
+
   const addRemoteToRecents = (url) => {
     if (!url) return;
     const updated = [url, ...recentRemotes.filter(r => r !== url)].slice(0, 5);
@@ -893,6 +902,60 @@ export const StudentProvider = ({ children }) => {
     setLoading(false);
   };
 
+  const handleRunTests = async (specificCommand = '', modeOverride = null) => {
+    if (!activeWorkspacePath) return;
+    const modeToUse = modeOverride || runMode;
+    
+    setShowRunPanel(true);
+    if (specificCommand) {
+      setRunResults(prev => prev.map(item => 
+        item.command === specificCommand ? { ...item, status: 'running', output: 'Executing specific command...' } : item
+      ));
+    } else {
+      setRunStatus('running');
+      setRunResults([]);
+      setRunOutput('');
+    }
+
+    try {
+      const res = await fetch('/api/workspace/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path: activeWorkspacePath,
+          mode: modeToUse,
+          command: specificCommand
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (specificCommand) {
+          setRunResults(prev => prev.map(item => {
+            const newItem = (data.results || []).find(r => r.command === item.command);
+            return newItem && newItem.status !== 'idle' ? newItem : item;
+          }));
+        } else {
+          setEarnedPoints(data.earned_points || 0);
+          setMaxPoints(data.max_points || 0);
+          setRunResults(data.results || []);
+          if (data.success) {
+            setRunStatus('success');
+          } else {
+            setRunStatus('error');
+          }
+        }
+      } else {
+        const errData = await res.json();
+        setRunOutput(errData.error || 'Failed to execute run');
+        setRunStatus('error');
+      }
+    } catch (err) {
+      setRunOutput("Connection error: " + err.message);
+      setRunStatus('error');
+    }
+  };
+
   return (
     <StudentContext.Provider value={{
       isDarkMode, setIsDarkMode,
@@ -941,7 +1004,22 @@ export const StudentProvider = ({ children }) => {
       remoteExercisesList,
       handleLoadExercisesFromRemote,
       quickOpenSelectedExercise,
-      setQuickOpenSelectedExercise
+      setQuickOpenSelectedExercise,
+      runMode,
+      setRunMode,
+      runStatus,
+      setRunStatus,
+      runResults,
+      setRunResults,
+      runOutput,
+      setRunOutput,
+      showRunPanel,
+      setShowRunPanel,
+      handleRunTests,
+      earnedPoints,
+      setEarnedPoints,
+      maxPoints,
+      setMaxPoints
     }}>
       {children}
     </StudentContext.Provider>

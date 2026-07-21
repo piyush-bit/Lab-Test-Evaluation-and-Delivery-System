@@ -89,20 +89,28 @@ func (config ImageConfig) EnsureImage() error {
 
 	stdout, stderr := base.output()
 
+	// Check if Docker daemon is running
+	ping := exec.Command(binary, "info")
+	ping.Stdout = io.Discard
+	ping.Stderr = io.Discard
+	if err := ping.Run(); err != nil {
+		return fmt.Errorf("Docker daemon is not running. Please start Docker Desktop first")
+	}
+
+	// Check if the image exists locally
 	inspect := exec.Command(binary, "image", "inspect", image)
 	inspect.Stdout = io.Discard
 	inspect.Stderr = io.Discard
-
 	if err := inspect.Run(); err == nil {
 		return nil
 	}
 
+	// Try to pull it
 	pull := exec.Command(binary, "pull", image)
 	pull.Stdout = stdout
 	pull.Stderr = stderr
-
 	if err := pull.Run(); err != nil {
-		return fmt.Errorf("prepare docker image %q: %w", image, err)
+		return fmt.Errorf("Docker image %q is not present locally and could not be pulled: %w", image, err)
 	}
 
 	return nil

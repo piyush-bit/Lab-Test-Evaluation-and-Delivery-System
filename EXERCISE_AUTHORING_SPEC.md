@@ -231,24 +231,32 @@ test-submission-group2:
   "local_entrypoint": "make test-public",
   "grading": [                          // Ordered list of grading commands.
     {                                  // Evaluator runs each in sequence.
+      "command": "make test-public",                  "points": 0, "public": true
+    },
+    {
       "command": "make test-submission-lifo", // Must match a Makefile target exactly.
-      "points": 2                      // Points awarded if exit code is 0.
+      "points": 2,                     // Points awarded if exit code is 0.
+      "public": false
     },
     {
       "command": "make test-submission-interleaved",
-      "points": 2
+      "points": 2,
+      "public": false
     },
     {
       "command": "make test-submission-size",
-      "points": 2
+      "points": 2,
+      "public": false
     },
     {
       "command": "make test-submission-pop-empty",
-      "points": 2
+      "points": 2,
+      "public": false
     },
     {
       "command": "make test-submission-peek",
-      "points": 2
+      "points": 2,
+      "public": false
     }
   ],                                   // Max score = sum of all points fields.
   "submission": {
@@ -276,6 +284,8 @@ test-submission-group2:
   (at their corresponding relative paths under `reference/`).
 - `grading[].command` values must exactly match Makefile target names. Mismatches are
   caught during exercise validation (the reference solution must pass every grading command).
+- `grading[].public` is a boolean flag indicating whether the test command is public (executable locally by the student in the IDE) or private (only executed during grading).
+- `grading[].points` defines points earned for a passing run. Diagnostic or public loop test commands (like `make test-public`) should be marked with `"public": true` and `"points": 0` as they do not affect the student's submission grade.
 - `local_entrypoint` must always be `"make test-public"`.
 - `grading` replaces `server_entrypoint`. There is no single `server_entrypoint` field.
 - `reference/` and all private test directories must appear in `private_globs` — never in `exclude_globs`.

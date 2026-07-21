@@ -143,3 +143,129 @@ func resolveExercisePath(path string) (string, error) {
 
 	return absPath, nil
 }
+
+type GradingTestResult struct {
+	Command        string `json:"command"`
+	PointsPossible int    `json:"points_possible"`
+	PointsEarned   int    `json:"points_earned"`
+	Status         string `json:"status"` // "pass" | "fail"
+	Output         string `json:"output"`
+	Public         bool   `json:"public"`
+}
+
+type GradingResult struct {
+	Success      bool                `json:"success"`
+	EarnedPoints int                 `json:"earned_points"`
+	MaxPoints    int                 `json:"max_points"`
+	Results      []GradingTestResult `json:"results"`
+}
+
+func RunGradingTests(config Config, useLocal bool, filterCommand string) (GradingResult, error) {
+	exercisePath, err := resolveExercisePath(config.ExercisePath)
+	if err != nil {
+		return GradingResult{}, err
+	}
+
+	manifest, err := exercise.LoadManifest(exercisePath)
+	if err != nil {
+		return GradingResult{}, err
+	}
+
+	timeout := time.Duration(manifest.Limits.TimeoutSeconds) * time.Second
+	if timeout <= 0 {
+		timeout = 30 * time.Second
+	}
+
+	maxPoints := 0
+	for _, entry := range manifest.Grading {
+		maxPoints += entry.Points
+	}
+
+	var results []GradingTestResult
+	earnedPoints := 0
+	overallSuccess := true
+
+	for _, entry := range manifest.Grading {
+		// Filter by specific command if requested
+		if filterCommand != "" && entry.Command != filterCommand {
+			// Skip and mark as idle
+			results = append(results, GradingTestResult{
+				Command:        entry.Command,
+				PointsPossible: entry.Points,
+				Status:         "idle",
+				Public:         entry.Public,
+				Output:         "Skipped.",
+			})
+			continue
+		}
+
+		// Private tests are locked locally in student workspace
+		if !entry.Public {
+			results = append(results, GradingTestResult{
+				Command:        entry.Command,
+				PointsPossible: entry.Points,
+				Status:         "locked",
+				Public:         entry.Public,
+				Output:         "This is a private test case. It is locked and will be executed upon submission.",
+			})
+			continue
+		}
+
+		var outputBuf strings.Builder
+		testResult := GradingTestResult{
+			Command:        entry.Command,
+			PointsPossible: entry.Points,
+			Status:         "fail",
+			Public:         entry.Public,
+		}
+
+		if useLocal {
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			command := exec.CommandContext(ctx, "/bin/sh", "-c", entry.Command)
+			command.Dir = exercisePath
+			command.Stdout = &outputBuf
+			command.Stderr = &outputBuf
+
+			err = command.Run()
+			cancel()
+		} else {
+			err = docker.RunConfig{
+				ImageConfig: docker.ImageConfig{
+					Image:  manifest.RunnerImage,
+					Binary: config.DockerBinary,
+					Stdout: &outputBuf,
+					Stderr: &outputBuf,
+				},
+				HostPath:  exercisePath,
+				Command:   entry.Command,
+				Timeout:   timeout,
+				MemoryMB:  manifest.Limits.MemoryMB,
+				PidsLimit: manifest.Limits.PidsLimit,
+			}.RunCommand()
+		}
+
+		testResult.Output = outputBuf.String()
+		if err != nil {
+			overallSuccess = false
+			if strings.TrimSpace(testResult.Output) == "" {
+				testResult.Output = err.Error()
+			}
+		} else {
+			testResult.Status = "pass"
+			testResult.PointsEarned = entry.Points
+			earnedPoints += entry.Points
+		}
+		results = append(results, testResult)
+	}
+
+	if results == nil {
+		results = []GradingTestResult{}
+	}
+
+	return GradingResult{
+		Success:      overallSuccess,
+		EarnedPoints: earnedPoints,
+		MaxPoints:    maxPoints,
+		Results:      results,
+	}, nil
+}
