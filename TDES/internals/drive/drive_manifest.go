@@ -1,6 +1,7 @@
 package drive
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -34,8 +35,14 @@ func ReadManifest(path string) (*DriveManifest, error) {
 	}
 
 	var manifest DriveManifest
-	if err := json.Unmarshal(data, &manifest); err != nil {
-		return nil, fmt.Errorf("decode drive manifest %q: %w", manifestPath, err)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&manifest); err != nil {
+		return nil, fmt.Errorf("invalid drive manifest %q: %w", manifestPath, err)
+	}
+
+	if manifest.ActiveModules == nil {
+		return nil, fmt.Errorf("manifest %q is missing drive active_modules schema", manifestPath)
 	}
 
 	normalizeActiveModules(&manifest)

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStudent } from '../StudentContext';
-import { BackIcon, CheckIcon } from '../components/Icons';
+import { BackIcon, CheckIcon, ZapIcon } from '../components/Icons';
 import Editor from '@monaco-editor/react';
 import FileTree from '../components/FileTree';
 
@@ -307,7 +307,7 @@ export default function ActiveWorkspace() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   {saveStatus === 'saving' && (
                     <span style={{ color: 'var(--secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      ⚡ Saving...
+                      <ZapIcon size={14} /> Saving...
                     </span>
                   )}
                   {saveStatus === 'unsaved' && (
@@ -390,8 +390,8 @@ export default function ActiveWorkspace() {
                 <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'rgba(0,0,0,0.01)' }}>
                   {runStatus === 'running' ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                        ⚡ Executing test cases...
+                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <ZapIcon size={14} /> Executing test cases...
                       </div>
                       <div style={{ height: '6px', width: '100%', backgroundColor: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
                         <div style={{ height: '100%', width: '40%', backgroundColor: 'var(--primary)', borderRadius: '4px', position: 'absolute', animation: 'indeterminate-progress 1.5s infinite ease-in-out' }}></div>

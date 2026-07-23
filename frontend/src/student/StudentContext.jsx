@@ -103,6 +103,150 @@ export const StudentProvider = ({ children }) => {
   const [validationError, setValidationError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Admin Drive State
+  const [activeAdminDrivePath, setActiveAdminDrivePath] = useState('');
+  const [adminDriveManifest, setAdminDriveManifest] = useState(null);
+  const [adminDriveExercises, setAdminDriveExercises] = useState([]);
+  const [adminNotification, setAdminNotification] = useState(null);
+
+  const inspectAdminDrive = async (targetPath) => {
+    if (!targetPath) return;
+    try {
+      const vRes = await fetch(`/api/validate-drive?path=${encodeURIComponent(targetPath)}`);
+      if (vRes.ok) {
+        const vData = await vRes.json();
+        if (vData.valid) {
+          setAdminDriveManifest(vData.manifest);
+        } else {
+          setAdminDriveManifest(null);
+        }
+      }
+      const eRes = await fetch(`/api/drive-exercises?path=${encodeURIComponent(targetPath)}`);
+      if (eRes.ok) {
+        const eData = await eRes.json();
+        const list = [];
+        Object.entries(eData).forEach(([exId, entry]) => {
+          if (entry && entry.versions) {
+            Object.keys(entry.versions).forEach(ver => {
+              list.push({ exercise_id: exId, version: ver });
+            });
+          }
+        });
+        setAdminDriveExercises(list);
+      }
+    } catch {
+      // silent
+    }
+  };
+
+  const handleOpenAdminDrive = async (path) => {
+    if (!path) return;
+    setValidationError('');
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/validate-drive?path=${encodeURIComponent(path)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.valid) {
+          addDriveToRecents(path);
+          setActiveAdminDrivePath(path);
+          setAdminDriveManifest(data.manifest);
+          await inspectAdminDrive(path);
+          setAdminNotification({ type: 'success', title: 'Drive Opened', message: `Opened drive at ${path}` });
+        } else {
+          setValidationError(`Invalid drive at ${path}: ${data.error || 'Missing manifest.json'}`);
+        }
+      } else {
+        setValidationError('Failed to validate drive path.');
+      }
+    } catch (err) {
+      setValidationError('Connection error: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  const handlePrepareAdminDrive = async (path) => {
+    if (!path) return;
+    setValidationError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/drive/prepare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ drive_path: path })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        addDriveToRecents(path);
+        setActiveAdminDrivePath(path);
+        await inspectAdminDrive(path);
+        setAdminNotification({ type: 'success', title: 'Drive Prepared', message: data.message || `Prepared drive at ${path}` });
+      } else {
+        const data = await res.json();
+        setValidationError(`Preparation failed: ${data.error}`);
+      }
+    } catch (err) {
+      setValidationError('Connection error: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  const handlePrepareAdminSubmission = async (path, recipientPublicKey) => {
+    if (!path || !recipientPublicKey) return;
+    setValidationError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/drive/prepare-submission', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ drive_path: path, recipient_public_key: recipientPublicKey })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        await inspectAdminDrive(path);
+        setAdminNotification({ type: 'success', title: 'Submissions Enabled', message: data.message || `Submission module prepared at ${path}` });
+      } else {
+        const data = await res.json();
+        setValidationError(`Submission setup failed: ${data.error}`);
+      }
+    } catch (err) {
+      setValidationError('Connection error: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  const handleAddExerciseToAdminDrive = async (path, exerciseID, versionVal) => {
+    if (!path || !exerciseID || !versionVal) return;
+    setValidationError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/drive/add-exercise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ drive_path: path, exercise_id: exerciseID, version: versionVal })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        await inspectAdminDrive(path);
+        setAdminNotification({ type: 'success', title: 'Exercise Added', message: data.message || `Exercise ${exerciseID}@${versionVal} added to drive.` });
+      } else {
+        const data = await res.json();
+        setValidationError(`Add exercise failed: ${data.error}`);
+      }
+    } catch (err) {
+      setValidationError('Connection error: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  const triggerAdminDriveFlow = () => {
+    setQuickOpenMode('admin_drive_menu');
+    setQuickOpenPath('');
+    setSelectedIndex(0);
+    setQuickOpenCallback(() => (chosenPath) => {});
+    setShowQuickOpen(true);
+  };
+
   const quickOpenRef = useRef(null);
   const lastFetchedBaseDirRef = useRef('');
 
@@ -190,15 +334,47 @@ export const StudentProvider = ({ children }) => {
     }
   };
 
+  const [quickOpenValidDriveInfo, setQuickOpenValidDriveInfo] = useState(null);
+
+  const isFolderBrowseMode = quickOpenMode === 'browse' || quickOpenMode === 'admin_browse_prepare' || quickOpenMode === 'admin_browse_open';
+
   // Detect baseDir transitions to fetch directories, ignoring typing filtering queries
   useEffect(() => {
-    if (!showQuickOpen || quickOpenMode !== 'browse') return;
+    if (!showQuickOpen || !isFolderBrowseMode) return;
 
     const { baseDir } = getPathParts(quickOpenPath);
     if (baseDir && baseDir !== lastFetchedBaseDirRef.current) {
       lastFetchedBaseDirRef.current = baseDir;
       fetchQuickOpenDirs(baseDir);
     }
+  }, [quickOpenPath, showQuickOpen, quickOpenMode, isFolderBrowseMode]);
+
+  // Live check drive validity when in admin_browse_open mode
+  useEffect(() => {
+    if (!showQuickOpen || quickOpenMode !== 'admin_browse_open' || !quickOpenPath) {
+      setQuickOpenValidDriveInfo(null);
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/validate-drive?path=${encodeURIComponent(quickOpenPath)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.valid) {
+            setQuickOpenValidDriveInfo({ valid: true, manifest: data.manifest, path: data.path });
+          } else {
+            setQuickOpenValidDriveInfo({ valid: false, error: data.error });
+          }
+        } else {
+          setQuickOpenValidDriveInfo({ valid: false, error: 'Directory check failed' });
+        }
+      } catch (err) {
+        setQuickOpenValidDriveInfo({ valid: false, error: err.message });
+      }
+    }, 150);
+
+    return () => clearTimeout(delayDebounce);
   }, [quickOpenPath, showQuickOpen, quickOpenMode]);
 
   // Trigger folder picker modal (Quick Open style)
@@ -258,41 +434,47 @@ export const StudentProvider = ({ children }) => {
     setShowQuickOpen(true);
   };
 
-  const checkWorkspaceManifest = async (path) => {
-    if (!path || quickOpenSelectedExercise) {
-      setQuickOpenActiveManifest(null);
-      return;
-    }
-    try {
-      const res = await fetch(`/api/validate-workspace?path=${encodeURIComponent(path)}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.valid && data.manifest) {
-          setQuickOpenActiveManifest(data.manifest);
-        } else {
-          setQuickOpenActiveManifest(null);
-        }
-      } else {
-        setQuickOpenActiveManifest(null);
-      }
-    } catch {
-      setQuickOpenActiveManifest(null);
-    }
-  };
+  const validationReqIdRef = useRef(0);
 
-  // Debounced check of workspace manifest when typing paths
+  // Debounced check of manifest when typing paths in any folder browse mode
   useEffect(() => {
-    if (!showQuickOpen || !quickOpenPath || quickOpenMode !== 'browse' || quickOpenSelectedExercise) {
-      setQuickOpenActiveManifest(null);
+    // Immediately wipe active manifest state synchronously to prevent UI flickering
+    setQuickOpenActiveManifest(null);
+
+    if (!showQuickOpen || !quickOpenPath || !isFolderBrowseMode || quickOpenSelectedExercise) {
       return;
     }
 
-    const delayDebounce = setTimeout(() => {
-      checkWorkspaceManifest(quickOpenPath);
-    }, 200);
+    const currentReqId = ++validationReqIdRef.current;
+
+    const delayDebounce = setTimeout(async () => {
+      try {
+        if (quickOpenMode === 'admin_browse_open' || quickOpenMode === 'admin_browse_prepare') {
+          const driveRes = await fetch(`/api/validate-drive?path=${encodeURIComponent(quickOpenPath)}`);
+          if (driveRes.ok) {
+            const driveData = await driveRes.json();
+            if (currentReqId === validationReqIdRef.current && driveData.valid && driveData.manifest) {
+              setQuickOpenActiveManifest({ ...driveData.manifest, is_drive: true });
+              return;
+            }
+          }
+        } else {
+          const wsRes = await fetch(`/api/validate-workspace?path=${encodeURIComponent(quickOpenPath)}`);
+          if (wsRes.ok) {
+            const wsData = await wsRes.json();
+            if (currentReqId === validationReqIdRef.current && wsData.valid && wsData.manifest) {
+              setQuickOpenActiveManifest({ ...wsData.manifest, is_workspace: true });
+              return;
+            }
+          }
+        }
+      } catch {
+        // silent fail
+      }
+    }, 150);
 
     return () => clearTimeout(delayDebounce);
-  }, [quickOpenPath, showQuickOpen, quickOpenMode, quickOpenSelectedExercise]);
+  }, [quickOpenPath, showQuickOpen, quickOpenMode, isFolderBrowseMode, quickOpenSelectedExercise]);
 
   // Debounced search of remote exercises when typing queries
   useEffect(() => {
@@ -461,8 +643,72 @@ export const StudentProvider = ({ children }) => {
   };
 
   const handleConfirmQuickOpen = () => {
+    if (quickOpenMode === 'admin_drive_menu') {
+      const item = selectableItems[selectedIndex];
+      if (item) {
+        if (item.type === 'action') {
+          if (item.action === 'admin_prepare_drive') {
+            setValidationError('');
+            setQuickOpenMode('admin_browse_prepare');
+            const startPath = currentCwd || '~/';
+            setQuickOpenPath(startPath);
+            setSelectedIndex(0);
+            const { baseDir } = getPathParts(startPath);
+            lastFetchedBaseDirRef.current = baseDir;
+            fetchQuickOpenDirs(baseDir);
+          } else if (item.action === 'admin_open_drive') {
+            setValidationError('');
+            setQuickOpenMode('admin_browse_open');
+            const startPath = currentCwd || '~/';
+            setQuickOpenPath(startPath);
+            setSelectedIndex(0);
+            const { baseDir } = getPathParts(startPath);
+            lastFetchedBaseDirRef.current = baseDir;
+            fetchQuickOpenDirs(baseDir);
+          }
+        } else if (item.type === 'recent_drive_disk') {
+          setValidationError('');
+          setShowQuickOpen(false);
+          handleOpenAdminDrive(item.value);
+        }
+      }
+      return;
+    } else if (quickOpenMode === 'admin_browse_prepare') {
+      const item = selectableItems[selectedIndex];
+      if (item) {
+        if (item.type === 'manifest' && item.data?.is_drive) {
+          setValidationError('');
+          setShowQuickOpen(false);
+          handleOpenAdminDrive(quickOpenPath);
+          return;
+        }
+        if (item.type === 'select_current_dir') {
+          setValidationError('');
+          setShowQuickOpen(false);
+          handlePrepareAdminDrive(item.path);
+          return;
+        }
+      }
+    } else if (quickOpenMode === 'admin_browse_open') {
+      const item = selectableItems[selectedIndex];
+      if (item && item.type === 'manifest' && item.data?.is_drive) {
+        setValidationError('');
+        setShowQuickOpen(false);
+        handleOpenAdminDrive(quickOpenPath);
+        return;
+      }
+      return;
+    }
+
     if (!quickOpenCallback) {
       setShowQuickOpen(false);
+      return;
+    }
+
+    const currentSelectedItem = selectableItems[selectedIndex];
+    if (currentSelectedItem && currentSelectedItem.type === 'select_current_dir') {
+      setShowQuickOpen(false);
+      quickOpenCallback(quickOpenPath);
       return;
     }
 
@@ -708,7 +954,32 @@ export const StudentProvider = ({ children }) => {
   let upIdx = -1;
   const dirIndices = [];
 
-  if (quickOpenMode === 'exercises') {
+  if (quickOpenMode === 'admin_drive_menu') {
+    const q = quickOpenPath.toLowerCase();
+    if (!q || "prepare a drive".includes(q) || "prepare drive".includes(q)) {
+      selectableItems.push({
+        type: 'action',
+        action: 'admin_prepare_drive',
+        label: 'Prepare a Drive...'
+      });
+    }
+    if (!q || "open drive".includes(q)) {
+      selectableItems.push({
+        type: 'action',
+        action: 'admin_open_drive',
+        label: 'Open Drive...'
+      });
+    }
+    recentDrives.forEach(path => {
+      if (!q || path.toLowerCase().includes(q)) {
+        selectableItems.push({
+          type: 'recent_drive_disk',
+          value: path,
+          label: path
+        });
+      }
+    });
+  } else if (quickOpenMode === 'exercises') {
     selectableItems.push({
       type: 'action',
       action: 'fetch_new',
@@ -758,8 +1029,40 @@ export const StudentProvider = ({ children }) => {
     selectableItems.push({ type: 'input_confirm', label: quickOpenPath.trim() ? `Confirm Exercise ID: ${quickOpenPath}` : 'Type Exercise ID (e.g. go101-lab01) and press Enter...' });
   } else if (quickOpenMode === 'input_exercise_version') {
     selectableItems.push({ type: 'input_confirm', label: quickOpenPath.trim() ? `Confirm Version: ${quickOpenPath}` : 'Type Version (or press Enter for Latest)...' });
+  } else if (quickOpenMode === 'admin_browse_prepare') {
+    if (quickOpenActiveManifest?.is_drive) {
+      manifestIdx = selectableItems.length;
+      selectableItems.push({ type: 'manifest', data: quickOpenActiveManifest });
+    } else if (quickOpenPath && !quickOpenActiveManifest?.is_workspace) {
+      selectableItems.push({
+        type: 'select_current_dir',
+        path: quickOpenPath,
+        label: `Prepare Drive: ${quickOpenPath}`
+      });
+    }
+    if (quickOpenParent) {
+      upIdx = selectableItems.length;
+      selectableItems.push({ type: 'up' });
+    }
+    filteredDirs.forEach((dir) => {
+      dirIndices.push(selectableItems.length);
+      selectableItems.push({ type: 'dir', name: dir });
+    });
+  } else if (quickOpenMode === 'admin_browse_open') {
+    if (quickOpenActiveManifest?.is_drive) {
+      manifestIdx = selectableItems.length;
+      selectableItems.push({ type: 'manifest', data: quickOpenActiveManifest });
+    }
+    if (quickOpenParent) {
+      upIdx = selectableItems.length;
+      selectableItems.push({ type: 'up' });
+    }
+    filteredDirs.forEach((dir) => {
+      dirIndices.push(selectableItems.length);
+      selectableItems.push({ type: 'dir', name: dir });
+    });
   } else {
-    if (quickOpenActiveManifest) {
+    if (quickOpenActiveManifest?.is_workspace) {
       manifestIdx = selectableItems.length;
       selectableItems.push({ type: 'manifest', data: quickOpenActiveManifest });
     }
@@ -1035,7 +1338,20 @@ export const StudentProvider = ({ children }) => {
       earnedPoints,
       setEarnedPoints,
       maxPoints,
-      setMaxPoints
+      setMaxPoints,
+      activeAdminDrivePath,
+      setActiveAdminDrivePath,
+      adminDriveManifest,
+      setAdminDriveManifest,
+      adminDriveExercises,
+      setAdminDriveExercises,
+      adminNotification,
+      setAdminNotification,
+      triggerAdminDriveFlow,
+      handleOpenAdminDrive,
+      handlePrepareAdminDrive,
+      handlePrepareAdminSubmission,
+      handleAddExerciseToAdminDrive
     }}>
       {children}
     </StudentContext.Provider>

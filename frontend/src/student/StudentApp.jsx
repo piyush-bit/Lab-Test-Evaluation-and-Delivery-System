@@ -1,11 +1,11 @@
 import React from 'react';
-import { HashRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { StudentProvider, useStudent } from './StudentContext';
 import Welcome from './pages/Welcome';
 import ActiveWorkspace from './pages/ActiveWorkspace';
 import CommandPalette from './components/CommandPalette';
 
-function StudentAppContent() {
+export function StudentAppContent() {
   const { 
     activeWorkspacePath, 
     setActiveWorkspacePath,
@@ -322,10 +322,10 @@ function StudentAppContent() {
 
 export default function StudentApp() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <StudentProvider>
         <StudentAppContent />
       </StudentProvider>
-    </HashRouter>
+    </BrowserRouter>
   );
 }

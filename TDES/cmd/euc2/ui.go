@@ -4,6 +4,7 @@ import (
 	initMod "TDES/internals/init"
 	exercisestore "TDES/internals/exercise_store"
 	drive "TDES/internals/drive"
+	exercise "TDES/internals/exercise"
 	runtests "TDES/internals/run"
 	"embed"
 	"encoding/json"
@@ -39,13 +40,44 @@ var uiCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		mux := http.NewServeMux()
 
-		// 1. Serve embedded static files
+		// 1. Serve embedded static files with SPA fallback to index.html for unknown frontend routes
 		subFS, err := fs.Sub(uiFS, "ui_dist")
 		if err != nil {
 			log.Fatalf("Fatal: failed to open embedded UI filesystem: %v", err)
 		}
 		fileServer := http.FileServer(http.FS(subFS))
-		mux.Handle("/", fileServer)
+
+		// Catch-all handler for static files & SPA fallback
+		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			// Don't handle API routes here
+			if strings.HasPrefix(r.URL.Path, "/api/") {
+				http.NotFound(w, r)
+				return
+			}
+
+			// Clean path
+			upath := strings.TrimPrefix(path.Clean(r.URL.Path), "/")
+			if upath == "" {
+				fileServer.ServeHTTP(w, r)
+				return
+			}
+
+			// Try to open file in subFS
+			f, err := subFS.Open(upath)
+			if err == nil {
+				_ = f.Close()
+				fileServer.ServeHTTP(w, r)
+				return
+			}
+
+			// If file does not exist, serve index.html for SPA routing
+			r2 := new(http.Request)
+			*r2 = *r
+			r2.URL = new(url.URL)
+			*r2.URL = *r.URL
+			r2.URL.Path = "/"
+			fileServer.ServeHTTP(w, r2)
+		})
 
 		// 2. API: Status check with Docker status check
 		mux.HandleFunc("GET /api/status", func(w http.ResponseWriter, r *http.Request) {
@@ -140,23 +172,20 @@ var uiCmd = &cobra.Command{
 				return
 			}
 
-			// Validate workspace: check for manifest.json
-			manifestPath := filepath.Join(absPath, "manifest.json")
-			_, mErr := os.Stat(manifestPath)
-			isValid := (mErr == nil)
-
-			var manifestData any
-			if isValid {
-				mFile, mReadErr := os.ReadFile(manifestPath)
-				if mReadErr == nil {
-					_ = json.Unmarshal(mFile, &manifestData)
-				}
+			// Validate workspace using ExerciseManifest struct matching
+			manifest, err := exercise.LoadManifest(absPath)
+			if err != nil || manifest == nil || strings.TrimSpace(manifest.LabID) == "" {
+				respondJSON(w, http.StatusOK, map[string]any{
+					"valid": false,
+					"error": "directory does not contain a valid exercise workspace manifest",
+				})
+				return
 			}
 
 			respondJSON(w, http.StatusOK, map[string]any{
-				"valid":    isValid,
+				"valid":    true,
 				"path":     absPath,
-				"manifest": manifestData,
+				"manifest": manifest,
 			})
 		})
 
@@ -258,6 +287,103 @@ var uiCmd = &cobra.Command{
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			_, _ = io.Copy(w, resp.Body)
+		})
+
+		// 4f. API: Admin - Prepare Drive
+		mux.HandleFunc("POST /api/drive/prepare", func(w http.ResponseWriter, r *http.Request) {
+			var req struct {
+				DrivePath string `json:"drive_path"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid request payload")
+				return
+			}
+			if req.DrivePath == "" {
+				respondError(w, http.StatusBadRequest, "drive_path is required")
+				return
+			}
+			drivePath := req.DrivePath
+			if strings.HasPrefix(drivePath, "~") {
+				if home, err := os.UserHomeDir(); err == nil {
+					drivePath = filepath.Join(home, strings.TrimPrefix(drivePath, "~"))
+				}
+			}
+			if err := drive.PrepareDrive(drivePath); err != nil {
+				respondError(w, http.StatusInternalServerError, "Failed to prepare drive: "+err.Error())
+				return
+			}
+			respondJSON(w, http.StatusOK, map[string]any{
+				"message": "Drive prepared successfully",
+				"path":    drivePath,
+			})
+		})
+
+		// 4g. API: Admin - Prepare Drive Submission
+		mux.HandleFunc("POST /api/drive/prepare-submission", func(w http.ResponseWriter, r *http.Request) {
+			var req struct {
+				DrivePath           string `json:"drive_path"`
+				RecipientPublicKey string `json:"recipient_public_key"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid request payload")
+				return
+			}
+			if req.DrivePath == "" {
+				respondError(w, http.StatusBadRequest, "drive_path is required")
+				return
+			}
+			if req.RecipientPublicKey == "" {
+				respondError(w, http.StatusBadRequest, "recipient_public_key is required")
+				return
+			}
+			drivePath := req.DrivePath
+			if strings.HasPrefix(drivePath, "~") {
+				if home, err := os.UserHomeDir(); err == nil {
+					drivePath = filepath.Join(home, strings.TrimPrefix(drivePath, "~"))
+				}
+			}
+			if err := drive.PrepareDriveForSubmission(drivePath, req.RecipientPublicKey); err != nil {
+				respondError(w, http.StatusInternalServerError, "Failed to prepare drive submission module: "+err.Error())
+				return
+			}
+			respondJSON(w, http.StatusOK, map[string]any{
+				"message": "Drive submission module prepared successfully",
+				"path":    drivePath,
+			})
+		})
+
+		// 4h. API: Admin - Add Exercise to Drive
+		mux.HandleFunc("POST /api/drive/add-exercise", func(w http.ResponseWriter, r *http.Request) {
+			var req struct {
+				DrivePath  string `json:"drive_path"`
+				ExerciseID string `json:"exercise_id"`
+				Version    string `json:"version"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid request payload")
+				return
+			}
+			if req.DrivePath == "" || req.ExerciseID == "" || req.Version == "" {
+				respondError(w, http.StatusBadRequest, "drive_path, exercise_id, and version are required")
+				return
+			}
+			drivePath := req.DrivePath
+			if strings.HasPrefix(drivePath, "~") {
+				if home, err := os.UserHomeDir(); err == nil {
+					drivePath = filepath.Join(home, strings.TrimPrefix(drivePath, "~"))
+				}
+			}
+			d := &drive.Drive{Path: drivePath}
+			if err := d.AddExerciseFromID(req.ExerciseID, req.Version); err != nil {
+				respondError(w, http.StatusInternalServerError, "Failed to add exercise to drive: "+err.Error())
+				return
+			}
+			respondJSON(w, http.StatusOK, map[string]any{
+				"message":     fmt.Sprintf("Exercise %s@%s added to drive successfully", req.ExerciseID, req.Version),
+				"exercise_id": req.ExerciseID,
+				"version":     req.Version,
+				"path":        drivePath,
+			})
 		})
 
 		// 5. API: Fetch Exercise (Required for creating workspace)
