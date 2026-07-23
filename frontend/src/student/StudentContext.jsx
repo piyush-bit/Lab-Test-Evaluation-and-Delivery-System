@@ -596,6 +596,20 @@ export const StudentProvider = ({ children }) => {
     localStorage.setItem('recent_workspaces', JSON.stringify(updated));
   };
 
+  const removeWorkspaceFromRecents = (pathToRem) => {
+    if (!pathToRem) return;
+    const normTarget = pathToRem.replace(/[/\\]+$/, '');
+    setRecents(prevRecents => {
+      const updated = prevRecents.filter(r => {
+        const rPath = typeof r === 'string' ? r : r.path;
+        const normR = (rPath || '').replace(/[/\\]+$/, '');
+        return normR !== normTarget;
+      });
+      localStorage.setItem('recent_workspaces', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   // Open Workspace Action
   const handleOpenWorkspace = async (path) => {
     setValidationError('');
@@ -611,6 +625,7 @@ export const StudentProvider = ({ children }) => {
           navigate('/workspace');
         } else {
           setValidationError(data.error || "No manifest.json found. Ensure this is an initialized TDES directory.");
+          removeWorkspaceFromRecents(path);
         }
       } else {
         setValidationError("Failed to communicate with local agent.");
@@ -991,6 +1006,7 @@ export const StudentProvider = ({ children }) => {
       dirIndices,
       filteredDirs,
       handleOpenWorkspace,
+      removeWorkspaceFromRecents,
       handleCreateWorkspace,
       handleInitWorkspace,
       quickOpenMode,

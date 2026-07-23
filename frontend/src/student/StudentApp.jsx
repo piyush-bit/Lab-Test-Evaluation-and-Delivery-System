@@ -120,19 +120,9 @@ function StudentAppContent() {
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" style={{ animation: 'spin 1s linear infinite' }}>
                     <circle cx="12" cy="12" r="10" strokeDasharray="30" strokeDashoffset="10" />
                   </svg>
-                ) : runMode === 'docker' ? (
-                  // Play with Docker containers stacked boxes icon
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3 2v14l10-7-10-7z" />
-                    <rect x="15" y="14" width="4" height="3" fill="currentColor" rx="0.5" />
-                    <rect x="20" y="14" width="4" height="3" fill="currentColor" rx="0.5" />
-                    <rect x="17.5" y="10" width="4" height="3" fill="currentColor" rx="0.5" />
-                  </svg>
                 ) : (
-                  // Play with Local Monitor icon
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3 2v14l10-7-10-7z" />
-                    <path d="M15 11h8v6h-8v-6zm3 7h2v1.5h-2V18z" />
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21" />
                   </svg>
                 )}
                 <span>{runStatus === 'running' ? 'Running' : `Run (${runMode === 'docker' ? 'Docker' : 'Local'})`}</span>
@@ -217,7 +207,7 @@ function StudentAppContent() {
                   >
                     <div>
                       <div style={{ fontSize: '0.75rem', fontWeight: 600, color: runMode === 'docker' ? 'var(--primary)' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        🐳 Docker Container
+                        Docker Container
                       </div>
                       <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                         Run in secure isolated sandbox
@@ -251,7 +241,7 @@ function StudentAppContent() {
                   >
                     <div>
                       <div style={{ fontSize: '0.75rem', fontWeight: 600, color: runMode === 'local' ? 'var(--primary)' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        💻 Local Host
+                        Local Host
                       </div>
                       <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                         Run on native host machine
