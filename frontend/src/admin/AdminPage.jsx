@@ -13,23 +13,25 @@ export default function AdminPage() {
     recentDrives,
     triggerAdminDriveFlow,
     handleOpenAdminDrive,
-    handlePrepareAdminDrive,
     activeAdminDrivePath,
     setActiveAdminDrivePath,
     adminDriveManifest,
     adminDriveExercises,
-    adminNotification,
-    setAdminNotification,
+    adminSubmissions,
     handlePrepareAdminSubmission,
     handleAddExerciseToAdminDrive,
+    handleDeleteExerciseFromAdminDrive,
+    handleGenerateKeyPair,
     quickOpenExercises,
-    triggerExercisePicker
   } = useStudent();
 
-  // Local state for active drive forms
+  // Local state for forms
   const [recipientPublicKey, setRecipientPublicKey] = useState('');
+  const [generatedPrivateKey, setGeneratedPrivateKey] = useState('');
   const [selectedExId, setSelectedExId] = useState('');
   const [selectedExVer, setSelectedExVer] = useState('');
+  const [showAddExModal, setShowAddExModal] = useState(false);
+  const [showPrepSubModal, setShowPrepSubModal] = useState(false);
 
   // When visiting /admin/drive directly, trigger the admin drive Command Palette flow automatically
   useEffect(() => {
@@ -46,19 +48,24 @@ export default function AdminPage() {
     }
   }, [quickOpenExercises]);
 
-  const generateDemoPublicKey = () => {
-    const array = new Uint8Array(32);
-    crypto.getRandomValues(array);
-    let binary = '';
-    for (let i = 0; i < array.length; i++) {
-      binary += String.fromCharCode(array[i]);
+  const handleGenerateKey = async () => {
+    const keys = await handleGenerateKeyPair();
+    if (keys) {
+      setRecipientPublicKey(keys.public_key);
+      setGeneratedPrivateKey(keys.private_key);
     }
-    const b64Key = btoa(binary);
-    setRecipientPublicKey(b64Key);
+  };
+
+  const formatBytes = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
-    <div className={`app-viewport ${activeAdminDrivePath ? 'workspace-active' : ''}`}>
+    <div className="app-viewport">
       {/* Background Grid Lines (only when no active drive is open) */}
       {!activeAdminDrivePath && (
         <div className="grid-lines-container">
@@ -68,83 +75,8 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Global Top Bar when active drive is open */}
-      {activeAdminDrivePath && (
-        <div className="workspace-top-bar" style={{
-          height: '40px',
-          width: '100%',
-          borderBottom: '1px solid var(--border-color)',
-          backgroundColor: 'var(--bg-card)',
-          backdropFilter: 'var(--glass-blur)',
-          WebkitBackdropFilter: 'var(--glass-blur)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '0 16px',
-          zIndex: 10,
-          userSelect: 'none'
-        }}>
-          <div style={{
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            padding: '4px 8px'
-          }}>
-            Admin Drive
-          </div>
-
-          <div style={{
-            fontSize: '0.8rem',
-            fontWeight: 600,
-            color: 'var(--text-primary)',
-            fontFamily: 'var(--font-mono)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <span>{activeAdminDrivePath}</span>
-            <span style={{
-              fontSize: '0.65rem',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              backgroundColor: 'rgba(5, 150, 105, 0.15)',
-              color: 'var(--accent)',
-              fontFamily: 'var(--font-sans)',
-              fontWeight: 600
-            }}>
-              🟢 Initialized
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button
-              title="Close Drive"
-              onClick={() => setActiveAdminDrivePath('')}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--accent-red)',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '4px',
-                borderRadius: '4px'
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                <line x1="9" y1="9" x2="15" y2="15" />
-                <line x1="15" y1="9" x2="9" y2="15" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Main Viewport Content */}
-      <main className={`main-viewport-content ${activeAdminDrivePath ? 'workspace-active' : ''}`}>
+      <main className="main-viewport-content">
         {!activeAdminDrivePath ? (
           /* ADMIN DASHBOARD (Matches Student Welcome Dashboard exactly) */
           <div className="vscode-welcome-container">
@@ -210,12 +142,14 @@ export default function AdminPage() {
             </div>
           </div>
         ) : (
-          /* ACTIVE DRIVE MANAGEMENT VIEW */
-          <div className="vscode-welcome-container" style={{ gap: '24px' }}>
+          /* ACTIVE DRIVE DETAILS & OPERATIONS VIEW (Same 2-column layout as Dashboard) */
+          <div className="vscode-welcome-container">
             <header className="vscode-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h1>Drive Details & Operations</h1>
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>{activeAdminDrivePath}</p>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', marginTop: '4px', opacity: 0.8 }}>
+                  {activeAdminDrivePath}
+                </p>
               </div>
 
               <button
@@ -224,48 +158,148 @@ export default function AdminPage() {
                   padding: '6px 14px',
                   borderRadius: '6px',
                   border: '1px solid var(--border-color)',
-                  backgroundColor: 'transparent',
+                  backgroundColor: 'var(--bg-card)',
                   color: 'var(--text-primary)',
                   fontSize: '0.8rem',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  fontWeight: 600
                 }}
               >
-                ← Back to Admin Console
+                ← Close Drive
               </button>
             </header>
 
-            {adminNotification && (
-              <div style={{
-                padding: '12px 16px',
-                borderRadius: '8px',
-                backgroundColor: adminNotification.type === 'success' ? 'rgba(5, 150, 105, 0.1)' : 'rgba(225, 29, 72, 0.1)',
-                border: `1px solid ${adminNotification.type === 'success' ? 'rgba(5, 150, 105, 0.3)' : 'rgba(225, 29, 72, 0.3)'}`,
-                color: adminNotification.type === 'success' ? 'var(--accent)' : 'var(--accent-red)',
-                fontSize: '0.85rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <span>{adminNotification.type === 'success' ? <CheckIcon size={14} /> : null}</span>
-                <span><strong>{adminNotification.title}:</strong> {adminNotification.message}</span>
-              </div>
-            )}
-
             <div className="vscode-columns-grid">
-              {/* LEFT COLUMN: Stored Exercises on Drive */}
+              {/* LEFT COLUMN: EXERCISE INVENTORY */}
               <div className="vscode-left-col">
                 <div className="vscode-section">
-                  <h2>Drive Inventory ({adminDriveExercises.length} Exercises)</h2>
-                  <div className="vscode-recents-list" style={{ marginTop: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <h2 style={{ fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                      <PackageIcon size={16} /> Exercise Inventory ({adminDriveExercises.length})
+                    </h2>
+
+                    <button
+                      onClick={() => setShowAddExModal(!showAddExModal)}
+                      style={{
+                        padding: '5px 10px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        backgroundColor: 'var(--btn-primary-bg)',
+                        color: 'var(--btn-primary-text)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {showAddExModal ? 'Cancel' : '+ Add Exercise'}
+                    </button>
+                  </div>
+
+                  {/* Add Exercise Modal / Form */}
+                  {showAddExModal && (
+                    <div style={{
+                      padding: '14px',
+                      borderRadius: '8px',
+                      backgroundColor: 'var(--bg-card)',
+                      border: '1px solid var(--border-color)',
+                      marginBottom: '16px'
+                    }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: '10px', color: 'var(--text-primary)' }}>Deploy Packaged Exercise to Drive</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <input
+                          type="text"
+                          value={selectedExId}
+                          onChange={(e) => setSelectedExId(e.target.value)}
+                          placeholder="Exercise ID (e.g. go101-lab01)"
+                          style={{
+                            padding: '7px 10px',
+                            fontSize: '0.8rem',
+                            fontFamily: 'var(--font-mono)',
+                            backgroundColor: 'var(--bg-terminal)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '6px',
+                            color: 'var(--text-primary)'
+                          }}
+                        />
+                        <input
+                          type="text"
+                          value={selectedExVer}
+                          onChange={(e) => setSelectedExVer(e.target.value)}
+                          placeholder="Version (e.g. v1.0.0)"
+                          style={{
+                            padding: '7px 10px',
+                            fontSize: '0.8rem',
+                            fontFamily: 'var(--font-mono)',
+                            backgroundColor: 'var(--bg-terminal)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '6px',
+                            color: 'var(--text-primary)'
+                          }}
+                        />
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
+                          <button
+                            onClick={() => {
+                              handleAddExerciseToAdminDrive(activeAdminDrivePath, selectedExId, selectedExVer);
+                              setShowAddExModal(false);
+                            }}
+                            disabled={!selectedExId.trim() || !selectedExVer.trim()}
+                            style={{
+                              padding: '6px 14px',
+                              fontSize: '0.78rem',
+                              fontWeight: 600,
+                              backgroundColor: 'var(--accent)',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: selectedExId.trim() && selectedExVer.trim() ? 'pointer' : 'not-allowed'
+                            }}
+                          >
+                            Deploy to Drive
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Exercises List Grid */}
+                  <div className="vscode-recents-list" style={{ gap: '8px' }}>
                     {adminDriveExercises.length === 0 ? (
-                      <div className="empty-recents-msg">No exercises deployed on this drive yet.</div>
+                      <div className="empty-recents-msg" style={{ padding: '20px', textAlign: 'center' }}>
+                        No exercises deployed on this drive yet.
+                      </div>
                     ) : (
                       adminDriveExercises.map((ex, idx) => (
-                        <div key={idx} className="vscode-recent-item" style={{ cursor: 'default' }}>
-                          <span className="recent-icon"><PackageIcon /></span>
-                          <div className="recent-details">
-                            <span className="recent-name">{ex.exercise_id} <span className="recent-lab-id">(v{ex.version})</span></span>
+                        <div key={idx} className="vscode-recent-item" style={{
+                          display: 'flex',
+                          justify: 'space-between',
+                          alignItems: 'center',
+                          padding: '10px 14px',
+                          cursor: 'default'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span className="recent-icon"><PackageIcon size={16} /></span>
+                            <div className="recent-details">
+                              <span className="recent-name" style={{ fontSize: '0.88rem', fontWeight: 600 }}>
+                                {ex.exercise_id} <span style={{ fontSize: '0.75rem', opacity: 0.6, fontFamily: 'var(--font-mono)' }}>v{ex.version}</span>
+                              </span>
+                            </div>
                           </div>
+
+                          <button
+                            title="Delete exercise from drive"
+                            onClick={() => handleDeleteExerciseFromAdminDrive(activeAdminDrivePath, ex.exercise_id, ex.version)}
+                            style={{
+                              padding: '4px 10px',
+                              fontSize: '0.72rem',
+                              color: 'var(--accent-red)',
+                              backgroundColor: 'rgba(225, 29, 72, 0.08)',
+                              border: '1px solid rgba(225, 29, 72, 0.2)',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Delete
+                          </button>
                         </div>
                       ))
                     )}
@@ -273,141 +307,196 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* RIGHT COLUMN: Drive Operations */}
-              <div className="vscode-right-col" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {/* Module 1: Prepare Submission */}
-                <div className="vscode-section" style={{
-                  padding: '16px',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--bg-card)'
-                }}>
-                  <h2 style={{ fontSize: '0.95rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <LockIcon size={16} /> Prepare Submission Module
-                  </h2>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                    Enable encrypted student submissions on this drive using your X25519 recipient public key.
-                  </p>
+              {/* RIGHT COLUMN: SUBMITTED PACKAGES */}
+              <div className="vscode-right-col">
+                <div className="vscode-section">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <h2 style={{ fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                      <LockIcon size={16} /> Submitted Packages
+                    </h2>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)' }}>Recipient Public Key (Base64)</span>
-                      <button
-                        onClick={generateDemoPublicKey}
-                        style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.72rem', cursor: 'pointer', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        <ZapIcon size={12} /> Generate Random Key
-                      </button>
-                    </div>
-
-                    <input
-                      type="text"
-                      value={recipientPublicKey}
-                      onChange={(e) => setRecipientPublicKey(e.target.value)}
-                      placeholder="Base64-encoded X25519 public key..."
-                      style={{
-                        padding: '8px 12px',
-                        fontSize: '0.8rem',
-                        fontFamily: 'var(--font-mono)',
-                        backgroundColor: 'var(--bg-terminal)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '6px',
-                        color: 'var(--text-primary)',
-                        outline: 'none'
-                      }}
-                    />
-
-                    <button
-                      onClick={() => handlePrepareAdminSubmission(activeAdminDrivePath, recipientPublicKey)}
-                      disabled={!recipientPublicKey.trim()}
-                      style={{
-                        marginTop: '4px',
-                        padding: '8px 14px',
-                        fontSize: '0.8rem',
-                        fontWeight: 600,
-                        backgroundColor: 'var(--btn-primary-bg)',
-                        color: 'var(--btn-primary-text)',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: recipientPublicKey.trim() ? 'pointer' : 'not-allowed',
-                        opacity: recipientPublicKey.trim() ? 1 : 0.6
-                      }}
-                    >
-                      Enable Drive Submissions
-                    </button>
+                    {adminSubmissions.prepared && (
+                      <span style={{
+                        fontSize: '0.72rem',
+                        padding: '3px 8px',
+                        borderRadius: '4px',
+                        backgroundColor: 'rgba(5, 150, 105, 0.12)',
+                        color: 'var(--accent)',
+                        fontWeight: 600
+                      }}>
+                        🟢 Active
+                      </span>
+                    )}
                   </div>
-                </div>
 
-                {/* Module 2: Add Exercise */}
-                <div className="vscode-section" style={{
-                  padding: '16px',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--bg-card)'
-                }}>
-                  <h2 style={{ fontSize: '0.95rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <PackageIcon size={16} /> Add Exercise to Drive
-                  </h2>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                    Deploy a packaged exercise from local cache onto the drive.
-                  </p>
+                  {!adminSubmissions.prepared ? (
+                    /* UNPREPARED SUBMISSION DIRECTORY BANNER */
+                    <div style={{
+                      padding: '20px',
+                      borderRadius: '8px',
+                      backgroundColor: 'var(--bg-card)',
+                      border: '1px dashed var(--border-color)',
+                      textAlign: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        Submission directory is not prepared on this drive.
+                      </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)' }}>Exercise ID & Version</span>
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '8px' }}>
-                      <input
-                        type="text"
-                        value={selectedExId}
-                        onChange={(e) => setSelectedExId(e.target.value)}
-                        placeholder="e.g. go101-lab01"
-                        style={{
-                          padding: '8px 12px',
-                          fontSize: '0.8rem',
-                          fontFamily: 'var(--font-mono)',
-                          backgroundColor: 'var(--bg-terminal)',
+                      {!showPrepSubModal ? (
+                        <button
+                          onClick={() => setShowPrepSubModal(true)}
+                          style={{
+                            padding: '8px 16px',
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            backgroundColor: 'var(--btn-primary-bg)',
+                            color: 'var(--btn-primary-text)',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          <ZapIcon size={14} /> Prepare Submission Directory
+                        </button>
+                      ) : (
+                        <div style={{
+                          width: '100%',
+                          padding: '14px',
+                          borderRadius: '8px',
+                          backgroundColor: 'var(--bg-main)',
                           border: '1px solid var(--border-color)',
-                          borderRadius: '6px',
-                          color: 'var(--text-primary)',
-                          outline: 'none'
-                        }}
-                      />
-                      <input
-                        type="text"
-                        value={selectedExVer}
-                        onChange={(e) => setSelectedExVer(e.target.value)}
-                        placeholder="v1.0"
-                        style={{
-                          padding: '8px 12px',
-                          fontSize: '0.8rem',
-                          fontFamily: 'var(--font-mono)',
-                          backgroundColor: 'var(--bg-terminal)',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '6px',
-                          color: 'var(--text-primary)',
-                          outline: 'none'
-                        }}
-                      />
+                          textAlign: 'left'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                            <span style={{ fontSize: '0.78rem', fontWeight: 600 }}>Recipient Public Key</span>
+                            <button
+                              onClick={handleGenerateKey}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--primary)',
+                                fontSize: '0.72rem',
+                                cursor: 'pointer',
+                                textDecoration: 'underline',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <ZapIcon size={12} /> Auto-Generate Keypair
+                            </button>
+                          </div>
+
+                          <input
+                            type="text"
+                            value={recipientPublicKey}
+                            onChange={(e) => setRecipientPublicKey(e.target.value)}
+                            placeholder="Base64-encoded X25519 public key..."
+                            style={{
+                              width: '100%',
+                              padding: '8px 12px',
+                              fontSize: '0.8rem',
+                              fontFamily: 'var(--font-mono)',
+                              backgroundColor: 'var(--bg-terminal)',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '6px',
+                              color: 'var(--text-primary)',
+                              marginBottom: '10px'
+                            }}
+                          />
+
+                          {generatedPrivateKey && (
+                            <div style={{
+                              padding: '8px 12px',
+                              borderRadius: '6px',
+                              backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                              border: '1px solid rgba(234, 179, 8, 0.2)',
+                              color: '#eab308',
+                              fontSize: '0.72rem',
+                              marginBottom: '10px',
+                              wordBreak: 'break-all'
+                            }}>
+                              <strong>Private Key (Save for grading):</strong> <code>{generatedPrivateKey}</code>
+                            </div>
+                          )}
+
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button
+                              onClick={() => setShowPrepSubModal(false)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '0.78rem',
+                                backgroundColor: 'transparent',
+                                color: 'var(--text-secondary)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '6px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => {
+                                handlePrepareAdminSubmission(activeAdminDrivePath, recipientPublicKey);
+                                setShowPrepSubModal(false);
+                              }}
+                              disabled={!recipientPublicKey.trim()}
+                              style={{
+                                padding: '6px 14px',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                backgroundColor: 'var(--accent)',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: recipientPublicKey.trim() ? 'pointer' : 'not-allowed'
+                              }}
+                            >
+                              Confirm
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-
-                    <button
-                      onClick={() => handleAddExerciseToAdminDrive(activeAdminDrivePath, selectedExId, selectedExVer)}
-                      disabled={!selectedExId.trim() || !selectedExVer.trim()}
-                      style={{
-                        marginTop: '4px',
-                        padding: '8px 14px',
-                        fontSize: '0.8rem',
-                        fontWeight: 600,
-                        backgroundColor: 'var(--btn-primary-bg)',
-                        color: 'var(--btn-primary-text)',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: selectedExId.trim() && selectedExVer.trim() ? 'pointer' : 'not-allowed',
-                        opacity: selectedExId.trim() && selectedExVer.trim() ? 1 : 0.6
-                      }}
-                    >
-                      Deploy Exercise to Drive
-                    </button>
-                  </div>
+                  ) : (
+                    /* PREPARED SUBMISSIONS LIST */
+                    <div className="vscode-recents-list" style={{ gap: '8px' }}>
+                      {(adminSubmissions.submissions || []).length === 0 ? (
+                        <div className="empty-recents-msg" style={{ padding: '20px', textAlign: 'center' }}>
+                          No student packages submitted yet.
+                        </div>
+                      ) : (
+                        (adminSubmissions.submissions || []).map((sub, idx) => (
+                          <div key={idx} className="vscode-recent-item" style={{
+                            display: 'flex',
+                            justify: 'space-between',
+                            alignItems: 'center',
+                            padding: '10px 14px',
+                            cursor: 'default'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <span className="recent-icon"><LockIcon size={16} /></span>
+                              <div className="recent-details">
+                                <span className="recent-name" style={{ fontSize: '0.85rem', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>
+                                  {sub.filename}
+                                </span>
+                                <span className="recent-path" style={{ fontSize: '0.72rem', opacity: 0.6 }}>
+                                  Size: {formatBytes(sub.size)} | Submitted: {new Date(sub.mod_time).toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

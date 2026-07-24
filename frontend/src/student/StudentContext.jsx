@@ -107,6 +107,7 @@ export const StudentProvider = ({ children }) => {
   const [activeAdminDrivePath, setActiveAdminDrivePath] = useState('');
   const [adminDriveManifest, setAdminDriveManifest] = useState(null);
   const [adminDriveExercises, setAdminDriveExercises] = useState([]);
+  const [adminSubmissions, setAdminSubmissions] = useState({ prepared: false, submissions: [] });
   const [adminNotification, setAdminNotification] = useState(null);
 
   const inspectAdminDrive = async (targetPath) => {
@@ -133,6 +134,11 @@ export const StudentProvider = ({ children }) => {
           }
         });
         setAdminDriveExercises(list);
+      }
+      const sRes = await fetch(`/api/drive/submissions?path=${encodeURIComponent(targetPath)}`);
+      if (sRes.ok) {
+        const sData = await sRes.json();
+        setAdminSubmissions(sData);
       }
     } catch {
       // silent
@@ -237,6 +243,42 @@ export const StudentProvider = ({ children }) => {
       setValidationError('Connection error: ' + err.message);
     }
     setLoading(false);
+  };
+
+  const handleDeleteExerciseFromAdminDrive = async (path, exerciseID, versionVal) => {
+    if (!path || !exerciseID) return;
+    setValidationError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/drive/delete-exercise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ drive_path: path, exercise_id: exerciseID, version: versionVal })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        await inspectAdminDrive(path);
+        setAdminNotification({ type: 'success', title: 'Exercise Removed', message: data.message || `Exercise ${exerciseID} removed from drive.` });
+      } else {
+        const data = await res.json();
+        setValidationError(`Delete exercise failed: ${data.error}`);
+      }
+    } catch (err) {
+      setValidationError('Connection error: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  const handleGenerateKeyPair = async () => {
+    try {
+      const res = await fetch('/api/drive/generate-keypair', { method: 'POST' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // fallback
+    }
+    return null;
   };
 
   const triggerAdminDriveFlow = () => {
@@ -1345,13 +1387,17 @@ export const StudentProvider = ({ children }) => {
       setAdminDriveManifest,
       adminDriveExercises,
       setAdminDriveExercises,
+      adminSubmissions,
+      setAdminSubmissions,
       adminNotification,
       setAdminNotification,
       triggerAdminDriveFlow,
       handleOpenAdminDrive,
       handlePrepareAdminDrive,
       handlePrepareAdminSubmission,
-      handleAddExerciseToAdminDrive
+      handleAddExerciseToAdminDrive,
+      handleDeleteExerciseFromAdminDrive,
+      handleGenerateKeyPair
     }}>
       {children}
     </StudentContext.Provider>

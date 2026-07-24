@@ -6,7 +6,10 @@ import (
 	drive "TDES/internals/drive"
 	exercise "TDES/internals/exercise"
 	runtests "TDES/internals/run"
+	"crypto/ecdh"
+	cryptoRand "crypto/rand"
 	"embed"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,6 +23,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -383,6 +387,112 @@ var uiCmd = &cobra.Command{
 				"exercise_id": req.ExerciseID,
 				"version":     req.Version,
 				"path":        drivePath,
+			})
+		})
+
+		// 4i. API: Admin - Delete Exercise from Drive
+		mux.HandleFunc("POST /api/drive/delete-exercise", func(w http.ResponseWriter, r *http.Request) {
+			var req struct {
+				DrivePath  string `json:"drive_path"`
+				ExerciseID string `json:"exercise_id"`
+				Version    string `json:"version"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid request payload")
+				return
+			}
+			if req.DrivePath == "" || req.ExerciseID == "" {
+				respondError(w, http.StatusBadRequest, "drive_path and exercise_id are required")
+				return
+			}
+			drivePath := req.DrivePath
+			if strings.HasPrefix(drivePath, "~") {
+				if home, err := os.UserHomeDir(); err == nil {
+					drivePath = filepath.Join(home, strings.TrimPrefix(drivePath, "~"))
+				}
+			}
+			storeRoot := filepath.Join(drivePath, "exercise")
+			if err := exercisestore.RemoveExercise(storeRoot, req.ExerciseID, req.Version); err != nil {
+				respondError(w, http.StatusInternalServerError, "Failed to delete exercise from drive: "+err.Error())
+				return
+			}
+			respondJSON(w, http.StatusOK, map[string]any{
+				"message": fmt.Sprintf("Exercise %s deleted successfully from drive", req.ExerciseID),
+			})
+		})
+
+		// 4j. API: Admin - Get Drive Submissions
+		mux.HandleFunc("GET /api/drive/submissions", func(w http.ResponseWriter, r *http.Request) {
+			drivePath := r.URL.Query().Get("path")
+			if drivePath == "" {
+				respondError(w, http.StatusBadRequest, "path parameter is required")
+				return
+			}
+			absPath, err := filepath.Abs(drivePath)
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+
+			manifestPath := filepath.Join(absPath, "submissions", "manifest.json")
+			manifestData, err := os.ReadFile(manifestPath)
+			if err != nil {
+				respondJSON(w, http.StatusOK, map[string]any{
+					"prepared": false,
+					"path":     absPath,
+				})
+				return
+			}
+
+			var subManifest any
+			_ = json.Unmarshal(manifestData, &subManifest)
+
+			submissionsDir := filepath.Join(absPath, "submissions")
+			type submissionFile struct {
+				Filename string    `json:"filename"`
+				Size     int64     `json:"size"`
+				ModTime  time.Time `json:"mod_time"`
+				RelPath  string    `json:"rel_path"`
+			}
+			var files []submissionFile
+
+			_ = filepath.Walk(submissionsDir, func(path string, info os.FileInfo, err error) error {
+				if err != nil || info.IsDir() {
+					return nil
+				}
+				if strings.HasSuffix(strings.ToLower(info.Name()), ".json") && info.Name() != "manifest.json" {
+					rel, _ := filepath.Rel(submissionsDir, path)
+					files = append(files, submissionFile{
+						Filename: info.Name(),
+						Size:     info.Size(),
+						ModTime:  info.ModTime(),
+						RelPath:  rel,
+					})
+				}
+				return nil
+			})
+
+			respondJSON(w, http.StatusOK, map[string]any{
+				"prepared":    true,
+				"path":        absPath,
+				"manifest":    subManifest,
+				"submissions": files,
+			})
+		})
+
+		// 4k. API: Admin - Generate Keypair
+		mux.HandleFunc("POST /api/drive/generate-keypair", func(w http.ResponseWriter, r *http.Request) {
+			privKey, err := ecdh.X25519().GenerateKey(cryptoRand.Reader)
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, "Failed to generate keypair: "+err.Error())
+				return
+			}
+			pubKeyB64 := base64.StdEncoding.EncodeToString(privKey.PublicKey().Bytes())
+			privKeyB64 := base64.StdEncoding.EncodeToString(privKey.Bytes())
+
+			respondJSON(w, http.StatusOK, map[string]string{
+				"public_key":  pubKeyB64,
+				"private_key": privKeyB64,
 			})
 		})
 

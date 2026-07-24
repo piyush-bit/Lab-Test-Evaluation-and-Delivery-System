@@ -121,6 +121,46 @@ func WriteIndex(storeRoot string, index Index) error {
 	return nil
 }
 
+func RemoveExercise(storeRoot string, exerciseID string, version string) error {
+	index, err := LoadIndex(storeRoot)
+	if err != nil {
+		return err
+	}
+
+	entry, ok := index[exerciseID]
+	if !ok {
+		return nil
+	}
+
+	if version == "" {
+		version = entry.Latest
+	}
+
+	packageHash, ok := entry.Versions[version]
+	if ok {
+		path, err := PackagePathFromHash(storeRoot, packageHash)
+		if err == nil && path != "" {
+			_ = os.Remove(path)
+		}
+		delete(entry.Versions, version)
+	}
+
+	if len(entry.Versions) == 0 {
+		delete(index, exerciseID)
+	} else {
+		if entry.Latest == version {
+			var newLatest string
+			for v := range entry.Versions {
+				newLatest = v
+			}
+			entry.Latest = newLatest
+		}
+		index[exerciseID] = entry
+	}
+
+	return WriteIndex(storeRoot, index)
+}
+
 func ResolveExercisePath(storeRoot string, exerciseID string, version string) (string, error) {
 	index, err := LoadIndex(storeRoot)
 	if err != nil {
