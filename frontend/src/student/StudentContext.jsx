@@ -29,11 +29,106 @@ export const StudentProvider = ({ children }) => {
   const [recentRemotes, setRecentRemotes] = useState(() => {
     try {
       const stored = localStorage.getItem('recent_remotes');
-      return stored ? JSON.parse(stored) : ['http://localhost:8080'];
+      return stored ? JSON.parse(stored) : ['http://localhost:8080', 'http://localhost:9090'];
     } catch {
-      return ['http://localhost:8080'];
+      return ['http://localhost:8080', 'http://localhost:9090'];
     }
   });
+
+  const [remoteServers, setRemoteServers] = useState(() => {
+    try {
+      const stored = localStorage.getItem('remote_servers');
+      return stored ? JSON.parse(stored) : ['http://localhost:8080', 'http://localhost:9090'];
+    } catch {
+      return ['http://localhost:8080', 'http://localhost:9090'];
+    }
+  });
+
+  const [remoteServerStatuses, setRemoteServerStatuses] = useState({});
+
+  const normalizeServerUrl = (url) => {
+    let cleaned = (url || '').trim();
+    if (!cleaned) return '';
+    if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
+      cleaned = 'http://' + cleaned;
+    }
+    return cleaned.replace(/\/+$/, '');
+  };
+
+  const checkRemoteServerHealth = async (url) => {
+    const normUrl = normalizeServerUrl(url);
+    if (!normUrl) return;
+
+    setRemoteServerStatuses(prev => ({
+      ...prev,
+      [normUrl]: { loading: true, online: prev[normUrl]?.online || false }
+    }));
+
+    try {
+      const res = await fetch(`/api/remote/health?url=${encodeURIComponent(normUrl)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRemoteServerStatuses(prev => ({
+          ...prev,
+          [normUrl]: { loading: false, online: !!data.online, error: data.error || '' }
+        }));
+      } else {
+        setRemoteServerStatuses(prev => ({
+          ...prev,
+          [normUrl]: { loading: false, online: false, error: 'HTTP error' }
+        }));
+      }
+    } catch (err) {
+      setRemoteServerStatuses(prev => ({
+        ...prev,
+        [normUrl]: { loading: false, online: false, error: err.message }
+      }));
+    }
+  };
+
+  const checkAllRemoteServersHealth = () => {
+    remoteServers.forEach(serverUrl => {
+      checkRemoteServerHealth(serverUrl);
+    });
+  };
+
+  const addRemoteServer = (url) => {
+    const normUrl = normalizeServerUrl(url);
+    if (!normUrl) return;
+
+    setRemoteServers(prev => {
+      const filtered = prev.filter(s => normalizeServerUrl(s) !== normUrl);
+      const updated = [normUrl, ...filtered];
+      localStorage.setItem('remote_servers', JSON.stringify(updated));
+      localStorage.setItem('recent_remotes', JSON.stringify(updated));
+      setRecentRemotes(updated);
+      return updated;
+    });
+
+    checkRemoteServerHealth(normUrl);
+  };
+
+  const removeRemoteServer = (url) => {
+    const normUrl = normalizeServerUrl(url);
+    setRemoteServers(prev => {
+      const updated = prev.filter(s => normalizeServerUrl(s) !== normUrl);
+      localStorage.setItem('remote_servers', JSON.stringify(updated));
+      localStorage.setItem('recent_remotes', JSON.stringify(updated));
+      setRecentRemotes(updated);
+      return updated;
+    });
+
+    setRemoteServerStatuses(prev => {
+      const copy = { ...prev };
+      delete copy[normUrl];
+      return copy;
+    });
+  };
+
+  // Run health check on startup
+  useEffect(() => {
+    checkAllRemoteServersHealth();
+  }, []);
 
   const [recentDrives, setRecentDrives] = useState(() => {
     try {
@@ -1397,7 +1492,14 @@ export const StudentProvider = ({ children }) => {
       handlePrepareAdminSubmission,
       handleAddExerciseToAdminDrive,
       handleDeleteExerciseFromAdminDrive,
-      handleGenerateKeyPair
+      handleGenerateKeyPair,
+      remoteServers,
+      setRemoteServers,
+      remoteServerStatuses,
+      addRemoteServer,
+      removeRemoteServer,
+      checkAllRemoteServersHealth,
+      checkRemoteServerHealth
     }}>
       {children}
     </StudentContext.Provider>

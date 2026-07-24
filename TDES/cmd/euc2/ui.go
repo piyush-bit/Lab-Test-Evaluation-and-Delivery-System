@@ -293,6 +293,65 @@ var uiCmd = &cobra.Command{
 			_, _ = io.Copy(w, resp.Body)
 		})
 
+		// 4f. API: Check Remote Server Health (pings <remoteURL>/healthz)
+		mux.HandleFunc("GET /api/remote/health", func(w http.ResponseWriter, r *http.Request) {
+			rawURL := strings.TrimSpace(r.URL.Query().Get("url"))
+			if rawURL == "" {
+				respondJSON(w, http.StatusOK, map[string]any{"online": false, "error": "url parameter is required"})
+				return
+			}
+
+			if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
+				rawURL = "http://" + rawURL
+			}
+
+			parsedURL, err := url.Parse(rawURL)
+			if err != nil || parsedURL.Host == "" {
+				respondJSON(w, http.StatusOK, map[string]any{
+					"online": false,
+					"url":    rawURL,
+					"error":  "invalid URL format",
+				})
+				return
+			}
+
+			healthURL := fmt.Sprintf("%s://%s/healthz", parsedURL.Scheme, parsedURL.Host)
+			client := &http.Client{Timeout: 3 * time.Second}
+			req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, healthURL, nil)
+			if err != nil {
+				respondJSON(w, http.StatusOK, map[string]any{
+					"online": false,
+					"url":    rawURL,
+					"error":  err.Error(),
+				})
+				return
+			}
+
+			resp, err := client.Do(req)
+			if err != nil {
+				respondJSON(w, http.StatusOK, map[string]any{
+					"online": false,
+					"url":    rawURL,
+					"error":  "unreachable",
+				})
+				return
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+				respondJSON(w, http.StatusOK, map[string]any{
+					"online": true,
+					"url":    rawURL,
+				})
+			} else {
+				respondJSON(w, http.StatusOK, map[string]any{
+					"online": false,
+					"url":    rawURL,
+					"error":  fmt.Sprintf("HTTP %d", resp.StatusCode),
+				})
+			}
+		})
+
 		// 4f. API: Admin - Prepare Drive
 		mux.HandleFunc("POST /api/drive/prepare", func(w http.ResponseWriter, r *http.Request) {
 			var req struct {
@@ -636,6 +695,92 @@ var uiCmd = &cobra.Command{
 			}
 
 			respondJSON(w, http.StatusOK, result)
+		})
+
+		// 6. API: Get Saved Submission Credentials
+		mux.HandleFunc("GET /api/workspace/submit-config", func(w http.ResponseWriter, r *http.Request) {
+			config, _ := loadLocalConfig()
+			respondJSON(w, http.StatusOK, map[string]string{
+				"student_id": config.StudentID,
+				"org_id":     config.OrgID,
+				"pin":        config.Pin,
+			})
+		})
+
+		// 7. API: Submit Workspace (Remote Server or Drive)
+		mux.HandleFunc("POST /api/workspace/submit", func(w http.ResponseWriter, r *http.Request) {
+			var req struct {
+				Path      string `json:"path"`
+				Strategy  string `json:"strategy"`  // "remote" or "drive"
+				Target    string `json:"target"`    // remote URL or drive path
+				StudentID string `json:"student_id"`
+				OrgID     string `json:"org_id"`
+				Pin       string `json:"pin"`
+				NewPin    string `json:"new_pin"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid submission request payload")
+				return
+			}
+
+			if req.Path == "" {
+				respondError(w, http.StatusBadRequest, "path parameter is required")
+				return
+			}
+			if req.Strategy != "remote" && req.Strategy != "drive" {
+				respondError(w, http.StatusBadRequest, "strategy must be 'remote' or 'drive'")
+				return
+			}
+			if strings.TrimSpace(req.Target) == "" {
+				respondError(w, http.StatusBadRequest, "target destination (server URL or drive path) is required")
+				return
+			}
+
+			studentID := strings.TrimSpace(req.StudentID)
+			if studentID == "" {
+				respondError(w, http.StatusBadRequest, "Student ID is required")
+				return
+			}
+			orgID := strings.TrimSpace(req.OrgID)
+			if orgID == "" {
+				orgID = "default"
+			}
+			pin := strings.TrimSpace(req.Pin)
+			if req.Strategy == "remote" && pin == "" {
+				respondError(w, http.StatusBadRequest, "PIN code is required for remote submission")
+				return
+			}
+
+			strat := submitStrategy{
+				name: req.Strategy,
+				path: req.Target,
+			}
+
+			resultStr, err := submitExerciseWithPath(req.Path, strat, orgID, studentID, pin, req.NewPin)
+			if err != nil {
+				respondError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+
+			// Save updated config locally
+			config, configPath := loadLocalConfig()
+			if configPath != "" {
+				config.StudentID = studentID
+				config.OrgID = orgID
+				if req.Strategy == "remote" {
+					if req.NewPin != "" {
+						config.Pin = req.NewPin
+					} else if pin != "" {
+						config.Pin = pin
+					}
+				}
+				saveLocalConfig(configPath, config)
+			}
+
+			respondJSON(w, http.StatusOK, map[string]any{
+				"success": true,
+				"result":  resultStr,
+			})
 		})
 
 		serverAddr := uiHost + ":" + uiPort

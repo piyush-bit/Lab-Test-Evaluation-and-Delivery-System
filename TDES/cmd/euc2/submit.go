@@ -154,18 +154,25 @@ var submitCmd = &cobra.Command{
 }
 
 func submitExercise(strategy submitStrategy, orgID string, studentID string, pin string, updatePin string) (string, error) {
+	return submitExerciseWithPath(".", strategy, orgID, studentID, pin, updatePin)
+}
+
+func submitExerciseWithPath(exercisePath string, strategy submitStrategy, orgID string, studentID string, pin string, updatePin string) (string, error) {
+	if strings.TrimSpace(exercisePath) == "" {
+		exercisePath = "."
+	}
 	switch strategy.name {
 	case "drive":
 		driveRef := &drive.Drive{Path: strategy.path}
 		return driveRef.CreateSubmission(drive.SubmissionRequest{
-			ExercisePath: ".",
+			ExercisePath: exercisePath,
 			OrgID:        orgID,
 			StudentID:    studentID,
 		})
 	case "remote":
 		remoteRef := remote.NewRemote(strategy.path)
 		return remoteRef.SubmitRemote(remote.SubmitRequest{
-			ExercisePath: ".",
+			ExercisePath: exercisePath,
 			OrgID:        orgID,
 			StudentID:    studentID,
 			BearerToken:  os.Getenv(remote.BearerTokenEnvVar),

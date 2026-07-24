@@ -5,6 +5,8 @@ import Welcome from './pages/Welcome';
 import ActiveWorkspace from './pages/ActiveWorkspace';
 import CommandPalette from './components/CommandPalette';
 
+import SubmitWizard from './components/SubmitWizard';
+
 export function StudentAppContent() {
   const { 
     activeWorkspacePath, 
@@ -16,7 +18,9 @@ export function StudentAppContent() {
   } = useStudent();
   const location = useLocation();
   const navigate = useNavigate();
+
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
+  const [submitWizardOpen, setSubmitWizardOpen] = React.useState(false);
 
   const hasActiveWorkspace = !!activeWorkspacePath;
   const isWorkspaceRoute = location.pathname === '/workspace';
@@ -256,28 +260,35 @@ export function StudentAppContent() {
                 </div>
               )}
             </div>
+
+            {/* Submit button: opens Command Palette style submit wizard */}
             <button
-              title="Submit Answer (Future Scope)"
+              title="Submit exercise using the wizard"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSubmitWizardOpen(true);
+              }}
               style={{
                 background: 'none',
                 border: '1px solid var(--border-color)',
                 backgroundColor: 'rgba(0,0,0,0.02)',
                 borderRadius: '6px',
-                padding: '4px 8px',
+                padding: '4px 10px',
                 cursor: 'pointer',
                 color: 'var(--text-secondary)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
+                gap: '6px',
                 fontSize: '0.72rem',
                 fontWeight: 600
               }}
             >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)' }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              Submit
+              <span>Submit</span>
             </button>
+
             <span style={{ fontSize: '0.8rem', color: 'var(--border-color)', margin: '0 2px' }}>|</span>
             <button
               title="Close Workspace"
@@ -313,6 +324,12 @@ export function StudentAppContent() {
           <Route path="/workspace" element={<ActiveWorkspace />} />
         </Routes>
       </main>
+
+      {/* Submit Wizard Dialog */}
+      <SubmitWizard
+        isOpen={submitWizardOpen}
+        onClose={() => setSubmitWizardOpen(false)}
+      />
 
       {/* Command Palette Overlay */}
       <CommandPalette />
