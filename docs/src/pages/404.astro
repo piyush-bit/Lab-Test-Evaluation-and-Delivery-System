@@ -1,0 +1,54 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<BaseLayout title="404: Page Not Found - TDES">
+    <Navbar activeTab="docs" />
+
+    <main class="main-content" style="min-height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 4rem 2rem; position: relative;">
+        <div class="404-container" style="max-width: 640px; width: 100%; text-align: center;">
+            
+            <!-- Glow background decorative element -->
+            <div style="position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 300px; background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0) 70%); filter: blur(40px); z-index: -1; pointer-events: none;"></div>
+
+            <!-- Big 404 Visual -->
+            <div class="code-badge" style="font-family: var(--font-mono); font-size: 5rem; font-weight: 800; background: linear-gradient(135deg, #ffab70 0%, #ff5c7c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; line-height: 1; letter-spacing: -2px;">
+                404
+            </div>
+
+            <h1 style="font-size: 2.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; letter-spacing: -0.5px;">
+                Exercise Path Lost
+            </h1>
+            
+            <p style="color: var(--text-secondary); font-size: 1.1rem; line-height: 1.6; margin-bottom: 2.5rem; max-width: 480px; margin-left: auto; margin-right: auto;">
+                The command or page reference you are trying to execute doesn't exist on this workspace. Let's redirect you back to grading coordinates.
+            </p>
+
+            <!-- Mock Terminal Diagnostics -->
+            <div class="mock-terminal" style="background: var(--bg-terminal); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; text-align: left; font-family: var(--font-mono); font-size: 0.875rem; color: #85e89d; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); margin-bottom: 3rem;">
+                <div style="display: flex; gap: 6px; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.75rem;">
+                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #ff5f56; display: inline-block;"></span>
+                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #ffbd2e; display: inline-block;"></span>
+                    <span style="width: 10px; height: 10px; border-radius: 50%; background: #27c93f; display: inline-block;"></span>
+                </div>
+                <div>
+                    <span style="color: #f97583;">$</span> euc2 run --route <span style="color: #ffab70;">"/unknown-path"</span><br>
+                    <span style="color: #e1e4e8; opacity: 0.6;">[tdes] Parsing request payload...</span><br>
+                    <span style="color: #ff5c7c;">Error: 404 - Requested resource could not be resolved.</span><br>
+                    <span style="color: #79b8ff;">Exit status:</span> <span style="color: #ffab70;">127 (Command Not Found)</span>
+                </div>
+            </div>
+
+            <!-- CTAs -->
+            <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+                <a href="/" class="btn btn-primary">Return Home</a>
+                <a href="/docs/quick-start" class="btn btn-secondary">Explore Documentation</a>
+            </div>
+
+        </div>
+    </main>
+
+    <Footer />
+</BaseLayout>
