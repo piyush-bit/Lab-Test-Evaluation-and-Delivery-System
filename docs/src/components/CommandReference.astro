@@ -1,0 +1,171 @@
+---
+// Command Reference Switcher Component
+---
+<div class="cmd-ref-container glass-card" style="margin: 2rem 0; padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-card);">
+    <div class="cmd-tabs-header" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+        <button class="cmd-tab-btn active" data-cmd="init" style="padding: 6px 16px; border-radius: 9999px; border: 1px solid var(--border-color); background: transparent; cursor: pointer; color: var(--text-primary); font-weight: 500; font-size: 0.875rem;">init</button>
+        <button class="cmd-tab-btn" data-cmd="fetch" style="padding: 6px 16px; border-radius: 9999px; border: 1px solid var(--border-color); background: transparent; cursor: pointer; color: var(--text-primary); font-weight: 500; font-size: 0.875rem;">fetch</button>
+        <button class="cmd-tab-btn" data-cmd="package" style="padding: 6px 16px; border-radius: 9999px; border: 1px solid var(--border-color); background: transparent; cursor: pointer; color: var(--text-primary); font-weight: 500; font-size: 0.875rem;">package</button>
+        <button class="cmd-tab-btn" data-cmd="run" style="padding: 6px 16px; border-radius: 9999px; border: 1px solid var(--border-color); background: transparent; cursor: pointer; color: var(--text-primary); font-weight: 500; font-size: 0.875rem;">run</button>
+        <button class="cmd-tab-btn" data-cmd="submit" style="padding: 6px 16px; border-radius: 9999px; border: 1px solid var(--border-color); background: transparent; cursor: pointer; color: var(--text-primary); font-weight: 500; font-size: 0.875rem;">submit</button>
+        <button class="cmd-tab-btn" data-cmd="evaluate" style="padding: 6px 16px; border-radius: 9999px; border: 1px solid var(--border-color); background: transparent; cursor: pointer; color: var(--text-primary); font-weight: 500; font-size: 0.875rem;">evaluate</button>
+        <button class="cmd-tab-btn" data-cmd="drive" style="padding: 6px 16px; border-radius: 9999px; border: 1px solid var(--border-color); background: transparent; cursor: pointer; color: var(--text-primary); font-weight: 500; font-size: 0.875rem;">drive</button>
+    </div>
+    <div id="command-details" class="command-details-panel">
+        <h3 style="font-size: 1.25rem; margin-bottom: 8px;">euc2 init</h3>
+        <p class="cmd-desc" style="color: var(--text-secondary); margin-bottom: 12px; font-size: 0.95rem;">Initialize an exercise by lab ID and version from local packages into a working directory.</p>
+        <div class="cmd-args-section" style="margin-bottom: 16px; font-size: 0.9rem; padding: 10px 14px; background: rgba(0,0,0,0.02); border-left: 3px solid var(--primary); border-radius: 4px;">
+            <strong>Arguments / Flags:</strong> <code>&lt;id-with-version&gt; &lt;working-directory&gt;</code>
+        </div>
+        <div class="code-block-header" style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 6px;">Usage & Command Output</div>
+        <pre class="shiki github-dark" style="padding: 1rem; border-radius: 8px; font-size: 0.85rem; font-family: var(--font-mono); overflow-x: auto; background: var(--bg-terminal); border: 1px solid var(--border-color);"><code style="color: #e1e4e8;">$ euc2 init go101-lab01@1.1.0 ./my-stack-exercise
+Exercise initialized in ./my-stack-exercise
+$ ls -A ./my-stack-exercise
+Makefile          README.md         manifest.json     run               stack.go</code></pre>
+    </div>
+</div>
+
+<style>
+    .cmd-tab-btn:hover {
+        background-color: var(--border-color) !important;
+    }
+    .cmd-tab-btn.active {
+        background-color: var(--primary) !important;
+        border-color: var(--primary) !important;
+        color: #ffffff !important;
+    }
+    html.dark .cmd-tab-btn.active {
+        background-color: var(--btn-primary-bg) !important;
+        border-color: var(--btn-primary-bg) !important;
+        color: var(--btn-primary-text) !important;
+    }
+    .cmd-args-section {
+        background-color: rgba(255,255,255,0.03) !important;
+    }
+    html.dark .cmd-args-section {
+        background-color: rgba(255,255,255,0.03) !important;
+    }
+</style>
+
+<script>
+    const commandData = {
+        init: {
+            title: "euc2 init",
+            desc: "Initialize an exercise by lab ID and version from local packages into a working directory.",
+            args: "<code>&lt;id-with-version&gt; &lt;working-directory&gt;</code>",
+            example: `$ euc2 init go101-lab01@1.1.0 ./my-stack-exercise
+Exercise initialized in ./my-stack-exercise
+$ ls -A ./my-stack-exercise
+Makefile          README.md         manifest.json     run               stack.go`
+        },
+        fetch: {
+            title: "euc2 fetch",
+            desc: "Fetch an exercise from a drive path or remote server registry, unpacking it locally.",
+            args: "<code>&lt;id-with-version&gt; [--drive /path] [--remote URL] [--org-id ID]</code>",
+            example: `# Fetch using local drive strategy
+$ euc2 fetch go101-lab01 --drive /Volumes/LabShare
+Fetching go101-lab01 from drive source...
+Saved public archive to cache.
+
+# Fetch from remote server endpoint
+$ euc2 fetch go101-lab01 --remote https://tdes.edu --org-id cse-101
+Querying server registry for go101-lab01...
+Fetched package successfully.`
+        },
+        package: {
+            title: "euc2 package",
+            desc: "Packages the exercise workspace, building separate public and private archives and caching them.",
+            args: "<code>&lt;exercise-directory&gt;</code>",
+            example: `$ euc2 package ./go101-lab01-stack
+Packaging exercise: /Users/piyush/Developer/Test-delivery-and-evalution-system/demo_exercises/go101-lab01-stack
+Public packages: [/var/tmp/euc2/cache/go101-lab01_1.1.0_public.tar.gz]
+Private packages: [/var/tmp/euc2/private_packages/go101-lab01_1.1.0_private.tar.gz]
+Exercise packaged and cached successfully.`
+        },
+        run: {
+            title: "euc2 run",
+            desc: "Executes the public test targets defined for this exercise in manifest.json to check current logic.",
+            args: "<code>[exercise-directory] [--local]</code>",
+            example: `# Runs public test targets using Docker image runner
+$ euc2 run
+ℹ️ Running public tests in container...
+✓ TestStackPush (0.01s)
+✓ TestStackPop (0.01s)
+PASS: 5/5 public tests completed successfully.
+
+# Runs public tests directly on the host system without Docker containerization
+$ euc2 run --local
+go test -v ./...
+=== RUN   TestStackPush
+--- PASS: TestStackPush (0.00s)
+PASS
+ok  	TDES/stack	0.005s`
+        },
+        submit: {
+            title: "euc2 submit",
+            desc: "Encrypts and packages files listed in include_paths to deliver to a destination.",
+            args: "<code>[--drive /path] [--remote URL] --org-id ID --student-id ID</code>",
+            example: `# Create an encrypted envelope on a shared lab drive
+$ euc2 submit --drive /Volumes/LabSubmissions --org-id cse-101 --student-id student_99
+Submission envelope created successfully.
+Encrypted file written to: /Volumes/LabSubmissions/submissions/go101-lab01/envelope_student_99.enc`
+        },
+        evaluate: {
+            title: "euc2 evaluate",
+            desc: "Grades a student's submission tar archive against private tests in a secure sandbox.",
+            args: "<code>&lt;submission-tar&gt; [--private-store Path] [--docker-binary Path] [--output OutputFile.json]</code>",
+            example: `$ euc2 evaluate ./student_99_submission.tar.gz --output result.json
+{
+  "lab_id": "go101-lab01",
+  "score": 10,
+  "max_score": 10,
+  "passed": true,
+  "evaluated_at": "2026-06-07T13:22:15Z"
+}`
+        },
+        drive: {
+            title: "euc2 drive",
+            desc: "Prepares local or remote drive directory structures for lab delivery and encrypted submissions.",
+            args: "<code>prepare &lt;path&gt; | prepare-submission &lt;path&gt; --recipient-public-key &lt;key&gt;</code>",
+            example: `# Prepare drive for exercise delivery
+$ euc2 drive prepare /Volumes/LabShare
+Drive prepared at: /Volumes/LabShare
+
+# Prepare submissions directory with X25519 keys
+$ euc2 drive prepare-submission /Volumes/LabShare --recipient-public-key MCowBQYDK2VuAyEA...
+Drive submission module prepared at: /Volumes/LabShare`
+        }
+    };
+
+    function setupCommandSwitcher() {
+        const tabBtns = document.querySelectorAll('.cmd-tab-btn');
+        const detailsPanel = document.getElementById('command-details');
+
+        if (!tabBtns || !detailsPanel) return;
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const cmdName = btn.getAttribute('data-cmd');
+                const data = commandData[cmdName];
+                
+                if (data) {
+                    detailsPanel.innerHTML = `
+                        <h3 style="font-size: 1.25rem; margin-bottom: 8px;">${data.title}</h3>
+                        <p class="cmd-desc" style="color: var(--text-secondary); margin-bottom: 12px; font-size: 0.95rem;">${data.desc}</p>
+                        <div class="cmd-args-section" style="margin-bottom: 16px; font-size: 0.9rem; padding: 10px 14px; background: rgba(255,255,255,0.03); border-left: 3px solid var(--primary); border-radius: 4px;">
+                            <strong>Arguments / Flags:</strong> ${data.args}
+                        </div>
+                        <div class="code-block-header" style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 6px;">Usage & Command Output</div>
+                        <pre class="shiki github-dark" style="padding: 1rem; border-radius: 8px; font-size: 0.85rem; font-family: var(--font-mono); overflow-x: auto; background: var(--bg-terminal); border: 1px solid var(--border-color);"><code style="color: #e1e4e8;">${data.example.trim()}</code></pre>
+                    `;
+                }
+            });
+        });
+    }
+
+    setupCommandSwitcher();
+    document.addEventListener('astro:page-load', setupCommandSwitcher);
+</script>

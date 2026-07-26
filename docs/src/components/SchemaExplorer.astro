@@ -1,0 +1,166 @@
+---
+// Schema Explorer Component
+---
+<div class="schema-explorer-container" style="display: flex; gap: 24px; flex-wrap: wrap; margin: 2rem 0; align-items: stretch;">
+    <div class="schema-code-panel" style="flex: 1.2; min-width: 320px; background: var(--bg-terminal); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; font-family: var(--font-mono); font-size: 0.875rem; color: #85e89d; line-height: 1.8; overflow-x: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <span style="color: #e1e4e8;">&#123;</span><br>
+        &nbsp;&nbsp;"<span class="schema-key selected" data-target="lab_id" style="color: #79b8ff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #79b8ff; padding: 2px 4px;">lab_id</span>": <span style="color: #ffab70;">"go101-lab01"</span>,<br>
+        &nbsp;&nbsp;"<span class="schema-key" data-target="title" style="color: #79b8ff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #79b8ff; padding: 2px 4px;">title</span>": <span style="color: #ffab70;">"Slice-backed stack"</span>,<br>
+        &nbsp;&nbsp;"<span class="schema-key" data-target="version" style="color: #79b8ff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #79b8ff; padding: 2px 4px;">version</span>": <span style="color: #ffab70;">"1.1.0"</span>,<br>
+        &nbsp;&nbsp;"<span class="schema-key" data-target="language" style="color: #79b8ff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #79b8ff; padding: 2px 4px;">language</span>": <span style="color: #ffab70;">"go"</span>,<br>
+        &nbsp;&nbsp;"<span class="schema-key" data-target="runner_image" style="color: #79b8ff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #79b8ff; padding: 2px 4px;">runner_image</span>": <span style="color: #ffab70;">"lab-go-runner:v1.0"</span>,<br>
+        &nbsp;&nbsp;"<span class="schema-key" data-target="local_entrypoint" style="color: #79b8ff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #79b8ff; padding: 2px 4px;">local_entrypoint</span>": <span style="color: #ffab70;">"make test-public"</span>,<br>
+        &nbsp;&nbsp;"<span class="schema-key" data-target="grading" style="color: #e1e4e8; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #e1e4e8; padding: 2px 4px;">grading</span>": <span style="color: #e1e4e8;">[</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #e1e4e8;">&#123;</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"<span class="schema-key" data-target="grading_command" style="color: #79b8ff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #79b8ff; padding: 2px 4px;">command</span>": <span style="color: #ffab70;">"make test-submission-lifo"</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"<span class="schema-key" data-target="grading_points" style="color: #79b8ff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #79b8ff; padding: 2px 4px;">points</span>": <span style="color: #ffab70;">2</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"<span class="schema-key" data-target="grading_public" style="color: #79b8ff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #79b8ff; padding: 2px 4px;">public</span>": <span style="color: #f97583;">false</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #e1e4e8;">&#125;</span><br>
+        &nbsp;&nbsp;<span style="color: #e1e4e8;">]</span>,<br>
+        &nbsp;&nbsp;"<span class="schema-key" data-target="submission" style="color: #e1e4e8; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #e1e4e8; padding: 2px 4px;">submission</span>": <span style="color: #e1e4e8;">&#123;</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;"<span class="schema-key" data-target="sub_include_paths" style="color: #79b8ff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #79b8ff; padding: 2px 4px;">include_paths</span>": <span style="color: #e1e4e8;">[</span><span style="color: #ffab70;">"stack.go"</span><span style="color: #e1e4e8;">]</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;"<span class="schema-key" data-target="sub_private_globs" style="color: #79b8ff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #79b8ff; padding: 2px 4px;">private_globs</span>": <span style="color: #e1e4e8;">[</span><span style="color: #ffab70;">"reference/*"</span><span style="color: #e1e4e8;">]</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;"<span class="schema-key" data-target="sub_exclude_globs" style="color: #79b8ff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #79b8ff; padding: 2px 4px;">exclude_globs</span>": <span style="color: #e1e4e8;">[</span><span style="color: #ffab70;">"*.tar.gz"</span><span style="color: #e1e4e8;">]</span><br>
+        &nbsp;&nbsp;<span style="color: #e1e4e8;">&#125;</span>,<br>
+        &nbsp;&nbsp;"<span class="schema-key" data-target="limits" style="color: #e1e4e8; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #e1e4e8; padding: 2px 4px;">limits</span>": <span style="color: #e1e4e8;">&#123;</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;"<span class="schema-key" data-target="lim_memory_mb" style="color: #79b8ff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #79b8ff; padding: 2px 4px;">memory_mb</span>": <span style="color: #ffab70;">256</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;"<span class="schema-key" data-target="lim_timeout_seconds" style="color: #79b8ff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #79b8ff; padding: 2px 4px;">timeout_seconds</span>": <span style="color: #ffab70;">25</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;"<span class="schema-key" data-target="lim_pids_limit" style="color: #79b8ff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #79b8ff; padding: 2px 4px;">pids_limit</span>": <span style="color: #ffab70;">32</span><br>
+        &nbsp;&nbsp;<span style="color: #e1e4e8;">&#125;</span><br>
+        <span style="color: #e1e4e8;">&#125;</span>
+    </div>
+    <div id="schema-desc-panel" class="schema-desc-panel glass-card" style="flex: 1; min-width: 300px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.05); min-height: 200px;">
+        <h3 style="font-size: 1.15rem; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; margin-top: 0;">💡 lab_id</h3>
+        <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; margin: 0;">A unique identifier string for the exercise lab. This is machine-readable, lowercase, and matches the directory name prefix (e.g. <code>go101-lab01</code>). Used to pair grading submissions with reference materials.</p>
+    </div>
+</div>
+
+<style>
+    .schema-key:hover,
+    .schema-key.selected {
+        background-color: var(--primary) !important;
+        color: #ffffff !important;
+        border-bottom-style: solid !important;
+        border-radius: 3px;
+    }
+    html.dark .schema-key:hover,
+    html.dark .schema-key.selected {
+        background-color: var(--btn-primary-bg) !important;
+        color: var(--btn-primary-text) !important;
+    }
+</style>
+
+<script>
+    const schemaDoc = {
+        lab_id: {
+            title: "lab_id",
+            desc: "A unique identifier string for the exercise lab. This is machine-readable, lowercase, and matches the directory name prefix (e.g. <code>go101-lab01</code>). Used to pair grading submissions with reference materials."
+        },
+        title: {
+            title: "title",
+            desc: "A human-readable label or name for the exercise (e.g. <code>Slice-Backed Stack in Go</code>) shown to students and displayed on course portals."
+        },
+        version: {
+            title: "version",
+            desc: "A Semantic Versioning (SemVer) string representing the current release of the lab (e.g. <code>1.1.0</code>). Version shifts indicate adjustments in test scripts, guidelines, or source code boilerplate."
+        },
+        language: {
+            title: "language",
+            desc: "Specifies the programming language target of the exercise (e.g., <code>go</code>, <code>c</code>, <code>python</code>, <code>cpp</code>). Helps orchestrate syntax highlights or language-specific compiler actions."
+        },
+        runner_image: {
+            title: "runner_image",
+            desc: "The container image name used by the Docker run service during public tests and grading (e.g. <code>lab-go-runner:v1.0</code>). The image must support basic utilities like <code>/bin/sh</code> and <code>make</code>."
+        },
+        local_entrypoint: {
+            title: "local_entrypoint",
+            desc: "The script or command executed locally when the student triggers test checking in their IDE (defaults to <code>make test-public</code>)."
+        },
+        grading: {
+            title: "grading",
+            desc: "An ordered array of grading target commands. The evaluation system runs each target in sequence, checking for a zero exit status. Points are awarded progressively based on individual target pass status."
+        },
+        grading_command: {
+            title: "grading[].command",
+            desc: "The specific Makefile target name to be executed inside the sandbox (e.g., <code>make test-submission-lifo</code>). It must match a target in the exercise's Makefile exactly."
+        },
+        grading_points: {
+            title: "grading[].points",
+            desc: "The integer score points awarded to the student if the corresponding grading command exits with code <code>0</code> (success). Can be <code>0</code> for diagnostic or public tests."
+        },
+        grading_public: {
+            title: "grading[].public",
+            desc: "A boolean flag indicating whether the command is public. If <code>true</code>, the command is executed locally by the student in the IDE/visual editor. If <code>false</code>, it is private and only executed during backend sandbox evaluation."
+        },
+        submission: {
+            title: "submission",
+            desc: "Configures how the student's solution files are collected and how private setter assets are excluded during packaging."
+        },
+        sub_include_paths: {
+            title: "submission.include_paths",
+            desc: "An array of paths or globs defining the student-editable files that should be packaged and submitted for grading (e.g., <code>stack.go</code>)."
+        },
+        sub_private_globs: {
+            title: "submission.private_globs",
+            desc: "An array of paths or globs identifying security-sensitive test scripts and reference solutions (e.g., <code>tests_private/*</code>). These paths are stripped by <code>euc2 package</code> before distributing public zip files to students."
+        },
+        sub_exclude_globs: {
+            title: "submission.exclude_globs",
+            desc: "An array of globs identifying build artifacts, temp files, or dependency files (e.g., <code>*.tar.gz</code>) to be excluded from submission packages to keep uploads clean."
+        },
+        limits: {
+            title: "limits",
+            desc: "Applies resource boundary constraints to the Docker container sandbox running the tests."
+        },
+        lim_memory_mb: {
+            title: "limits.memory_mb",
+            desc: "The maximum amount of RAM in Megabytes allocated to the grading container (e.g., <code>256</code>). Prevents memory leaks in student submissions from locking up the host."
+        },
+        lim_timeout_seconds: {
+            title: "limits.timeout_seconds",
+            desc: "The maximum execution time in seconds allowed for **each individual grading command** (e.g., <code>25</code>). If a command runs longer, it is forcefully terminated and graded as a fail."
+        },
+        lim_pids_limit: {
+            title: "limits.pids_limit",
+            desc: "The maximum number of simultaneous processes or threads allowed inside the container (e.g., <code>32</code>). Prevents fork bombs or resource exhaustion."
+        }
+    };
+
+    function setupSchemaExplorer() {
+        const keys = document.querySelectorAll('.schema-key');
+        const descPanel = document.getElementById('schema-desc-panel');
+
+        if (!keys || !descPanel) return;
+
+        function updateDescPanel(keyName) {
+            const info = schemaDoc[keyName];
+            if (info) {
+                descPanel.innerHTML = `
+                    <h3 style="font-size: 1.15rem; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; margin-top: 0;">💡 ${info.title}</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; margin: 0;">${info.desc}</p>
+                `;
+            }
+        }
+
+        keys.forEach(keyElement => {
+            const target = keyElement.getAttribute('data-target');
+            if (!target) return;
+
+            keyElement.addEventListener('mouseover', () => {
+                keys.forEach(k => k.classList.remove('selected'));
+                keyElement.classList.add('selected');
+                updateDescPanel(target);
+            });
+
+            keyElement.addEventListener('click', () => {
+                keys.forEach(k => k.classList.remove('selected'));
+                keyElement.classList.add('selected');
+                updateDescPanel(target);
+            });
+        });
+    }
+
+    // Run on init and Astro page transitions
+    setupSchemaExplorer();
+    document.addEventListener('astro:page-load', setupSchemaExplorer);
+</script>

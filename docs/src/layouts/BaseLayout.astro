@@ -1,0 +1,49 @@
+---
+import '../styles/global.css';
+
+interface Props {
+	title: string;
+	description?: string;
+	activeTab?: string;
+}
+
+const { title, description = "A secure, containerized, and language-agnostic exercise delivery and evaluation system for Computer Science Education.", activeTab } = Astro.props;
+---
+<!doctype html>
+<html lang="en" class="dark">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		
+		<!-- Google Fonts -->
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+		
+		<!-- Inline Theme Toggle Script to Prevent Flash -->
+		<script is:inline>
+			const savedTheme = localStorage.getItem('theme');
+			const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+			if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+				document.documentElement.classList.add('dark');
+			} else {
+				document.documentElement.classList.remove('dark');
+			}
+		</script>
+	</head>
+	<body>
+		<!-- Background Grid Alignment Lines (Teachyst Style) -->
+		<div class="grid-lines-container">
+			<div class="vertical-line v-line-1"></div>
+			<div class="vertical-line v-line-2"></div>
+			<div class="vertical-line v-line-3"></div>
+			<div class="horizontal-line h-line-1"></div>
+		</div>
+
+		<slot />
+	</body>
+</html>

@@ -1,0 +1,36 @@
+---
+import { getCollection, render } from 'astro:content';
+import DocLayout from '../../layouts/DocLayout.astro';
+import CommandReference from '../../components/CommandReference.astro';
+import SchemaExplorer from '../../components/SchemaExplorer.astro';
+
+export async function getStaticPaths() {
+  const allDocs = await getCollection('docs');
+  return allDocs.map(entry => ({
+    params: { slug: entry.id },
+    props: { entry }
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content, headings } = await render(entry);
+---
+<DocLayout title={entry.data.title} description={entry.data.description} headings={headings} activeSlug={entry.id}>
+  <Content />
+  
+  {entry.id === 'student-cli-reference' && (
+    <div class="custom-interactive-section" style="margin-top: 3rem; border-top: 1px solid var(--border-color); padding-top: 2rem;">
+      <h2 id="interactive-cli-reference">Interactive CLI Explorer</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Use the interactive tab selector below to quickly explore euc2 commands, arguments, and real terminal output structures.</p>
+      <CommandReference />
+    </div>
+  )}
+
+  {entry.id === 'exercise-authoring-spec' && (
+    <div class="custom-interactive-section" style="margin-top: 3rem; border-top: 1px solid var(--border-color); padding-top: 2rem;">
+      <h2 id="interactive-schema-explorer">Interactive Manifest Schema Explorer</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Hover over or click on individual keys in the JSON code block to learn more about the configuration schema rules for <code>manifest.json</code>.</p>
+      <SchemaExplorer />
+    </div>
+  )}
+</DocLayout>

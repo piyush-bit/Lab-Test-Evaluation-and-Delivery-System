@@ -1,0 +1,124 @@
+---
+interface Props {
+  headings: { depth: number; slug: string; text: string }[];
+}
+const { headings } = Astro.props;
+
+// Filter out h1 (depth === 1) and very deep headings
+const filteredHeadings = headings.filter(h => h.depth > 1 && h.depth <= 3);
+---
+{filteredHeadings.length > 0 && (
+  <aside class="docs-toc-sidebar">
+    <div class="docs-toc-sticky">
+      <h4>On This Page</h4>
+      <ul>
+        {filteredHeadings.map(h => (
+          <li class={`toc-depth-${h.depth}`}>
+            <a href={`#${h.slug}`} class="toc-link" data-slug={h.slug}>{h.text}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </aside>
+)}
+
+<style>
+  .toc-depth-3 {
+    padding-left: 15px;
+    font-size: 0.825rem;
+    opacity: 0.85;
+  }
+  .docs-toc-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+  }
+  .docs-toc-sticky {
+    position: sticky;
+    top: 100px;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+    padding-left: 20px;
+    border-left: 1px solid var(--border-color);
+  }
+  .docs-toc-sticky::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+  }
+  .docs-toc-sticky h4 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    font-weight: 700;
+  }
+  .docs-toc-sticky ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .toc-link {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    transition: color 0.15s;
+    display: block;
+    line-height: 1.4;
+  }
+  .toc-link:hover,
+  .toc-link.active {
+    color: var(--text-primary);
+  }
+  .toc-link.active {
+    font-weight: 600;
+    color: var(--primary) !important;
+  }
+  html.dark .toc-link.active {
+    color: #ffffff !important;
+  }
+</style>
+
+<script>
+  function setupScrollSpy() {
+    const tocLinks = document.querySelectorAll('.toc-link');
+    if (tocLinks.length === 0) return;
+
+    // Map links to their headings in the DOM
+    const headingElements = Array.from(tocLinks).map(link => {
+      const slug = link.getAttribute('data-slug');
+      return {
+        link,
+        element: document.getElementById(slug || '')
+      };
+    }).filter(item => item.element !== null);
+
+    if (headingElements.length === 0) return;
+
+    function onScroll() {
+      let currentSlug = '';
+      const scrollPosition = window.scrollY + 120; // offset
+
+      for (const { element, link } of headingElements) {
+        if (element && element.offsetTop <= scrollPosition) {
+          currentSlug = element.id;
+        }
+      }
+
+      tocLinks.forEach(link => {
+        if (link.getAttribute('data-slug') === currentSlug) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
+    }
+
+    window.addEventListener('scroll', onScroll);
+    onScroll(); // initialize on load
+  }
+
+  setupScrollSpy();
+  document.addEventListener('astro:page-load', setupScrollSpy);
+</script>

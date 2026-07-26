@@ -1,0 +1,106 @@
+---
+// Terminal Simulator Component
+---
+<div class="hero-visual">
+    <div class="terminal-window">
+        <div class="terminal-header">
+            <div class="terminal-buttons">
+                <span class="btn-dot close"></span>
+                <span class="btn-dot minimize"></span>
+                <span class="btn-dot expand"></span>
+            </div>
+            <div class="terminal-title">Terminal - euc2 CLI</div>
+            <div class="terminal-actions">
+                <button id="btn-run-term" class="term-action-btn active" data-cmd="run">run</button>
+                <button id="btn-eval-term" class="term-action-btn" data-cmd="evaluate">evaluate</button>
+            </div>
+        </div>
+        <div class="terminal-body" id="terminal-content">
+            <div class="term-line"><span class="term-prompt">~ $</span> <span class="typed-text">euc2 run</span></div>
+            <div class="term-output">
+                <span class="status-info">ℹ️ Running public tests in container...</span><br>
+                <span class="status-success">✓ TestStackPush (0.01s)</span><br>
+                <span class="status-success">✓ TestStackPop (0.01s)</span><br>
+                <span class="status-success">✓ TestStackPeek (0.01s)</span><br>
+                <span class="status-success">✓ TestStackIsEmpty (0.01s)</span><br>
+                <span class="status-success">✓ TestStackSize (0.01s)</span><br>
+                <br>
+                <span class="final-success">PASS: 5/5 public tests completed successfully.</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const terminalData = {
+        run: `
+<div class="term-line"><span class="term-prompt">~ $</span> <span class="typed-text">euc2 run</span></div>
+<div class="term-output">
+    <span class="status-info">ℹ️ Running public tests in container...</span><br>
+    <span class="status-success">✓ TestStackPush (0.01s)</span><br>
+    <span class="status-success">✓ TestStackPop (0.01s)</span><br>
+    <span class="status-success">✓ TestStackPeek (0.01s)</span><br>
+    <span class="status-success">✓ TestStackIsEmpty (0.01s)</span><br>
+    <span class="status-success">✓ TestStackSize (0.01s)</span><br>
+    <br>
+    <span class="final-success">PASS: 5/5 public tests completed successfully.</span>
+</div>
+        `,
+        evaluate: `
+<div class="term-line"><span class="term-prompt">~ $</span> <span class="typed-text">euc2 evaluate ./submission.tar.gz</span></div>
+<div class="term-output">
+    <span class="status-info">ℹ️ Resolving private test packages...</span><br>
+    <span class="status-info">ℹ️ Spin up grading runtime using image "lab-go-runner:v1.0"...</span><br>
+    <br>
+    <span class="status-success">✓ Target: "make test-submission-lifo" (Points: 2/2)</span><br>
+    <span class="status-success">✓ Target: "make test-submission-interleaved" (Points: 2/2)</span><br>
+    <span class="status-success">✓ Target: "make test-submission-size" (Points: 2/2)</span><br>
+    <span class="status-success">✓ Target: "make test-submission-pop-empty" (Points: 2/2)</span><br>
+    <span class="status-success">✓ Target: "make test-submission-peek" (Points: 2/2)</span><br>
+    <br>
+    <pre style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 6px; color:#818cf8; font-size: 0.75rem; margin: 5px 0;">
+{
+  "lab_id": "go101-lab01",
+  "score": 10,
+  "max_score": 10,
+  "passed": true,
+  "evaluated_at": "2026-06-07T13:22:15Z"
+}</pre>
+    <br>
+    <span class="final-success">EVALUATION COMPLETE: Score: 10/10</span>
+</div>
+        `
+    };
+
+    function setupTerminal() {
+        const btnRun = document.getElementById('btn-run-term');
+        const btnEval = document.getElementById('btn-eval-term');
+        const termContent = document.getElementById('terminal-content');
+
+        if (!btnRun || !btnEval || !termContent) return;
+
+        const updateSim = (cmdType: 'run' | 'evaluate') => {
+            if (cmdType === 'run') {
+                btnRun.classList.add('active');
+                btnEval.classList.remove('active');
+            } else {
+                btnEval.classList.add('active');
+                btnRun.classList.remove('active');
+            }
+
+            termContent.innerHTML = `<div class="term-line"><span class="term-prompt">~ $</span> <span class="typed-text">typing...</span></div>`;
+
+            setTimeout(() => {
+                termContent.innerHTML = terminalData[cmdType];
+            }, 450);
+        };
+
+        btnRun.addEventListener('click', () => updateSim('run'));
+        btnEval.addEventListener('click', () => updateSim('evaluate'));
+    }
+
+    // Run on load
+    setupTerminal();
+    // Run on view transition/navigation if needed
+    document.addEventListener('astro:page-load', setupTerminal);
+</script>

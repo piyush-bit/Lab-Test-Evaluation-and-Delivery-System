@@ -1,0 +1,188 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import TOC from '../components/TOC.astro';
+import { getCollection } from 'astro:content';
+
+interface Props {
+  title: string;
+  description?: string;
+  headings: { depth: number; slug: string; text: string }[];
+  activeSlug?: string;
+}
+
+const { title, description, headings, activeSlug } = Astro.props;
+
+// Fetch and organize collection docs
+const allDocs = await getCollection('docs');
+
+const getStartedDocs = allDocs
+  .filter(d => d.data.section === 'get-started')
+  .sort((a, b) => a.data.order - b.data.order);
+
+const referenceDocs = allDocs
+  .filter(d => d.data.section === 'reference-guides')
+  .sort((a, b) => a.data.order - b.data.order);
+
+const specDocs = allDocs
+  .filter(d => d.data.section === 'specs')
+  .sort((a, b) => a.data.order - b.data.order);
+---
+<BaseLayout title={`${title} - TDES Docs`} description={description} activeTab="docs">
+  <Navbar activeTab="docs" />
+  
+  <div class="docs-layout-container" style="max-width: 1200px; margin: 100px auto 0 auto; padding: 2rem 24px; min-height: calc(100vh - 200px);">
+    <div class="docs-page-layout" style="display: flex; gap: 40px; align-items: flex-start; justify-content: space-between;">
+      
+      <!-- Left Sidebar (Nav) -->
+      <aside class="docs-nav-sidebar" style="width: 240px; flex-shrink: 0; position: sticky; top: 100px; max-height: calc(100vh - 140px); overflow-y: auto; padding-right: 20px; border-right: 1px solid var(--border-color);">
+        <div class="docs-nav-sticky">
+          
+          <div class="docs-nav-section" style="margin-bottom: 24px;">
+            <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 12px; font-weight: 700;">Get Started</h4>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; padding-left: 0; margin: 0;">
+              {getStartedDocs.map(doc => (
+                <li>
+                  <a href={`/docs/${doc.id}`} class={`docs-nav-link ${activeSlug === doc.id ? 'active' : ''}`} style="font-size: 0.9rem; color: var(--text-secondary); transition: all 0.2s; display: block; font-weight: 500;">
+                    {doc.data.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div class="docs-nav-section" style="margin-bottom: 24px;">
+            <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 12px; font-weight: 700;">Reference Guides</h4>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; padding-left: 0; margin: 0;">
+              {referenceDocs.map(doc => (
+                <li>
+                  <a href={`/docs/${doc.id}`} class={`docs-nav-link ${activeSlug === doc.id ? 'active' : ''}`} style="font-size: 0.9rem; color: var(--text-secondary); transition: all 0.2s; display: block; font-weight: 500;">
+                    {doc.data.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div class="docs-nav-section" style="margin-bottom: 24px;">
+            <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 12px; font-weight: 700;">Specifications</h4>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; padding-left: 0; margin: 0;">
+              {specDocs.map(doc => (
+                <li>
+                  <a href={`/docs/${doc.id}`} class={`docs-nav-link ${activeSlug === doc.id ? 'active' : ''}`} style="font-size: 0.9rem; color: var(--text-secondary); transition: all 0.2s; display: block; font-weight: 500;">
+                    {doc.data.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+        </div>
+      </aside>
+
+      <!-- Center Main Content -->
+      <main class="docs-content-area align-left" style="flex: 1; min-width: 0; padding-bottom: 4rem;">
+        <slot />
+      </main>
+
+      <!-- Right Sidebar (TOC) -->
+      <TOC headings={headings} />
+      
+    </div>
+  </div>
+  
+  <Footer />
+
+  <!-- Mermaid Dynamic Rendering CDN Script -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" is:inline></script>
+  <script is:inline>
+    function decodeHtmlEntities(text) {
+      const textArea = document.createElement('textarea');
+      textArea.innerHTML = text;
+      return textArea.value;
+    }
+
+    function renderMermaidDiagrams() {
+      const preBlocks = document.querySelectorAll('pre[data-language="mermaid"]');
+      if (preBlocks.length === 0) return;
+
+      preBlocks.forEach(pre => {
+        const codeElement = pre.querySelector('code');
+        const rawText = codeElement ? codeElement.textContent : pre.textContent;
+        const codeText = decodeHtmlEntities(rawText.trim());
+
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.style.display = 'flex';
+        div.style.justifyContent = 'center';
+        div.style.margin = '2rem 0';
+        div.style.background = 'transparent';
+        div.textContent = codeText;
+        pre.parentNode.replaceChild(div, pre);
+      });
+
+      if (window.mermaid) {
+        window.mermaid.initialize({
+          startOnLoad: false,
+          theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
+          securityLevel: 'loose'
+        });
+        window.mermaid.run();
+      }
+    }
+
+    // Render on load and on page navigation swaps
+    renderMermaidDiagrams();
+    document.addEventListener('astro:page-load', renderMermaidDiagrams);
+  </script>
+</BaseLayout>
+
+<style>
+  .docs-nav-sidebar {
+    scrollbar-width: none;
+  }
+  .docs-nav-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+  .docs-nav-link:hover,
+  .docs-nav-link.active {
+    color: var(--text-primary) !important;
+  }
+  .docs-nav-link.active {
+    font-weight: 700 !important;
+    border-left: 2px solid var(--primary);
+    padding-left: 8px !important;
+    margin-left: -10px;
+  }
+  html.dark .docs-nav-link.active {
+    border-left-color: var(--btn-primary-bg);
+  }
+  
+  /* Responsive styles */
+  @media (max-width: 1024px) {
+    .docs-page-layout {
+      flex-direction: column;
+      gap: 30px !important;
+    }
+    .docs-nav-sidebar {
+      width: 100% !important;
+      max-height: none !important;
+      position: static !important;
+      border-right: none !important;
+      border-bottom: 1px solid var(--border-color);
+      padding-right: 0 !important;
+      padding-bottom: 20px;
+    }
+    .docs-nav-sticky {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+    .docs-nav-section {
+      margin-bottom: 0 !important;
+      flex: 1;
+      min-width: 200px;
+    }
+  }
+</style>
