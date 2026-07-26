@@ -18,20 +18,34 @@ export default function AdminPage() {
     adminDriveManifest,
     adminDriveExercises,
     adminSubmissions,
+    inspectAdminDrive,
     handlePrepareAdminSubmission,
     handleAddExerciseToAdminDrive,
+    triggerAdminAddExercisePicker,
+    triggerAdminConfirmClearResults,
+    triggerAdminConfirmClearSubmissions,
     handleDeleteExerciseFromAdminDrive,
     handleGenerateKeyPair,
+    handleBatchEvaluateSubmissions,
+    handleSingleEvaluateSubmission,
+    handleSavePrivateKeyRecord,
     quickOpenExercises,
   } = useStudent();
 
-  // Local state for forms
+  // Local state for forms & modals
   const [recipientPublicKey, setRecipientPublicKey] = useState('');
   const [generatedPrivateKey, setGeneratedPrivateKey] = useState('');
-  const [selectedExId, setSelectedExId] = useState('');
-  const [selectedExVer, setSelectedExVer] = useState('');
-  const [showAddExModal, setShowAddExModal] = useState(false);
+  const [instructorPrivateKey, setInstructorPrivateKey] = useState('');
   const [showPrepSubModal, setShowPrepSubModal] = useState(false);
+  const [showEvalKeyModal, setShowEvalKeyModal] = useState(false);
+  const [evalTargetFilename, setEvalTargetFilename] = useState('');
+  const [evaluatingTarget, setEvaluatingTarget] = useState(null); // null, '__batch__', or filename
+  const [evalResults, setEvalResults] = useState(null);
+  const [expandedLogs, setExpandedLogs] = useState({});
+
+  const toggleLogExpand = (idx) => {
+    setExpandedLogs(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
 
   // When visiting /admin/drive directly, trigger the admin drive Command Palette flow automatically
   useEffect(() => {
@@ -40,28 +54,90 @@ export default function AdminPage() {
     }
   }, [location.pathname]);
 
-  // Sync default values for exercise select
-  useEffect(() => {
-    if (quickOpenExercises.length > 0 && !selectedExId) {
-      setSelectedExId(quickOpenExercises[0].lab_id);
-      setSelectedExVer(quickOpenExercises[0].version);
-    }
-  }, [quickOpenExercises]);
-
   const handleGenerateKey = async () => {
     const keys = await handleGenerateKeyPair();
     if (keys) {
       setRecipientPublicKey(keys.public_key);
       setGeneratedPrivateKey(keys.private_key);
+      setInstructorPrivateKey(keys.private_key);
     }
   };
 
   const formatBytes = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
+    if (!bytes || bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const executeEvaluationDirect = async (filename, keyToUse = '') => {
+    const targetKey = filename || '__batch__';
+    setEvaluatingTarget(targetKey);
+    const key = keyToUse || adminSubmissions.private_key || instructorPrivateKey;
+
+    if (filename) {
+      const record = await handleSingleEvaluateSubmission(activeAdminDrivePath, filename, key);
+      if (record) {
+        setEvalResults([record]);
+      }
+    } else {
+      const records = await handleBatchEvaluateSubmissions(activeAdminDrivePath, key);
+      if (records) {
+        setEvalResults(records);
+      }
+    }
+    setEvaluatingTarget(null);
+    setShowEvalKeyModal(false);
+  };
+
+  const startBatchEvaluation = () => {
+    if (adminSubmissions.has_private_key) {
+      executeEvaluationDirect('');
+    } else {
+      setEvalTargetFilename('');
+      setShowEvalKeyModal(true);
+    }
+  };
+
+  const startSingleEvaluation = (filename) => {
+    if (adminSubmissions.has_private_key) {
+      executeEvaluationDirect(filename);
+    } else {
+      setEvalTargetFilename(filename);
+      setShowEvalKeyModal(true);
+    }
+  };
+
+  const handleSaveMissingKey = async () => {
+    if (!instructorPrivateKey.trim()) return;
+    const saved = await handleSavePrivateKeyRecord(adminSubmissions.submission_id, adminSubmissions.public_key, instructorPrivateKey.trim());
+    if (saved) {
+      await inspectAdminDrive(activeAdminDrivePath);
+      executeEvaluationDirect(evalTargetFilename, instructorPrivateKey.trim());
+    }
+  };
+
+  const exportCSVReport = () => {
+    if (!evalResults || evalResults.length === 0) return;
+    const headers = ['Student ID', 'Lab ID', 'Version', 'Status', 'Earned Points', 'Max Points', 'Error'];
+    const rows = evalResults.map(r => [
+      r.student_id || 'Unknown',
+      r.lab_id || 'N/A',
+      r.version || 'N/A',
+      r.status || 'error',
+      r.earned_points || 0,
+      r.max_points || 0,
+      `"${(r.error || '').replace(/"/g, '""')}"`
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `evaluation_report_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -142,7 +218,7 @@ export default function AdminPage() {
             </div>
           </div>
         ) : (
-          /* ACTIVE DRIVE DETAILS & OPERATIONS VIEW (Same 2-column layout as Dashboard) */
+          /* ACTIVE DRIVE DETAILS VIEW (Minimal VS Code Dashboard Design Language) */
           <div className="vscode-welcome-container">
             <header className="vscode-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
@@ -153,13 +229,14 @@ export default function AdminPage() {
               </div>
 
               <button
-                onClick={() => setActiveAdminDrivePath('')}
+                onClick={() => {
+                  setActiveAdminDrivePath('');
+                  setEvalResults(null);
+                }}
                 style={{
-                  padding: '6px 14px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border-color)',
-                  backgroundColor: 'var(--bg-card)',
-                  color: 'var(--text-primary)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
                   fontSize: '0.8rem',
                   cursor: 'pointer',
                   fontWeight: 600
@@ -169,133 +246,62 @@ export default function AdminPage() {
               </button>
             </header>
 
+            {validationError && (
+              <div className="validation-alert-error" style={{ marginBottom: '14px' }}>
+                {validationError}
+              </div>
+            )}
+
             <div className="vscode-columns-grid">
               {/* LEFT COLUMN: EXERCISE INVENTORY */}
               <div className="vscode-left-col">
                 <div className="vscode-section">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <h2 style={{ fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-                      <PackageIcon size={16} /> Exercise Inventory ({adminDriveExercises.length})
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                    <h2 style={{ border: 'none', padding: 0, margin: 0 }}>
+                      Exercise Inventory ({adminDriveExercises.length})
                     </h2>
 
                     <button
-                      onClick={() => setShowAddExModal(!showAddExModal)}
+                      onClick={() => triggerAdminAddExercisePicker(activeAdminDrivePath)}
                       style={{
-                        padding: '5px 10px',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        backgroundColor: 'var(--btn-primary-bg)',
-                        color: 'var(--btn-primary-text)',
+                        background: 'none',
                         border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer'
+                        color: 'var(--primary)',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        padding: 0
                       }}
                     >
-                      {showAddExModal ? 'Cancel' : '+ Add Exercise'}
+                      + Add Exercise
                     </button>
                   </div>
 
-                  {/* Add Exercise Modal / Form */}
-                  {showAddExModal && (
-                    <div style={{
-                      padding: '14px',
-                      borderRadius: '8px',
-                      backgroundColor: 'var(--bg-card)',
-                      border: '1px solid var(--border-color)',
-                      marginBottom: '16px'
-                    }}>
-                      <div style={{ fontSize: '0.78rem', fontWeight: 600, marginBottom: '10px', color: 'var(--text-primary)' }}>Deploy Packaged Exercise to Drive</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <input
-                          type="text"
-                          value={selectedExId}
-                          onChange={(e) => setSelectedExId(e.target.value)}
-                          placeholder="Exercise ID (e.g. go101-lab01)"
-                          style={{
-                            padding: '7px 10px',
-                            fontSize: '0.8rem',
-                            fontFamily: 'var(--font-mono)',
-                            backgroundColor: 'var(--bg-terminal)',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '6px',
-                            color: 'var(--text-primary)'
-                          }}
-                        />
-                        <input
-                          type="text"
-                          value={selectedExVer}
-                          onChange={(e) => setSelectedExVer(e.target.value)}
-                          placeholder="Version (e.g. v1.0.0)"
-                          style={{
-                            padding: '7px 10px',
-                            fontSize: '0.8rem',
-                            fontFamily: 'var(--font-mono)',
-                            backgroundColor: 'var(--bg-terminal)',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '6px',
-                            color: 'var(--text-primary)'
-                          }}
-                        />
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
-                          <button
-                            onClick={() => {
-                              handleAddExerciseToAdminDrive(activeAdminDrivePath, selectedExId, selectedExVer);
-                              setShowAddExModal(false);
-                            }}
-                            disabled={!selectedExId.trim() || !selectedExVer.trim()}
-                            style={{
-                              padding: '6px 14px',
-                              fontSize: '0.78rem',
-                              fontWeight: 600,
-                              backgroundColor: 'var(--accent)',
-                              color: '#fff',
-                              border: 'none',
-                              borderRadius: '6px',
-                              cursor: selectedExId.trim() && selectedExVer.trim() ? 'pointer' : 'not-allowed'
-                            }}
-                          >
-                            Deploy to Drive
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Exercises List Grid */}
-                  <div className="vscode-recents-list" style={{ gap: '8px' }}>
+                  <div className="vscode-recents-list">
                     {adminDriveExercises.length === 0 ? (
-                      <div className="empty-recents-msg" style={{ padding: '20px', textAlign: 'center' }}>
-                        No exercises deployed on this drive yet.
-                      </div>
+                      <div className="empty-recents-msg">No exercises deployed on this drive.</div>
                     ) : (
                       adminDriveExercises.map((ex, idx) => (
-                        <div key={idx} className="vscode-recent-item" style={{
-                          display: 'flex',
-                          justify: 'space-between',
-                          alignItems: 'center',
-                          padding: '10px 14px',
-                          cursor: 'default'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <span className="recent-icon"><PackageIcon size={16} /></span>
+                        <div key={idx} className="vscode-recent-item" style={{ justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span className="recent-icon"><PackageIcon size={14} /></span>
                             <div className="recent-details">
-                              <span className="recent-name" style={{ fontSize: '0.88rem', fontWeight: 600 }}>
-                                {ex.exercise_id} <span style={{ fontSize: '0.75rem', opacity: 0.6, fontFamily: 'var(--font-mono)' }}>v{ex.version}</span>
+                              <span className="recent-name">
+                                {ex.exercise_id} <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>v{ex.version}</span>
                               </span>
                             </div>
                           </div>
 
                           <button
-                            title="Delete exercise from drive"
+                            title="Delete exercise"
                             onClick={() => handleDeleteExerciseFromAdminDrive(activeAdminDrivePath, ex.exercise_id, ex.version)}
                             style={{
-                              padding: '4px 10px',
-                              fontSize: '0.72rem',
+                              background: 'none',
+                              border: 'none',
                               color: 'var(--accent-red)',
-                              backgroundColor: 'rgba(225, 29, 72, 0.08)',
-                              border: '1px solid rgba(225, 29, 72, 0.2)',
-                              borderRadius: '4px',
-                              cursor: 'pointer'
+                              fontSize: '0.75rem',
+                              cursor: 'pointer',
+                              opacity: 0.8
                             }}
                           >
                             Delete
@@ -310,196 +316,256 @@ export default function AdminPage() {
               {/* RIGHT COLUMN: SUBMITTED PACKAGES */}
               <div className="vscode-right-col">
                 <div className="vscode-section">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <h2 style={{ fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-                      <LockIcon size={16} /> Submitted Packages
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                    <h2 style={{ border: 'none', padding: 0, margin: 0 }}>
+                      Submitted Packages ({adminSubmissions.submissions?.length || 0})
                     </h2>
 
-                    {adminSubmissions.prepared && (
-                      <span style={{
-                        fontSize: '0.72rem',
-                        padding: '3px 8px',
-                        borderRadius: '4px',
-                        backgroundColor: 'rgba(5, 150, 105, 0.12)',
-                        color: 'var(--accent)',
-                        fontWeight: 600
-                      }}>
-                        🟢 Active
-                      </span>
+                    {adminSubmissions.prepared && (adminSubmissions.submissions?.length || 0) > 0 && (
+                      <button
+                        onClick={startBatchEvaluation}
+                        disabled={evaluatingTarget !== null}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: evaluatingTarget !== null ? 'var(--text-muted)' : 'var(--primary)',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          cursor: evaluatingTarget !== null ? 'not-allowed' : 'pointer',
+                          padding: 0
+                        }}
+                      >
+                        {evaluatingTarget === '__batch__' ? 'Evaluating All...' : 'Batch Evaluate All'}
+                      </button>
                     )}
                   </div>
 
-                  {!adminSubmissions.prepared ? (
-                    /* UNPREPARED SUBMISSION DIRECTORY BANNER */
+                  {/* Submission ID Minimal Status Bar */}
+                  {adminSubmissions.prepared && (
                     <div style={{
-                      padding: '20px',
-                      borderRadius: '8px',
-                      backgroundColor: 'var(--bg-card)',
-                      border: '1px dashed var(--border-color)',
-                      textAlign: 'center',
                       display: 'flex',
-                      flexDirection: 'column',
+                      justifyContent: 'space-between',
                       alignItems: 'center',
-                      gap: '12px'
+                      fontSize: '0.74rem',
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--text-muted)',
+                      marginTop: '6px',
+                      marginBottom: '16px'
                     }}>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        Submission directory is not prepared on this drive.
+                      <span>ID: {adminSubmissions.submission_id || 'sub_default'}</span>
+                      <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                        {!adminSubmissions.has_private_key && (
+                          <span style={{ color: 'var(--accent-red)', fontWeight: 500 }}>Key Required</span>
+                        )}
+                        {(adminSubmissions.submissions?.length || 0) > 0 && (
+                          <button
+                            onClick={() => triggerAdminConfirmClearSubmissions(activeAdminDrivePath)}
+                            disabled={evaluatingTarget !== null}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: evaluatingTarget !== null ? 'var(--text-muted)' : 'var(--accent-red)',
+                              fontSize: '0.74rem',
+                              fontFamily: 'var(--font-sans)',
+                              fontWeight: 600,
+                              cursor: evaluatingTarget !== null ? 'not-allowed' : 'pointer',
+                              padding: 0
+                            }}
+                          >
+                            Clear Submissions
+                          </button>
+                        )}
                       </div>
+                    </div>
+                  )}
 
-                      {!showPrepSubModal ? (
+                  {/* PROMPT FOR MISSING PRIVATE KEY */}
+                  {showEvalKeyModal && (
+                    <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                        Save Private Key for <code>{adminSubmissions.submission_id}</code>:
+                      </div>
+                      <input
+                        type="password"
+                        value={instructorPrivateKey}
+                        onChange={(e) => setInstructorPrivateKey(e.target.value)}
+                        placeholder="Paste Base64 X25519 Private Key..."
+                        style={{
+                          padding: '6px 10px',
+                          fontSize: '0.8rem',
+                          fontFamily: 'var(--font-mono)',
+                          backgroundColor: 'transparent',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '6px',
+                          color: 'var(--text-primary)',
+                          outline: 'none'
+                        }}
+                      />
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                         <button
-                          onClick={() => setShowPrepSubModal(true)}
+                          onClick={() => setShowEvalKeyModal(false)}
                           style={{
-                            padding: '8px 16px',
-                            fontSize: '0.8rem',
+                            padding: '4px 10px',
+                            fontSize: '0.75rem',
+                            backgroundColor: 'transparent',
+                            color: 'var(--text-secondary)',
+                            border: 'none',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSaveMissingKey}
+                          disabled={!instructorPrivateKey.trim() || evaluatingTarget !== null}
+                          style={{
+                            padding: '5px 12px',
+                            fontSize: '0.78rem',
                             fontWeight: 600,
                             backgroundColor: 'var(--btn-primary-bg)',
                             color: 'var(--btn-primary-text)',
-                            border: 'none',
+                            border: '1px solid var(--border-color)',
                             borderRadius: '6px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px'
+                            cursor: instructorPrivateKey.trim() && evaluatingTarget === null ? 'pointer' : 'not-allowed'
                           }}
                         >
-                          <ZapIcon size={14} /> Prepare Submission Directory
+                          Save Key & Evaluate
                         </button>
-                      ) : (
-                        <div style={{
-                          width: '100%',
-                          padding: '14px',
-                          borderRadius: '8px',
-                          backgroundColor: 'var(--bg-main)',
-                          border: '1px solid var(--border-color)',
-                          textAlign: 'left'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                            <span style={{ fontSize: '0.78rem', fontWeight: 600 }}>Recipient Public Key</span>
-                            <button
-                              onClick={handleGenerateKey}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                color: 'var(--primary)',
-                                fontSize: '0.72rem',
-                                cursor: 'pointer',
-                                textDecoration: 'underline',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px'
-                              }}
-                            >
-                              <ZapIcon size={12} /> Auto-Generate Keypair
-                            </button>
-                          </div>
+                      </div>
+                    </div>
+                  )}
 
-                          <input
-                            type="text"
-                            value={recipientPublicKey}
-                            onChange={(e) => setRecipientPublicKey(e.target.value)}
-                            placeholder="Base64-encoded X25519 public key..."
-                            style={{
-                              width: '100%',
-                              padding: '8px 12px',
-                              fontSize: '0.8rem',
-                              fontFamily: 'var(--font-mono)',
-                              backgroundColor: 'var(--bg-terminal)',
-                              border: '1px solid var(--border-color)',
-                              borderRadius: '6px',
-                              color: 'var(--text-primary)',
-                              marginBottom: '10px'
-                            }}
-                          />
+                  {!adminSubmissions.prepared ? (
+                    <div className="empty-recents-msg" style={{ paddingLeft: 0, fontStyle: 'normal' }}>
+                      <div style={{ marginBottom: '10px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                        Submissions directory is not prepared.
+                      </div>
 
-                          {generatedPrivateKey && (
-                            <div style={{
-                              padding: '8px 12px',
-                              borderRadius: '6px',
-                              backgroundColor: 'rgba(234, 179, 8, 0.1)',
-                              border: '1px solid rgba(234, 179, 8, 0.2)',
-                              color: '#eab308',
-                              fontSize: '0.72rem',
-                              marginBottom: '10px',
-                              wordBreak: 'break-all'
-                            }}>
-                              <strong>Private Key (Save for grading):</strong> <code>{generatedPrivateKey}</code>
-                            </div>
-                          )}
-
-                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                            <button
-                              onClick={() => setShowPrepSubModal(false)}
-                              style={{
-                                padding: '6px 12px',
-                                fontSize: '0.78rem',
-                                backgroundColor: 'transparent',
-                                color: 'var(--text-secondary)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: '6px',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              onClick={() => {
-                                handlePrepareAdminSubmission(activeAdminDrivePath, recipientPublicKey);
-                                setShowPrepSubModal(false);
-                              }}
-                              disabled={!recipientPublicKey.trim()}
-                              style={{
-                                padding: '6px 14px',
-                                fontSize: '0.78rem',
-                                fontWeight: 600,
-                                backgroundColor: 'var(--accent)',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                cursor: recipientPublicKey.trim() ? 'pointer' : 'not-allowed'
-                              }}
-                            >
-                              Confirm
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                      <button
+                        onClick={() => handlePrepareAdminSubmission(activeAdminDrivePath)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--primary)',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          padding: 0
+                        }}
+                      >
+                        + Prepare Submission Directory
+                      </button>
                     </div>
                   ) : (
-                    /* PREPARED SUBMISSIONS LIST */
-                    <div className="vscode-recents-list" style={{ gap: '8px' }}>
+                    <div className="vscode-recents-list">
                       {(adminSubmissions.submissions || []).length === 0 ? (
-                        <div className="empty-recents-msg" style={{ padding: '20px', textAlign: 'center' }}>
-                          No student packages submitted yet.
-                        </div>
+                        <div className="empty-recents-msg">No student packages submitted yet.</div>
                       ) : (
-                        (adminSubmissions.submissions || []).map((sub, idx) => (
-                          <div key={idx} className="vscode-recent-item" style={{
-                            display: 'flex',
-                            justify: 'space-between',
-                            alignItems: 'center',
-                            padding: '10px 14px',
-                            cursor: 'default'
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <span className="recent-icon"><LockIcon size={16} /></span>
-                              <div className="recent-details">
-                                <span className="recent-name" style={{ fontSize: '0.85rem', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>
-                                  {sub.filename}
-                                </span>
-                                <span className="recent-path" style={{ fontSize: '0.72rem', opacity: 0.6 }}>
-                                  Size: {formatBytes(sub.size)} | Submitted: {new Date(sub.mod_time).toLocaleString()}
-                                </span>
+                        (adminSubmissions.submissions || []).map((sub, idx) => {
+                          const targetKey = sub.rel_path || sub.filename;
+                          const isEvaluatingThis = evaluatingTarget === targetKey;
+                          const isAnyEvaluating = evaluatingTarget !== null;
+
+                          return (
+                            <div key={idx} className="vscode-recent-item" style={{ justifyContent: 'space-between' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span className="recent-icon"><LockIcon size={14} /></span>
+                                <div className="recent-details">
+                                  <span className="recent-name" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem' }}>
+                                    {sub.filename}
+                                  </span>
+                                  <span className="recent-path" style={{ fontSize: '0.7rem' }}>
+                                    {formatBytes(sub.size)}
+                                  </span>
+                                </div>
                               </div>
+
+                              <button
+                                title="Evaluate individual submission"
+                                onClick={() => startSingleEvaluation(targetKey)}
+                                disabled={isAnyEvaluating}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: isEvaluatingThis ? 'var(--accent)' : (isAnyEvaluating ? 'var(--text-muted)' : 'var(--primary)'),
+                                  fontSize: '0.75rem',
+                                  fontWeight: 600,
+                                  cursor: isAnyEvaluating ? 'not-allowed' : 'pointer'
+                                }}
+                              >
+                                {isEvaluatingThis ? 'Evaluating...' : 'Evaluate'}
+                              </button>
                             </div>
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   )}
                 </div>
               </div>
             </div>
+
+            {/* EVALUATION RESULTS SUMMARY TABLE */}
+            {evalResults && (
+              <div className="vscode-section" style={{ marginTop: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
+                  <h2 style={{ border: 'none', padding: 0, margin: 0 }}>
+                    Evaluation Summary ({evalResults.length})
+                  </h2>
+
+                  <button
+                    onClick={exportCSVReport}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--primary)',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      padding: 0
+                    }}
+                  >
+                    Export CSV Report
+                  </button>
+                </div>
+
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+                        <th style={{ padding: '8px 12px' }}>Student ID</th>
+                        <th style={{ padding: '8px 12px' }}>Lab ID</th>
+                        <th style={{ padding: '8px 12px' }}>Version</th>
+                        <th style={{ padding: '8px 12px' }}>Status</th>
+                        <th style={{ padding: '8px 12px' }}>Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {evalResults.map((res, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                          <td style={{ padding: '8px 12px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{res.student_id || 'Unknown'}</td>
+                          <td style={{ padding: '8px 12px' }}>{res.lab_id || 'N/A'}</td>
+                          <td style={{ padding: '8px 12px', fontFamily: 'var(--font-mono)' }}>{res.version || 'N/A'}</td>
+                          <td style={{ padding: '8px 12px' }}>
+                            <span style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
+                              color: res.status === 'passed' ? 'var(--accent)' : 'var(--accent-red)'
+                            }}>
+                              {res.status}
+                            </span>
+                          </td>
+                          <td style={{ padding: '8px 12px', fontWeight: 600 }}>
+                            {res.earned_points} / {res.max_points}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>

@@ -292,8 +292,8 @@ export const StudentProvider = ({ children }) => {
     setLoading(false);
   };
 
-  const handlePrepareAdminSubmission = async (path, recipientPublicKey) => {
-    if (!path || !recipientPublicKey) return;
+  const handlePrepareAdminSubmission = async (path, recipientPublicKey = '') => {
+    if (!path) return;
     setValidationError('');
     setLoading(true);
     try {
@@ -374,6 +374,77 @@ export const StudentProvider = ({ children }) => {
       // fallback
     }
     return null;
+  };
+
+  const handleBatchEvaluateSubmissions = async (path, recipientPrivateKey = '') => {
+    if (!path) return null;
+    setValidationError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/drive/evaluate-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ drive_path: path, recipient_private_key: recipientPrivateKey })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLoading(false);
+        return data.records || [];
+      } else {
+        const errData = await res.json();
+        setValidationError(`Batch evaluation failed: ${errData.error || 'Check private key'}`);
+      }
+    } catch (err) {
+      setValidationError('Connection error: ' + err.message);
+    }
+    setLoading(false);
+    return null;
+  };
+
+  const handleSingleEvaluateSubmission = async (path, filename, recipientPrivateKey = '') => {
+    if (!path || !filename) return null;
+    setValidationError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/drive/evaluate-single', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ drive_path: path, filename: filename, recipient_private_key: recipientPrivateKey })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLoading(false);
+        return data.record || null;
+      } else {
+        const errData = await res.json();
+        setValidationError(`Evaluation failed: ${errData.error || 'Check private key'}`);
+      }
+    } catch (err) {
+      setValidationError('Connection error: ' + err.message);
+    }
+    setLoading(false);
+    return null;
+  };
+
+  const handleSavePrivateKeyRecord = async (submissionID, publicKey, privateKey) => {
+    if (!submissionID || !privateKey) return false;
+    try {
+      const res = await fetch('/api/drive/save-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submission_id: submissionID,
+          public_key: publicKey,
+          private_key: privateKey
+        })
+      });
+      if (res.ok) {
+        return true;
+      }
+    } catch {
+      // fallback
+    }
+    return false;
   };
 
   const triggerAdminDriveFlow = () => {
@@ -558,6 +629,94 @@ export const StudentProvider = ({ children }) => {
     }
 
     setQuickOpenCallback(() => callbackFn);
+    setShowQuickOpen(true);
+  };
+
+  // Trigger cached exercises list modal for deploying to admin drive
+  const triggerAdminAddExercisePicker = async (drivePath) => {
+    setQuickOpenSelectedExercise(null);
+    setQuickOpenPath('');
+    setQuickOpenActiveManifest(null);
+    setQuickOpenMode('admin_add_exercise');
+    setSelectedIndex(0);
+
+    try {
+      const res = await fetch('/api/exercises');
+      if (res.ok) {
+        const data = await res.json();
+        const list = [];
+        Object.entries(data).forEach(([labId, entry]) => {
+          Object.entries(entry.versions).forEach(([ver, hash]) => {
+            list.push({
+              lab_id: labId,
+              version: ver,
+              title: entry.title || '',
+              language: entry.language || '',
+              label: `${labId} (v${ver})`,
+              latest: ver === entry.latest
+            });
+          });
+        });
+        setQuickOpenExercises(list);
+      }
+    } catch {
+      setQuickOpenExercises([]);
+    }
+
+    setQuickOpenCallback(() => async (selectedExercise) => {
+      if (selectedExercise && selectedExercise.lab_id && selectedExercise.version) {
+        await handleAddExerciseToAdminDrive(drivePath, selectedExercise.lab_id, selectedExercise.version);
+      }
+    });
+    setShowQuickOpen(true);
+  };
+
+  // Trigger confirmation modal via Command Palette for clearing evaluation results
+  const triggerAdminConfirmClearResults = (onConfirm) => {
+    setQuickOpenSelectedExercise(null);
+    setQuickOpenPath('');
+    setQuickOpenActiveManifest(null);
+    setQuickOpenMode('admin_confirm_clear_results');
+    setSelectedIndex(0);
+    setQuickOpenCallback(() => onConfirm);
+    setShowQuickOpen(true);
+  };
+
+  const handleClearAdminSubmissions = async (drivePath) => {
+    if (!drivePath) return false;
+    setValidationError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/drive/clear-submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ drive_path: drivePath })
+      });
+      if (res.ok) {
+        setAdminNotification('Cleared all submission packages from drive');
+        await inspectAdminDrive(drivePath);
+        setLoading(false);
+        return true;
+      } else {
+        const errData = await res.json();
+        setValidationError(`Clear failed: ${errData.error || 'Check drive path'}`);
+      }
+    } catch (err) {
+      setValidationError('Connection error: ' + err.message);
+    }
+    setLoading(false);
+    return false;
+  };
+
+  const triggerAdminConfirmClearSubmissions = (drivePath) => {
+    setQuickOpenSelectedExercise(null);
+    setQuickOpenPath('');
+    setQuickOpenActiveManifest(null);
+    setQuickOpenMode('admin_confirm_clear_submissions');
+    setSelectedIndex(0);
+    setQuickOpenCallback(() => async () => {
+      await handleClearAdminSubmissions(drivePath);
+    });
     setShowQuickOpen(true);
   };
 
@@ -863,6 +1022,20 @@ export const StudentProvider = ({ children }) => {
           quickOpenCallback(item.data);
         }
       }
+    } else if (quickOpenMode === 'admin_add_exercise') {
+      const item = selectableItems[selectedIndex];
+      if (item && item.type === 'exercise') {
+        setShowQuickOpen(false);
+        if (quickOpenCallback) {
+          quickOpenCallback(item.data);
+        }
+      }
+    } else if (quickOpenMode === 'admin_confirm_clear_results' || quickOpenMode === 'admin_confirm_clear_submissions') {
+      const item = selectableItems[selectedIndex];
+      setShowQuickOpen(false);
+      if (item && item.action === 'yes' && quickOpenCallback) {
+        quickOpenCallback();
+      }
     } else if (quickOpenMode === 'drive_exercises') {
       const item = selectableItems[selectedIndex];
       if (item && item.type === 'exercise') {
@@ -1129,6 +1302,20 @@ export const StudentProvider = ({ children }) => {
     filteredExercises.forEach((ex) => {
       selectableItems.push({ type: 'exercise', data: ex });
     });
+  } else if (quickOpenMode === 'admin_add_exercise') {
+    const filteredExercises = quickOpenExercises.filter(ex => 
+      ex.label.toLowerCase().includes(quickOpenPath.toLowerCase()) ||
+      ex.lab_id.toLowerCase().includes(quickOpenPath.toLowerCase())
+    );
+    filteredExercises.forEach((ex) => {
+      selectableItems.push({ type: 'exercise', data: ex });
+    });
+  } else if (quickOpenMode === 'admin_confirm_clear_results') {
+    selectableItems.push({ type: 'action', action: 'yes', label: 'Yes, clear all evaluation results' });
+    selectableItems.push({ type: 'action', action: 'no', label: 'No, cancel' });
+  } else if (quickOpenMode === 'admin_confirm_clear_submissions') {
+    selectableItems.push({ type: 'action', action: 'yes', label: 'Yes, permanently delete all submission packages from drive' });
+    selectableItems.push({ type: 'action', action: 'no', label: 'No, cancel' });
   } else if (quickOpenMode === 'select_source') {
     const q = quickOpenPath.toLowerCase();
     if (!q || "+ New Remote Registry URL...".toLowerCase().includes(q)) {
@@ -1237,7 +1424,7 @@ export const StudentProvider = ({ children }) => {
       e.preventDefault();
       const item = selectableItems[selectedIndex];
       if (item) {
-        if (quickOpenMode === 'exercises' || quickOpenMode === 'drive_exercises' || quickOpenMode === 'remote_exercises') {
+        if (quickOpenMode === 'exercises' || quickOpenMode === 'admin_add_exercise' || quickOpenMode === 'admin_confirm_clear_results' || quickOpenMode === 'admin_confirm_clear_submissions' || quickOpenMode === 'drive_exercises' || quickOpenMode === 'remote_exercises') {
           if (item.type === 'action' && item.action === 'fetch_new') {
             setValidationError('');
             setQuickOpenMode('select_source');
@@ -1491,8 +1678,15 @@ export const StudentProvider = ({ children }) => {
       handlePrepareAdminDrive,
       handlePrepareAdminSubmission,
       handleAddExerciseToAdminDrive,
+      triggerAdminAddExercisePicker,
+      triggerAdminConfirmClearResults,
+      handleClearAdminSubmissions,
+      triggerAdminConfirmClearSubmissions,
       handleDeleteExerciseFromAdminDrive,
       handleGenerateKeyPair,
+      handleBatchEvaluateSubmissions,
+      handleSingleEvaluateSubmission,
+      handleSavePrivateKeyRecord,
       remoteServers,
       setRemoteServers,
       remoteServerStatuses,

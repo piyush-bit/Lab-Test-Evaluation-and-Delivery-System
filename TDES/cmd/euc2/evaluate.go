@@ -105,21 +105,32 @@ type privateCacheArtifactProvider struct {
 }
 
 func (p *privateCacheArtifactProvider) OpenPrivateArtifact(ctx context.Context, orgID, labID, version string) (io.ReadCloser, error) {
-	storeRoot := p.storeRoot
-	if storeRoot == "" {
-		storeRoot = exercisestore.GetPrivateCacheDir()
+	candidateStores := []string{}
+	if p.storeRoot != "" {
+		candidateStores = append(candidateStores, p.storeRoot)
+	}
+	machineCacheDir := exercisestore.GetPrivateCacheDir()
+	if machineCacheDir != "" && machineCacheDir != p.storeRoot {
+		candidateStores = append(candidateStores, machineCacheDir)
 	}
 
-	packagePath, err := exercisestore.ResolveExercisePath(storeRoot, labID, version)
-	if err == nil {
-		if file, err := os.Open(packagePath); err == nil {
-			return file, nil
+	for _, storeRoot := range candidateStores {
+		packagePath, err := exercisestore.ResolveExercisePath(storeRoot, labID, version)
+		if err == nil {
+			if file, err := os.Open(packagePath); err == nil {
+				return file, nil
+			}
 		}
 	}
 
 	// Try fetching from registry if configured
 	if p.registryURL != "" {
 		fmt.Printf("Private exercise package %s@%s not found in local cache. Attempting to pull from registry...\n", labID, version)
+
+		targetStore := machineCacheDir
+		if targetStore == "" {
+			targetStore = p.storeRoot
+		}
 
 		remoteRef := remote.NewRemote(p.registryURL)
 		body, err := remoteRef.FetchPrivateFromRemote(labID, version, orgID, p.bearerToken)
@@ -143,11 +154,11 @@ func (p *privateCacheArtifactProvider) OpenPrivateArtifact(ctx context.Context, 
 			return nil, fmt.Errorf("close temp package: %w", err)
 		}
 
-		if err := exercisestore.SavePackage(storeRoot, tempPath); err != nil {
+		if err := exercisestore.SavePackage(targetStore, tempPath); err != nil {
 			return nil, fmt.Errorf("save remote private package to local cache: %w", err)
 		}
 
-		packagePath, err = exercisestore.ResolveExercisePath(storeRoot, labID, version)
+		packagePath, err := exercisestore.ResolveExercisePath(targetStore, labID, version)
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +169,7 @@ func (p *privateCacheArtifactProvider) OpenPrivateArtifact(ctx context.Context, 
 		return file, nil
 	}
 
-	return nil, fmt.Errorf("%w: %s@%s", evaluatorcore.ErrExerciseNotFound, labID, version)
+	return nil, fmt.Errorf("%w: %s@%s (searched stores: %v)", evaluatorcore.ErrExerciseNotFound, labID, version, candidateStores)
 }
 
 func init() {

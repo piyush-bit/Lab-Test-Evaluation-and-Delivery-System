@@ -1,6 +1,7 @@
 package evaluatorcore
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -44,6 +45,7 @@ type EvaluationTestResult struct {
 	PointsPossible int    `json:"points_possible"`
 	PointsEarned   int    `json:"points_earned"`
 	Status         string `json:"status"`
+	Output         string `json:"output,omitempty"`
 }
 
 func NewEvaluator(provider ArtifactProvider, runtime Runtime) (*Evaluator, error) {
@@ -150,12 +152,19 @@ func (e *Evaluator) EvaluateSubmission(ctx context.Context, request EvaluationRe
 			Status:         "fail",
 		}
 
+		var outputBuf bytes.Buffer
+		execImageConfig := imageConfig
+		execImageConfig.Stdout = &outputBuf
+		execImageConfig.Stderr = &outputBuf
+
 		err := e.runtime.ExecCommand(ExecConfig{
-			ImageConfig: imageConfig,
+			ImageConfig: execImageConfig,
 			ContainerID: containerID,
 			Command:     entry.Command,
 			Timeout:     timeout,
 		})
+
+		testResult.Output = strings.TrimSpace(outputBuf.String())
 
 		switch {
 		case err == nil:

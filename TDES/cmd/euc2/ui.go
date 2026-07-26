@@ -5,6 +5,7 @@ import (
 	exercisestore "TDES/internals/exercise_store"
 	drive "TDES/internals/drive"
 	exercise "TDES/internals/exercise"
+	evaluatorcore "TDES/internals/evaluator-core"
 	runtests "TDES/internals/run"
 	"crypto/ecdh"
 	cryptoRand "crypto/rand"
@@ -384,8 +385,9 @@ var uiCmd = &cobra.Command{
 		// 4g. API: Admin - Prepare Drive Submission
 		mux.HandleFunc("POST /api/drive/prepare-submission", func(w http.ResponseWriter, r *http.Request) {
 			var req struct {
-				DrivePath           string `json:"drive_path"`
+				DrivePath          string `json:"drive_path"`
 				RecipientPublicKey string `json:"recipient_public_key"`
+				SubmissionID       string `json:"submission_id"`
 			}
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 				respondError(w, http.StatusBadRequest, "Invalid request payload")
@@ -395,23 +397,23 @@ var uiCmd = &cobra.Command{
 				respondError(w, http.StatusBadRequest, "drive_path is required")
 				return
 			}
-			if req.RecipientPublicKey == "" {
-				respondError(w, http.StatusBadRequest, "recipient_public_key is required")
-				return
-			}
 			drivePath := req.DrivePath
 			if strings.HasPrefix(drivePath, "~") {
 				if home, err := os.UserHomeDir(); err == nil {
 					drivePath = filepath.Join(home, strings.TrimPrefix(drivePath, "~"))
 				}
 			}
-			if err := drive.PrepareDriveForSubmission(drivePath, req.RecipientPublicKey); err != nil {
+			manifest, generatedPrivateKey, err := drive.PrepareDriveForSubmissionWithID(drivePath, req.RecipientPublicKey, req.SubmissionID)
+			if err != nil {
 				respondError(w, http.StatusInternalServerError, "Failed to prepare drive submission module: "+err.Error())
 				return
 			}
 			respondJSON(w, http.StatusOK, map[string]any{
-				"message": "Drive submission module prepared successfully",
-				"path":    drivePath,
+				"message":              "Drive submission module prepared successfully",
+				"path":                 drivePath,
+				"submission_id":        manifest.SubmissionID,
+				"recipient_public_key": manifest.RecipientPublicKeyB64,
+				"private_key":          generatedPrivateKey,
 			})
 		})
 
@@ -503,8 +505,10 @@ var uiCmd = &cobra.Command{
 				return
 			}
 
-			var subManifest any
+			var subManifest drive.SubmissionManifest
 			_ = json.Unmarshal(manifestData, &subManifest)
+
+			keyRec, hasKey := drive.GetKeyRecord(subManifest.SubmissionID)
 
 			submissionsDir := filepath.Join(absPath, "submissions")
 			type submissionFile struct {
@@ -532,14 +536,49 @@ var uiCmd = &cobra.Command{
 			})
 
 			respondJSON(w, http.StatusOK, map[string]any{
-				"prepared":    true,
-				"path":        absPath,
-				"manifest":    subManifest,
-				"submissions": files,
+				"prepared":        true,
+				"path":            absPath,
+				"submission_id":   subManifest.SubmissionID,
+				"public_key":      subManifest.RecipientPublicKeyB64,
+				"has_private_key": hasKey,
+				"private_key":     keyRec.PrivateKey,
+				"manifest":        subManifest,
+				"submissions":     files,
 			})
 		})
 
-		// 4k. API: Admin - Generate Keypair
+		// 4k. API: Admin - Save Key Record
+		mux.HandleFunc("POST /api/drive/save-key", func(w http.ResponseWriter, r *http.Request) {
+			var req struct {
+				SubmissionID string `json:"submission_id"`
+				PublicKey    string `json:"public_key"`
+				PrivateKey   string `json:"private_key"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid request payload")
+				return
+			}
+			if req.SubmissionID == "" || req.PrivateKey == "" {
+				respondError(w, http.StatusBadRequest, "submission_id and private_key are required")
+				return
+			}
+			err := drive.SaveKeyRecord(drive.KeyRecord{
+				SubmissionID: req.SubmissionID,
+				PublicKey:    req.PublicKey,
+				PrivateKey:   req.PrivateKey,
+				CreatedAt:    time.Now().Format(time.RFC3339),
+			})
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, "Failed to save private key: "+err.Error())
+				return
+			}
+			respondJSON(w, http.StatusOK, map[string]any{
+				"message":       "Private key saved successfully for submission ID " + req.SubmissionID,
+				"submission_id": req.SubmissionID,
+			})
+		})
+
+		// 4l. API: Admin - Generate Keypair
 		mux.HandleFunc("POST /api/drive/generate-keypair", func(w http.ResponseWriter, r *http.Request) {
 			privKey, err := ecdh.X25519().GenerateKey(cryptoRand.Reader)
 			if err != nil {
@@ -552,6 +591,280 @@ var uiCmd = &cobra.Command{
 			respondJSON(w, http.StatusOK, map[string]string{
 				"public_key":  pubKeyB64,
 				"private_key": privKeyB64,
+			})
+		})
+
+		// 4l2. API: Admin - Clear Submissions Directory on Drive
+		mux.HandleFunc("POST /api/drive/clear-submissions", func(w http.ResponseWriter, r *http.Request) {
+			var req struct {
+				DrivePath string `json:"drive_path"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid request payload")
+				return
+			}
+			if req.DrivePath == "" {
+				respondError(w, http.StatusBadRequest, "drive_path is required")
+				return
+			}
+
+			if err := drive.ClearSubmissions(req.DrivePath); err != nil {
+				respondError(w, http.StatusInternalServerError, "Failed to clear submissions: "+err.Error())
+				return
+			}
+
+			respondJSON(w, http.StatusOK, map[string]any{
+				"success": true,
+				"message": "Submissions cleared successfully",
+			})
+		})
+
+		// 4m. API: Admin - Batch Evaluate Submissions
+		mux.HandleFunc("POST /api/drive/evaluate-batch", func(w http.ResponseWriter, r *http.Request) {
+			var req struct {
+				DrivePath           string `json:"drive_path"`
+				RecipientPrivateKey string `json:"recipient_private_key"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid request payload")
+				return
+			}
+			if req.DrivePath == "" {
+				respondError(w, http.StatusBadRequest, "drive_path is required")
+				return
+			}
+
+			drivePath := req.DrivePath
+			if strings.HasPrefix(drivePath, "~") {
+				if home, err := os.UserHomeDir(); err == nil {
+					drivePath = filepath.Join(home, strings.TrimPrefix(drivePath, "~"))
+				}
+			}
+			if abs, err := filepath.Abs(drivePath); err == nil {
+				drivePath = abs
+			}
+
+			privKeyStr := strings.TrimSpace(req.RecipientPrivateKey)
+			if privKeyStr == "" {
+				manifestPath := filepath.Join(drivePath, "submissions", "manifest.json")
+				manifestData, err := os.ReadFile(manifestPath)
+				if err == nil {
+					var subManifest drive.SubmissionManifest
+					if err := json.Unmarshal(manifestData, &subManifest); err == nil && subManifest.SubmissionID != "" {
+						if keyRec, ok := drive.GetKeyRecord(subManifest.SubmissionID); ok && keyRec.PrivateKey != "" {
+							privKeyStr = keyRec.PrivateKey
+						}
+					}
+				}
+			}
+
+			if privKeyStr == "" {
+				respondError(w, http.StatusBadRequest, "recipient_private_key is required (or private key must be saved in key store)")
+				return
+			}
+
+			rawKey, err := base64.StdEncoding.DecodeString(privKeyStr)
+			if err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid recipient private key base64: "+err.Error())
+				return
+			}
+			privateKey, err := ecdh.X25519().NewPrivateKey(rawKey)
+			if err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid X25519 private key: "+err.Error())
+				return
+			}
+
+			decrypted, err := drive.LoadAndDecryptSubmissions(drivePath, privateKey)
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, "Failed to load submissions: "+err.Error())
+				return
+			}
+
+			var records []BatchResultRecord
+			for _, sub := range decrypted {
+				record := BatchResultRecord{
+					EnvelopePath: sub.EnvelopePath,
+					Status:       "error",
+				}
+
+				if sub.Error != nil {
+					record.Error = fmt.Sprintf("decryption failed: %v", sub.Error)
+					records = append(records, record)
+					continue
+				}
+
+				tempFile, err := os.CreateTemp("", "batch-eval-*.tar")
+				if err != nil {
+					record.Error = fmt.Sprintf("create temp file: %v", err)
+					records = append(records, record)
+					continue
+				}
+				tempPath := tempFile.Name()
+				_, _ = tempFile.Write(sub.PlaintextTar)
+				tempFile.Close()
+
+				resultJSON, err := evaluateSubmissionFile(r.Context(), tempPath, evaluationOptions{
+					PrivateStore: filepath.Join(drivePath, "exercise"),
+				})
+				os.Remove(tempPath)
+
+				if err != nil {
+					record.Error = fmt.Sprintf("evaluation failed: %v", err)
+					records = append(records, record)
+					continue
+				}
+
+				var evalResult evaluatorcore.EvaluationResult
+				if err := json.Unmarshal(resultJSON, &evalResult); err != nil {
+					record.Error = fmt.Sprintf("decode result JSON: %v", err)
+					records = append(records, record)
+					continue
+				}
+
+				record.StudentID = evalResult.StudentID
+				record.LabID = evalResult.LabID
+				record.Version = evalResult.Version
+				record.Status = evalResult.Status
+				record.EarnedPoints = evalResult.EarnedPoints
+				record.MaxPoints = evalResult.MaxPoints
+				record.Results = evalResult.Results
+				records = append(records, record)
+			}
+
+			respondJSON(w, http.StatusOK, map[string]any{
+				"records": records,
+				"count":   len(records),
+			})
+		})
+
+		// 4n. API: Admin - Evaluate Single Submission
+		mux.HandleFunc("POST /api/drive/evaluate-single", func(w http.ResponseWriter, r *http.Request) {
+			var req struct {
+				DrivePath           string `json:"drive_path"`
+				Filename            string `json:"filename"`
+				RecipientPrivateKey string `json:"recipient_private_key"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid request payload")
+				return
+			}
+			if req.DrivePath == "" || req.Filename == "" {
+				respondError(w, http.StatusBadRequest, "drive_path and filename are required")
+				return
+			}
+
+			drivePath := req.DrivePath
+			if strings.HasPrefix(drivePath, "~") {
+				if home, err := os.UserHomeDir(); err == nil {
+					drivePath = filepath.Join(home, strings.TrimPrefix(drivePath, "~"))
+				}
+			}
+			if abs, err := filepath.Abs(drivePath); err == nil {
+				drivePath = abs
+			}
+
+			privKeyStr := strings.TrimSpace(req.RecipientPrivateKey)
+			if privKeyStr == "" {
+				manifestPath := filepath.Join(drivePath, "submissions", "manifest.json")
+				manifestData, err := os.ReadFile(manifestPath)
+				if err == nil {
+					var subManifest drive.SubmissionManifest
+					if err := json.Unmarshal(manifestData, &subManifest); err == nil && subManifest.SubmissionID != "" {
+						if keyRec, ok := drive.GetKeyRecord(subManifest.SubmissionID); ok && keyRec.PrivateKey != "" {
+							privKeyStr = keyRec.PrivateKey
+						}
+					}
+				}
+			}
+
+			if privKeyStr == "" {
+				respondError(w, http.StatusBadRequest, "recipient_private_key is required (or private key must be saved in key store)")
+				return
+			}
+
+			var envelopePath string
+			var envelopeData []byte
+
+			submissionsDir := filepath.Join(drivePath, "submissions")
+			_ = filepath.Walk(submissionsDir, func(p string, info os.FileInfo, err error) error {
+				if err != nil || info.IsDir() {
+					return nil
+				}
+				relSub, _ := filepath.Rel(submissionsDir, p)
+				relDrive, _ := filepath.Rel(drivePath, p)
+				if info.Name() == req.Filename || relSub == req.Filename || relDrive == req.Filename || p == req.Filename {
+					if data, err := os.ReadFile(p); err == nil {
+						envelopePath = p
+						envelopeData = data
+						return io.EOF
+					}
+				}
+				return nil
+			})
+
+			if envelopeData == nil {
+				respondError(w, http.StatusNotFound, fmt.Sprintf("Submission file not found (%s)", req.Filename))
+				return
+			}
+
+			var envelope drive.SubmissionEnvelope
+			if err := json.Unmarshal(envelopeData, &envelope); err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid submission JSON: "+err.Error())
+				return
+			}
+
+			rawKey, err := base64.StdEncoding.DecodeString(privKeyStr)
+			if err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid private key base64: "+err.Error())
+				return
+			}
+			privateKey, err := ecdh.X25519().NewPrivateKey(rawKey)
+			if err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid X25519 private key: "+err.Error())
+				return
+			}
+
+			plaintext, err := drive.DecryptSubmissionArchive(envelope, privateKey)
+			if err != nil {
+				respondError(w, http.StatusBadRequest, "Decryption failed: "+err.Error())
+				return
+			}
+
+			tempFile, err := os.CreateTemp("", "single-eval-*.tar")
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, "Temp file creation failed: "+err.Error())
+				return
+			}
+			tempPath := tempFile.Name()
+			_, _ = tempFile.Write(plaintext)
+			tempFile.Close()
+			defer os.Remove(tempPath)
+
+			resultJSON, err := evaluateSubmissionFile(r.Context(), tempPath, evaluationOptions{
+				PrivateStore: filepath.Join(drivePath, "exercise"),
+			})
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, "Evaluation failed: "+err.Error())
+				return
+			}
+
+			var evalResult evaluatorcore.EvaluationResult
+			_ = json.Unmarshal(resultJSON, &evalResult)
+
+			record := BatchResultRecord{
+				EnvelopePath: envelopePath,
+				StudentID:    evalResult.StudentID,
+				LabID:        evalResult.LabID,
+				Version:      evalResult.Version,
+				Status:       evalResult.Status,
+				EarnedPoints: evalResult.EarnedPoints,
+				MaxPoints:    evalResult.MaxPoints,
+				Results:      evalResult.Results,
+			}
+
+			respondJSON(w, http.StatusOK, map[string]any{
+				"record": record,
+				"result": evalResult,
 			})
 		})
 

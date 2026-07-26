@@ -76,6 +76,24 @@ const PALETTE_CONFIGS = {
     iconType: 'exercise',
     isFolderBrowse: false,
   },
+  admin_add_exercise: {
+    headerLabel: 'SELECT CACHED EXERCISE TO DEPLOY TO DRIVE',
+    placeholder: 'Search cached exercises to deploy to drive...',
+    iconType: 'exercise',
+    isFolderBrowse: false,
+  },
+  admin_confirm_clear_results: {
+    headerLabel: 'CLEAR ALL EVALUATION RESULTS?',
+    placeholder: 'Select Yes to confirm clearing all evaluation results...',
+    iconType: 'wrench',
+    isFolderBrowse: false,
+  },
+  admin_confirm_clear_submissions: {
+    headerLabel: 'PERMANENTLY CLEAR ALL SUBMISSIONS FROM DRIVE?',
+    placeholder: 'Select Yes to confirm deleting all student submission files...',
+    iconType: 'wrench',
+    isFolderBrowse: false,
+  },
 };
 
 export default function CommandPalette() {

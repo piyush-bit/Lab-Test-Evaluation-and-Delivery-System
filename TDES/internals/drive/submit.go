@@ -31,6 +31,7 @@ const (
 
 type SubmissionManifest struct {
 	SchemaVersion         string `json:"schema_version"`
+	SubmissionID          string `json:"submission_id,omitempty"`
 	EncryptAlg            string `json:"encrypt_alg"`
 	RecipientPublicKeyB64 string `json:"recipient_public_key_b64"`
 }
@@ -53,44 +54,158 @@ type SubmissionEnvelope struct {
 	CiphertextB64         string `json:"ciphertext_b64"`
 }
 
-func PrepareDriveForSubmission(drivePath string, recipientPublicKeyB64 string) error {
-	drive, err := resolveDrive(drivePath, true)
+type KeyRecord struct {
+	SubmissionID string `json:"submission_id"`
+	PublicKey    string `json:"public_key"`
+	PrivateKey   string `json:"private_key"`
+	CreatedAt    string `json:"created_at"`
+}
+
+func GetKeysConfigPath() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = "."
+	}
+	dir := filepath.Join(home, ".euc2")
+	_ = os.MkdirAll(dir, 0755)
+	return filepath.Join(dir, "keys.json")
+}
+
+func SaveKeyRecord(rec KeyRecord) error {
+	path := GetKeysConfigPath()
+	keys := make(map[string]KeyRecord)
+
+	data, err := os.ReadFile(path)
+	if err == nil && len(data) > 0 {
+		_ = json.Unmarshal(data, &keys)
+	}
+
+	keys[rec.SubmissionID] = rec
+
+	outData, err := json.MarshalIndent(keys, "", "  ")
 	if err != nil {
 		return err
 	}
+	return os.WriteFile(path, outData, 0644)
+}
 
-	recipientPublicKeyB64 = strings.TrimSpace(recipientPublicKeyB64)
-	if recipientPublicKeyB64 == "" {
-		return fmt.Errorf("recipient public key is required")
+func GetKeyRecord(submissionID string) (KeyRecord, bool) {
+	if submissionID == "" {
+		return KeyRecord{}, false
 	}
+	path := GetKeysConfigPath()
+	data, err := os.ReadFile(path)
+	if err != nil || len(data) == 0 {
+		return KeyRecord{}, false
+	}
+
+	keys := make(map[string]KeyRecord)
+	if err := json.Unmarshal(data, &keys); err != nil {
+		return KeyRecord{}, false
+	}
+
+	rec, ok := keys[submissionID]
+	return rec, ok
+}
+
+func PrepareDriveForSubmission(drivePath string, recipientPublicKeyB64 string) error {
+	_, _, err := PrepareDriveForSubmissionWithID(drivePath, recipientPublicKeyB64, "")
+	return err
+}
+
+func PrepareDriveForSubmissionWithID(drivePath string, recipientPublicKeyB64 string, submissionID string) (*SubmissionManifest, string, error) {
+	drive, err := resolveDrive(drivePath, true)
+	if err != nil {
+		return nil, "", err
+	}
+
+	var generatedPrivateKey string
+	recipientPublicKeyB64 = strings.TrimSpace(recipientPublicKeyB64)
+
+	if recipientPublicKeyB64 == "" {
+		privKey, err := ecdh.X25519().GenerateKey(rand.Reader)
+		if err != nil {
+			return nil, "", fmt.Errorf("generate keypair: %w", err)
+		}
+		recipientPublicKeyB64 = base64.StdEncoding.EncodeToString(privKey.PublicKey().Bytes())
+		generatedPrivateKey = base64.StdEncoding.EncodeToString(privKey.Bytes())
+	}
+
 	if _, err := decodeRecipientPublicKey(recipientPublicKeyB64); err != nil {
-		return err
+		return nil, "", err
+	}
+
+	if submissionID == "" {
+		b := make([]byte, 8)
+		_, _ = rand.Read(b)
+		submissionID = fmt.Sprintf("sub_%s", hex.EncodeToString(b))
 	}
 
 	if err := os.MkdirAll(filepath.Join(drive.Path, submissionDirName), defaultSubmissionDirectoryMode); err != nil {
-		return fmt.Errorf("create drive submissions directory: %w", err)
+		return nil, "", fmt.Errorf("create drive submissions directory: %w", err)
 	}
 
 	drive.Manifest.ActiveModules["delivery"] = true
 	if err := drive.Manifest.WriteManifest(drive.Path); err != nil {
-		return fmt.Errorf("write drive manifest: %w", err)
+		return nil, "", fmt.Errorf("write drive manifest: %w", err)
 	}
 
 	manifest := SubmissionManifest{
 		SchemaVersion:         submissionManifestSchema,
+		SubmissionID:          submissionID,
 		EncryptAlg:            submissionEncryptAlgorithm,
 		RecipientPublicKeyB64: recipientPublicKeyB64,
 	}
 
 	data, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
-		return fmt.Errorf("encode submission manifest: %w", err)
+		return nil, "", fmt.Errorf("encode submission manifest: %w", err)
 	}
 	data = append(data, '\n')
 
 	if err := os.WriteFile(submissionManifestPath(drive.Path), data, defaultSubmissionFileMode); err != nil {
-		return fmt.Errorf("write submission manifest: %w", err)
+		return nil, "", fmt.Errorf("write submission manifest: %w", err)
 	}
+
+	if generatedPrivateKey != "" {
+		_ = SaveKeyRecord(KeyRecord{
+			SubmissionID: submissionID,
+			PublicKey:    recipientPublicKeyB64,
+			PrivateKey:   generatedPrivateKey,
+			CreatedAt:    fmt.Sprintf("%s", os.Getenv("USER")),
+		})
+	}
+
+	return &manifest, generatedPrivateKey, nil
+}
+
+// ClearSubmissions removes all student submission files and lab subdirectories
+// inside the submissions directory of a drive while preserving submissions/manifest.json.
+func ClearSubmissions(drivePath string) error {
+	drive, err := resolveDrive(drivePath, false)
+	if err != nil {
+		return err
+	}
+
+	submissionsDir := filepath.Join(drive.Path, submissionDirName)
+	entries, err := os.ReadDir(submissionsDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("read submissions directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.Name() == submissionManifestFileName {
+			continue // preserve manifest.json (submission_id & public_key)
+		}
+		targetPath := filepath.Join(submissionsDir, entry.Name())
+		if err := os.RemoveAll(targetPath); err != nil {
+			return fmt.Errorf("remove submission entry %s: %w", entry.Name(), err)
+		}
+	}
+
 	return nil
 }
 

@@ -28,14 +28,15 @@ var (
 )
 
 type BatchResultRecord struct {
-	EnvelopePath string `json:"envelope_path"`
-	StudentID    string `json:"student_id,omitempty"`
-	LabID        string `json:"lab_id,omitempty"`
-	Version      string `json:"version,omitempty"`
-	Status       string `json:"status"`
-	EarnedPoints int    `json:"earned_points"`
-	MaxPoints    int    `json:"max_points"`
-	Error        string `json:"error,omitempty"`
+	EnvelopePath string                               `json:"envelope_path"`
+	StudentID    string                               `json:"student_id,omitempty"`
+	LabID        string                               `json:"lab_id,omitempty"`
+	Version      string                               `json:"version,omitempty"`
+	Status       string                               `json:"status"`
+	EarnedPoints int                                  `json:"earned_points"`
+	MaxPoints    int                                  `json:"max_points"`
+	Results      []evaluatorcore.EvaluationTestResult `json:"results,omitempty"`
+	Error        string                               `json:"error,omitempty"`
 }
 
 var driveEvaluateBatchCmd = &cobra.Command{
