@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStudent } from '../StudentContext';
-import { DriveIcon, OpenFolderIcon, LockIcon, CloseIcon } from './Icons';
+import { CloseIcon } from './Icons';
 
 export default function SubmitWizard({ isOpen, onClose }) {
   const {
@@ -8,11 +8,11 @@ export default function SubmitWizard({ isOpen, onClose }) {
     remoteServers,
     remoteServerStatuses,
     recentDrives,
-    addRemoteServer,
-    checkRemoteServerHealth
+    addRemoteServer
   } = useStudent();
 
-  // Wizard Steps: 'target' | 'add_server' | 'add_drive' | 'student' | 'new_student' | 'pin' | 'submitting' | 'result'
+  // Wizard Steps: 
+  // 'target' | 'add_server' | 'add_drive' | 'student' | 'new_student_id' | 'new_student_org' | 'pin' | 'new_pin' | 'confirm_drive' | 'submitting' | 'result'
   const [step, setStep] = useState('target');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -21,14 +21,15 @@ export default function SubmitWizard({ isOpen, onClose }) {
   const [selectedTarget, setSelectedTarget] = useState(null); // { type: 'remote'|'drive', target: string }
   const [selectedStudent, setSelectedStudent] = useState(null); // { student_id: string, org_id: string }
 
-  // Form inputs
-  const [serverInput, setServerInput] = useState('');
-  const [driveInput, setDriveInput] = useState('');
-  const [studentIdInput, setStudentIdInput] = useState('');
-  const [orgIdInput, setOrgIdInput] = useState('default');
-  const [pinInput, setPinInput] = useState('');
-  const [newPinInput, setNewPinInput] = useState('');
-  const [showNewPin, setShowNewPin] = useState(false);
+  // Folder Browsing State for 'add_drive'
+  const [currentBrowsePath, setCurrentBrowsePath] = useState('');
+  const [parentPath, setParentPath] = useState('');
+  const [subDirectories, setSubDirectories] = useState([]);
+
+  // Temp form fields
+  const [tempStudentId, setTempStudentId] = useState('');
+  const [pin, setPin] = useState('');
+  const [newPin, setNewPin] = useState('');
 
   // Results & Errors
   const [validationError, setValidationError] = useState('');
@@ -55,9 +56,8 @@ export default function SubmitWizard({ isOpen, onClose }) {
     setSelectedIndex(0);
     setSelectedTarget(null);
     setSelectedStudent(null);
-    setPinInput('');
-    setNewPinInput('');
-    setShowNewPin(false);
+    setPin('');
+    setNewPin('');
     setValidationError('');
     setSubmitResult(null);
 
@@ -66,11 +66,7 @@ export default function SubmitWizard({ isOpen, onClose }) {
       .then(res => res.json())
       .then(data => {
         if (data.student_id) {
-          // Prepopulate form fields
-          setStudentIdInput(data.student_id);
-          setOrgIdInput(data.org_id || 'default');
-          
-          // Seed saved profiles if empty
+          // Prepopulate profiles
           setSavedProfiles(prev => {
             const hasProfile = prev.some(p => p.student_id === data.student_id && p.org_id === data.org_id);
             if (!hasProfile) {
@@ -98,29 +94,51 @@ export default function SubmitWizard({ isOpen, onClose }) {
     });
   }, [isOpen, recentDrives]);
 
+  // Load directories when entering folder browser mode
+  useEffect(() => {
+    if (step === 'add_drive') {
+      fetchBrowseDirs(currentBrowsePath);
+    }
+  }, [step, currentBrowsePath]);
+
+  const fetchBrowseDirs = async (path) => {
+    try {
+      const res = await fetch(`/api/browse?path=${encodeURIComponent(path)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentBrowsePath(data.current_path);
+        setParentPath(data.parent_path || '');
+        setSubDirectories(data.directories || []);
+        setSelectedIndex(0);
+        setValidationError('');
+      } else {
+        setValidationError('Failed to read directory');
+      }
+    } catch (err) {
+      setValidationError('Error: ' + err.message);
+    }
+  };
+
   if (!isOpen) return null;
 
   // Filter Target Options (Hide offline remote servers and unprepared drives)
   const getFilteredTargets = () => {
     const list = [];
 
-    // Option: Add new remote server
     list.push({
       type: 'action',
       action: 'add_server',
       label: '+ Add new remote server...',
-      desc: 'Register and validate a new TDES evaluation server URL'
+      desc: 'Connect and register a new TDES evaluation server URL'
     });
 
-    // Option: Add new drive path
     list.push({
       type: 'action',
       action: 'add_drive',
       label: '+ Add new drive path...',
-      desc: 'Browse or register a local USB/disk directory'
+      desc: 'Browse and open a local USB/disk directory'
     });
 
-    // Filtered online remote servers
     remoteServers.forEach(serverUrl => {
       const status = remoteServerStatuses[serverUrl];
       if (status && status.online) {
@@ -133,7 +151,6 @@ export default function SubmitWizard({ isOpen, onClose }) {
       }
     });
 
-    // Filtered ready drives
     recentDrives.forEach(drivePath => {
       const isPrepared = driveSubmissionsStatus[drivePath];
       if (isPrepared) {
@@ -146,7 +163,6 @@ export default function SubmitWizard({ isOpen, onClose }) {
       }
     });
 
-    // Apply search query filtering
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       return list.filter(item => 
@@ -164,7 +180,7 @@ export default function SubmitWizard({ isOpen, onClose }) {
       type: 'action',
       action: 'new_profile',
       label: '+ Create new student profile...',
-      desc: 'Specify a new Student ID and Organization identifier'
+      desc: 'Specify a new Student ID and Organization ID'
     });
 
     savedProfiles.forEach(p => {
@@ -172,7 +188,7 @@ export default function SubmitWizard({ isOpen, onClose }) {
         type: 'profile',
         profile: p,
         label: `${p.student_id} (Org: ${p.org_id})`,
-        desc: 'Select saved profile credentials'
+        desc: 'Use saved profile credentials'
       });
     });
 
@@ -186,49 +202,122 @@ export default function SubmitWizard({ isOpen, onClose }) {
     return list;
   };
 
+  // Get current Folder Browser items
+  const getBrowseItems = () => {
+    const list = [];
+    
+    // Select current dir option
+    list.push({
+      type: 'select_dir',
+      path: currentBrowsePath,
+      label: `Select Current Folder: ${currentBrowsePath}`,
+      desc: 'Verify and select this directory as submission target'
+    });
+
+    // Go up option
+    if (parentPath) {
+      list.push({
+        type: 'up',
+        path: parentPath,
+        label: '.. (Go Up)',
+        desc: `Navigate to parent: ${parentPath}`
+      });
+    }
+
+    // Subdirectories
+    subDirectories.forEach(dir => {
+      list.push({
+        type: 'dir',
+        label: dir,
+        desc: 'Navigate into folder'
+      });
+    });
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      // Keep select_dir and up always, only filter directories
+      return list.filter((item, index) => 
+        index <= 1 || item.label.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  };
+
   const handleTargetSelect = (item) => {
     if (item.action === 'add_server') {
       setStep('add_server');
       setSearchQuery('');
-      setServerInput('');
       setSelectedIndex(0);
       setValidationError('');
     } else if (item.action === 'add_drive') {
       setStep('add_drive');
       setSearchQuery('');
-      setDriveInput('');
       setSelectedIndex(0);
-      setValidationError('');
+      // Fetch default dir
+      fetchBrowseDirs('');
     } else if (item.type === 'target_remote') {
       setSelectedTarget({ type: 'remote', target: item.target });
       setStep('student');
       setSearchQuery('');
       setSelectedIndex(0);
-      setValidationError('');
     } else if (item.type === 'target_drive') {
       setSelectedTarget({ type: 'drive', target: item.target });
       setStep('student');
       setSearchQuery('');
       setSelectedIndex(0);
+    }
+  };
+
+  const handleBrowseSelect = async (item) => {
+    if (item.type === 'select_dir') {
       setValidationError('');
+      try {
+        const res = await fetch(`/api/drive/submissions?path=${encodeURIComponent(item.path)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.prepared) {
+            setDriveSubmissionsStatus(prev => ({ ...prev, [item.path]: true }));
+            setSelectedTarget({ type: 'drive', target: item.path });
+            setStep('student');
+            setSearchQuery('');
+            setSelectedIndex(0);
+          } else {
+            setValidationError(`Submission directory not prepared on path: ${item.path}`);
+          }
+        } else {
+          setValidationError('Failed to validate local drive path');
+        }
+      } catch (err) {
+        setValidationError('Error: ' + err.message);
+      }
+    } else if (item.type === 'up') {
+      setCurrentBrowsePath(item.path);
+      setSearchQuery('');
+    } else if (item.type === 'dir') {
+      // separator-safe path join
+      const separator = currentBrowsePath.includes('/') ? '/' : '\\';
+      const cleanBase = currentBrowsePath.replace(/[/\\]$/, '');
+      const newPath = `${cleanBase}${separator}${item.label}`;
+      setCurrentBrowsePath(newPath);
+      setSearchQuery('');
     }
   };
 
   const handleStudentSelect = (item) => {
     if (item.action === 'new_profile') {
-      setStep('new_student');
-      setStudentIdInput('');
-      setOrgIdInput('default');
-      setValidationError('');
+      setStep('new_student_id');
+      setSearchQuery('');
+      setSelectedIndex(0);
     } else if (item.type === 'profile') {
       setSelectedStudent(item.profile);
-      setStep('pin');
-      setValidationError('');
+      setStep(selectedTarget.type === 'remote' ? 'pin' : 'confirm_drive');
+      setSearchQuery('');
+      setSelectedIndex(0);
     }
   };
 
   const handleAddServerConfirm = async () => {
-    const cleanUrl = serverInput.trim();
+    const cleanUrl = searchQuery.trim();
     if (!cleanUrl) return;
 
     setValidationError('');
@@ -243,7 +332,7 @@ export default function SubmitWizard({ isOpen, onClose }) {
           setSearchQuery('');
           setSelectedIndex(0);
         } else {
-          setValidationError(`Server ${cleanUrl} is offline or unreachable: ${data.error || 'Connection failed'}`);
+          setValidationError(`Server is offline or unreachable: ${data.error || 'Connection failed'}`);
         }
       } else {
         setValidationError('Failed to validate remote registry server health');
@@ -253,65 +342,7 @@ export default function SubmitWizard({ isOpen, onClose }) {
     }
   };
 
-  const handleAddDriveConfirm = async () => {
-    const cleanPath = driveInput.trim();
-    if (!cleanPath) return;
-
-    setValidationError('');
-    try {
-      const res = await fetch(`/api/drive/submissions?path=${encodeURIComponent(cleanPath)}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.prepared) {
-          // Add to recent drives via context side-effect or state
-          setDriveSubmissionsStatus(prev => ({ ...prev, [cleanPath]: true }));
-          setSelectedTarget({ type: 'drive', target: cleanPath });
-          setStep('student');
-          setSearchQuery('');
-          setSelectedIndex(0);
-        } else {
-          setValidationError(`Submission directory not enabled/prepared on path: ${cleanPath}`);
-        }
-      } else {
-        setValidationError('Failed to validate local drive path');
-      }
-    } catch (err) {
-      setValidationError('Error: ' + err.message);
-    }
-  };
-
-  const handleNewStudentConfirm = () => {
-    const cleanId = studentIdInput.trim();
-    const cleanOrg = orgIdInput.trim() || 'default';
-    if (!cleanId) {
-      setValidationError('Student ID is required');
-      return;
-    }
-
-    const profile = { student_id: cleanId, org_id: cleanOrg };
-    setSelectedStudent(profile);
-
-    // Save profile to list
-    setSavedProfiles(prev => {
-      const hasProfile = prev.some(p => p.student_id === cleanId && p.org_id === cleanOrg);
-      if (!hasProfile) {
-        const updated = [profile, ...prev];
-        localStorage.setItem('tdes_student_profiles', JSON.stringify(updated));
-        return updated;
-      }
-      return prev;
-    });
-
-    setStep('pin');
-    setValidationError('');
-  };
-
   const handleFinalSubmit = async () => {
-    if (selectedTarget.type === 'remote' && !pinInput.trim()) {
-      setValidationError('Security PIN code is required');
-      return;
-    }
-
     setValidationError('');
     setStep('submitting');
 
@@ -325,33 +356,98 @@ export default function SubmitWizard({ isOpen, onClose }) {
           target: selectedTarget.target,
           student_id: selectedStudent.student_id,
           org_id: selectedStudent.org_id,
-          pin: pinInput.trim(),
-          new_pin: showNewPin ? newPinInput.trim() : ''
+          pin: pin.trim(),
+          new_pin: newPin.trim()
         })
       });
 
       const data = await res.json();
       if (!res.ok) {
-        setStep('pin');
+        setStep(selectedTarget.type === 'remote' ? 'pin' : 'confirm_drive');
         setValidationError(data.error || 'Submission failed');
       } else {
         setSubmitResult(data.result);
         setStep('result');
       }
     } catch (err) {
-      setStep('pin');
+      setStep(selectedTarget.type === 'remote' ? 'pin' : 'confirm_drive');
       setValidationError('Connection error: ' + err.message);
     }
   };
 
-  // Keyboard Navigation Handlers
+  const getConfirmItems = () => {
+    const list = [
+      {
+        type: 'submit_action',
+        action: 'submit',
+        label: 'Submit'
+      },
+      {
+        type: 'submit_action',
+        action: 'cancel',
+        label: 'Cancel'
+      }
+    ];
+
+    if (step === 'pin') {
+      list.splice(1, 0, {
+        type: 'submit_action',
+        action: 'change_pin',
+        label: 'Change/Update Security PIN...'
+      });
+    }
+
+    if (step === 'confirm_drive' && searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return list.filter(item => 
+        item.label.toLowerCase().includes(q) || 
+        (item.desc && item.desc.toLowerCase().includes(q))
+      );
+    }
+
+    return list;
+  };
+
+  const getResultOptions = () => {
+    const list = [
+      {
+        action: 'close',
+        label: 'Close',
+        desc: 'Exit the submission wizard'
+      }
+    ];
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return list.filter(item => 
+        item.label.toLowerCase().includes(q) || 
+        (item.desc && item.desc.toLowerCase().includes(q))
+      );
+    }
+
+    return list;
+  };
+
+  const handleCopyPath = () => {
+    if (!submitResult) return;
+    navigator.clipboard.writeText(submitResult);
+    setValidationError('✓ Copied to clipboard!');
+    setTimeout(() => setValidationError(''), 2000);
+  };
+
+  // Keyboard navigation inside quick open
   const handleKeyDown = (e) => {
     if (e.key === 'Escape') {
       onClose();
       return;
     }
 
-    const items = step === 'target' ? getFilteredTargets() : step === 'student' ? getFilteredStudents() : [];
+    const items = 
+      step === 'target' ? getFilteredTargets() : 
+      step === 'add_drive' ? getBrowseItems() : 
+      step === 'student' ? getFilteredStudents() :
+      (step === 'pin' || step === 'new_pin' || step === 'confirm_drive') ? getConfirmItems() :
+      step === 'result' ? getResultOptions() : [];
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -363,16 +459,71 @@ export default function SubmitWizard({ isOpen, onClose }) {
       e.preventDefault();
       if (step === 'target' && items[selectedIndex]) {
         handleTargetSelect(items[selectedIndex]);
-      } else if (step === 'student' && items[selectedIndex]) {
-        handleStudentSelect(items[selectedIndex]);
+      } else if (step === 'add_drive' && items[selectedIndex]) {
+        handleBrowseSelect(items[selectedIndex]);
       } else if (step === 'add_server') {
         handleAddServerConfirm();
-      } else if (step === 'add_drive') {
-        handleAddDriveConfirm();
-      } else if (step === 'new_student') {
-        handleNewStudentConfirm();
-      } else if (step === 'pin') {
-        handleFinalSubmit();
+      } else if (step === 'student' && items[selectedIndex]) {
+        handleStudentSelect(items[selectedIndex]);
+      } else if (step === 'new_student_id') {
+        const cleanId = searchQuery.trim();
+        if (!cleanId) {
+          setValidationError('Student ID is required');
+          return;
+        }
+        setTempStudentId(cleanId);
+        setStep('new_student_org');
+        setSearchQuery('');
+        setValidationError('');
+      } else if (step === 'new_student_org') {
+        const cleanOrg = searchQuery.trim() || 'default';
+        const profile = { student_id: tempStudentId, org_id: cleanOrg };
+        setSelectedStudent(profile);
+
+        // Save profile locally
+        setSavedProfiles(prev => {
+          const hasProfile = prev.some(p => p.student_id === tempStudentId && p.org_id === cleanOrg);
+          if (!hasProfile) {
+            const updated = [profile, ...prev];
+            localStorage.setItem('tdes_student_profiles', JSON.stringify(updated));
+            return updated;
+          }
+          return prev;
+        });
+
+        setStep(selectedTarget.type === 'remote' ? 'pin' : 'confirm_drive');
+        setSearchQuery('');
+        setValidationError('');
+      } else if ((step === 'pin' || step === 'new_pin' || step === 'confirm_drive') && items[selectedIndex]) {
+        const actionItem = items[selectedIndex];
+        if (actionItem.action === 'submit') {
+          if (step === 'pin') {
+            const cleanPin = searchQuery.trim();
+            if (!cleanPin) {
+              setValidationError('PIN code is required');
+              return;
+            }
+            setPin(cleanPin);
+          } else if (step === 'new_pin') {
+            const cleanNewPin = searchQuery.trim();
+            setNewPin(cleanNewPin);
+          }
+          handleFinalSubmit();
+        } else if (actionItem.action === 'change_pin') {
+          setStep('new_pin');
+          setSearchQuery('');
+          setSelectedIndex(0);
+          setValidationError('');
+        } else if (actionItem.action === 'cancel') {
+          onClose();
+        }
+      } else if (step === 'result' && items[selectedIndex]) {
+        const actionItem = items[selectedIndex];
+        if (actionItem.action === 'copy') {
+          handleCopyPath();
+        } else if (actionItem.action === 'close') {
+          onClose();
+        }
       }
     }
   };
@@ -385,7 +536,7 @@ export default function SubmitWizard({ isOpen, onClose }) {
       if (parsed && parsed.earned_points !== undefined) {
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ fontSize: '1.0rem', fontWeight: 700, color: 'var(--accent)', marginBottom: '8px' }}>
+            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent)', marginBottom: '4px' }}>
               Evaluation Completed: {parsed.earned_points} / {parsed.max_points} points
             </div>
             {parsed.results && parsed.results.map((tr, idx) => (
@@ -400,10 +551,62 @@ export default function SubmitWizard({ isOpen, onClose }) {
         );
       }
     } catch {}
+
+    const isPath = resultStr.includes('/') || resultStr.includes('\\');
+    if (isPath) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+              Status
+            </div>
+            <div style={{ fontSize: '0.82rem', color: 'var(--accent)', fontWeight: 600 }}>
+              Submission successfully saved to disk
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+              Manifest Path
+            </div>
+            <div style={{ 
+              fontFamily: 'var(--font-mono)', 
+              fontSize: '0.75rem', 
+              color: 'var(--text-primary)', 
+              backgroundColor: 'var(--bg-main)', 
+              border: '1px solid var(--border-color)', 
+              padding: '8px 12px', 
+              borderRadius: '6px',
+              wordBreak: 'break-all',
+              lineHeight: '1.4'
+            }}>
+              {resultStr}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)', whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>
         {resultStr}
       </div>
+    );
+  };
+
+  const formatSubmitResult = (resultStr) => {
+    if (!resultStr) return null;
+    const isPath = resultStr.includes('/') || resultStr.includes('\\');
+    if (!isPath) return <span>Submitted successfully: {resultStr}</span>;
+
+    const separator = resultStr.includes('/') ? '/' : '\\';
+    const parts = resultStr.split(separator);
+    const fileName = parts.pop();
+    const dirPath = parts.join(separator) + separator;
+
+    return (
+      <span>
+        Submitted as {dirPath}<strong>{fileName}</strong>
+      </span>
     );
   };
 
@@ -439,185 +642,136 @@ export default function SubmitWizard({ isOpen, onClose }) {
         </div>
 
         {/* Selected Flow Header Indicator */}
-        {(selectedTarget || selectedStudent) && (
-          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-            {selectedTarget && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <strong>Destination:</strong> {selectedTarget.type === 'remote' ? 'Remote Server:' : 'Local Drive:'} {selectedTarget.target}
-              </span>
-            )}
-            {selectedStudent && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                <strong>Student Profile:</strong> {selectedStudent.student_id} (Org: {selectedStudent.org_id})
-              </span>
+        {((selectedTarget || selectedStudent) || step === 'result') && (
+          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', fontSize: '0.75rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
+            {step === 'result' ? (
+              formatSubmitResult(submitResult)
+            ) : (
+              <span>Submitting as {selectedStudent ? `${selectedStudent.student_id}(org:${selectedStudent.org_id})` : '<id>(org:<org>)'} at {selectedTarget ? selectedTarget.target : '<location>'}</span>
             )}
           </div>
         )}
 
         {/* Input Row / Form Area */}
-        <div className="quick-open-input-row" style={{ borderBottom: step === 'result' ? 'none' : '1px solid var(--border-color)' }}>
-          {step === 'target' && (
-            <input 
-              type="text" 
-              value={searchQuery} 
-              onChange={(e) => { setSearchQuery(e.target.value); setSelectedIndex(0); }}
-              placeholder="Search or add target connection..."
-              className="quick-open-input"
-              autoFocus
-            />
-          )}
-
-          {step === 'student' && (
-            <input 
-              type="text" 
-              value={searchQuery} 
-              onChange={(e) => { setSearchQuery(e.target.value); setSelectedIndex(0); }}
-              placeholder="Search or create student credentials profile..."
-              className="quick-open-input"
-              autoFocus
-            />
-          )}
-
-          {step === 'add_server' && (
-            <div style={{ display: 'flex', flex: 1, gap: '8px', padding: '0 8px' }}>
+        {step !== 'submitting' && (
+          <div className="quick-open-input-row" style={{ borderBottom: '1px solid var(--border-color)' }}>
+            {step === 'target' && (
               <input 
                 type="text" 
-                value={serverInput} 
-                onChange={(e) => setServerInput(e.target.value)}
-                placeholder="Type remote registry server URL and press Enter..."
+                value={searchQuery} 
+                onChange={(e) => { setSearchQuery(e.target.value); setSelectedIndex(0); }}
+                placeholder="Search or add target connection..."
                 className="quick-open-input"
-                style={{ flex: 1 }}
                 autoFocus
               />
-              <button 
-                onClick={handleAddServerConfirm}
-                className="vscode-theme-text-btn"
-                style={{ alignSelf: 'center', backgroundColor: 'var(--primary)', color: '#fff', border: 'none', padding: '4px 12px' }}
-              >
-                Validate
-              </button>
-            </div>
-          )}
+            )}
 
-          {step === 'add_drive' && (
-            <div style={{ display: 'flex', flex: 1, gap: '8px', padding: '0 8px' }}>
+            {step === 'add_server' && (
               <input 
                 type="text" 
-                value={driveInput} 
-                onChange={(e) => setDriveInput(e.target.value)}
-                placeholder="Type drive/USB path and press Enter..."
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Type remote registry server URL and press Enter to connect..."
                 className="quick-open-input"
-                style={{ flex: 1 }}
                 autoFocus
               />
-              <button 
-                onClick={handleAddDriveConfirm}
-                className="vscode-theme-text-btn"
-                style={{ alignSelf: 'center', backgroundColor: 'var(--primary)', color: '#fff', border: 'none', padding: '4px 12px' }}
-              >
-                Validate
-              </button>
-            </div>
-          )}
+            )}
 
-          {step === 'new_student' && (
-            <div style={{ display: 'flex', flex: 1, gap: '10px', padding: '0 10px', alignItems: 'center' }}>
+            {step === 'add_drive' && (
               <input 
                 type="text" 
-                value={studentIdInput} 
-                onChange={(e) => setStudentIdInput(e.target.value)}
-                placeholder="Student ID *"
+                value={searchQuery} 
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  // Allow direct typing browsing path
+                  if (e.target.value.includes('/') || e.target.value.includes('\\')) {
+                    setCurrentBrowsePath(e.target.value);
+                  }
+                }}
+                placeholder="Navigate or type drive folder path..."
                 className="quick-open-input"
-                style={{ flex: 2, padding: '4px 6px', fontSize: '0.8rem' }}
                 autoFocus
               />
+            )}
+
+            {step === 'student' && (
               <input 
                 type="text" 
-                value={orgIdInput} 
-                onChange={(e) => setOrgIdInput(e.target.value)}
-                placeholder="Org ID (default: default)"
+                value={searchQuery} 
+                onChange={(e) => { setSearchQuery(e.target.value); setSelectedIndex(0); }}
+                placeholder="Search or select student profile..."
                 className="quick-open-input"
-                style={{ flex: 1, padding: '4px 6px', fontSize: '0.8rem' }}
+                autoFocus
               />
-              <button 
-                onClick={handleNewStudentConfirm}
-                className="vscode-theme-text-btn"
-                style={{ backgroundColor: 'var(--primary)', color: '#fff', border: 'none', padding: '4px 12px' }}
-              >
-                Next
-              </button>
-            </div>
-          )}
+            )}
 
-          {step === 'pin' && (
-            <div style={{ display: 'flex', flex: 1, gap: '12px', padding: '0 12px', alignItems: 'center' }}>
-              {selectedTarget.type === 'remote' ? (
-                <>
-                  <input 
-                    type="password" 
-                    value={pinInput} 
-                    onChange={(e) => setPinInput(e.target.value)}
-                    placeholder="Enter Security PIN *"
-                    className="quick-open-input"
-                    style={{ flex: 2 }}
-                    autoFocus
-                  />
-                  {showNewPin ? (
-                    <input 
-                      type="password" 
-                      value={newPinInput} 
-                      onChange={(e) => setNewPinInput(e.target.value)}
-                      placeholder="Enter new PIN"
-                      className="quick-open-input"
-                      style={{ flex: 2 }}
-                    />
-                  ) : (
-                    <button 
-                      onClick={() => setShowNewPin(true)}
-                      className="vscode-theme-text-btn"
-                      style={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}
-                    >
-                      Reset PIN
-                    </button>
-                  )}
-                </>
-              ) : (
-                <div style={{ flex: 1, fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                  Ready to copy package to drive. No PIN required.
-                </div>
-              )}
-              <button 
-                onClick={handleFinalSubmit}
-                className="vscode-theme-text-btn"
-                style={{ backgroundColor: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', border: 'none', padding: '6px 14px', fontWeight: 600 }}
-              >
-                Submit Now
-              </button>
-            </div>
-          )}
+            {step === 'new_student_id' && (
+              <input 
+                type="text" 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Type Student ID and press Enter..."
+                className="quick-open-input"
+                autoFocus
+              />
+            )}
 
-          {step === 'submitting' && (
-            <div style={{ display: 'flex', flex: 1, padding: '0 12px', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" style={{ animation: 'spin 1.5s linear infinite' }}>
-                <circle cx="12" cy="12" r="10" strokeDasharray="30" strokeDashoffset="10" />
-              </svg>
-              <span>Submitting package and executing remote grading targets...</span>
-            </div>
-          )}
+            {step === 'new_student_org' && (
+              <input 
+                type="text" 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Type Organization ID (default: default) and press Enter..."
+                className="quick-open-input"
+                autoFocus
+              />
+            )}
 
-          {step === 'result' && (
-            <div style={{ flex: 1, fontSize: '0.82rem', padding: '0 10px', color: 'var(--accent)', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>Submission complete! See evaluation feedback below:</span>
-              <button 
-                onClick={onClose}
-                className="vscode-theme-text-btn"
-                style={{ backgroundColor: 'var(--primary)', color: '#fff', border: 'none', padding: '4px 12px' }}
-              >
-                Close Wizard
-              </button>
-            </div>
-          )}
-        </div>
+            {step === 'pin' && (
+              <input 
+                type="password" 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Type Security PIN and press Enter..."
+                className="quick-open-input"
+                autoFocus
+              />
+            )}
+
+            {step === 'new_pin' && (
+              <input 
+                type="password" 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Type new Security PIN and press Enter..."
+                className="quick-open-input"
+                autoFocus
+              />
+            )}
+
+            {step === 'confirm_drive' && (
+              <input 
+                type="text" 
+                value={searchQuery} 
+                onChange={(e) => { setSearchQuery(e.target.value); setSelectedIndex(0); }}
+                placeholder="Type 'Submit' or select option..."
+                className="quick-open-input"
+                autoFocus
+              />
+            )}
+
+            {step === 'result' && (
+              <input 
+                type="text" 
+                value={searchQuery} 
+                onChange={(e) => { setSearchQuery(e.target.value); setSelectedIndex(0); }}
+                placeholder="Type search or choose action..."
+                className="quick-open-input"
+                autoFocus
+              />
+            )}
+          </div>
+        )}
 
         {/* Validation Errors */}
         {validationError && (
@@ -638,7 +792,47 @@ export default function SubmitWizard({ isOpen, onClose }) {
                 style={{ borderBottom: '1px solid var(--border-color)' }}
               >
                 <div className="recent-details">
-                  <span className="recent-name" style={{ fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span className="recent-name" style={{ fontSize: '0.82rem' }}>
+                    {item.label}
+                  </span>
+                  {item.desc && (
+                    <span className="recent-path" style={{ fontSize: '0.7rem', opacity: 0.6 }}>
+                      {item.desc}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+
+          {step === 'add_server' && (
+            <div 
+              className="quick-open-item active"
+              onClick={handleAddServerConfirm}
+              style={{ borderBottom: '1px solid var(--border-color)' }}
+            >
+              <div className="recent-details">
+                <span className="recent-name" style={{ fontSize: '0.82rem' }}>
+                  {searchQuery.trim() ? `Connect Server: ${searchQuery}` : 'Type Server URL and press Enter...'}
+                </span>
+                <span className="recent-path" style={{ fontSize: '0.7rem', opacity: 0.6 }}>
+                  Registry URL will be validated for active health
+                </span>
+              </div>
+            </div>
+          )}
+
+          {step === 'add_drive' && (
+            getBrowseItems().map((item, idx) => (
+              <div 
+                key={idx}
+                className={`quick-open-item ${selectedIndex === idx ? 'active' : ''}`}
+                onClick={() => handleBrowseSelect(item)}
+                onMouseEnter={() => setSelectedIndex(idx)}
+                style={{ borderBottom: '1px solid var(--border-color)' }}
+              >
+                <div className="recent-details">
+                  <span className="recent-name" style={{ fontSize: '0.82rem' }}>
                     {item.label}
                   </span>
                   {item.desc && (
@@ -674,16 +868,139 @@ export default function SubmitWizard({ isOpen, onClose }) {
             ))
           )}
 
-          {step === 'result' && (
-            <div style={{ padding: '16px 20px', textAlign: 'left', backgroundColor: 'var(--bg-main)' }}>
-              {parseResultView(submitResult)}
+          {step === 'new_student_id' && (
+            <div className="quick-open-item active">
+              <div className="recent-details">
+                <span className="recent-name" style={{ fontSize: '0.82rem' }}>
+                  {searchQuery.trim() ? `Student ID: ${searchQuery}` : 'Type Student ID and press Enter...'}
+                </span>
+                <span className="recent-path" style={{ fontSize: '0.7rem', opacity: 0.6 }}>
+                  Step 1: Set identifier
+                </span>
+              </div>
             </div>
           )}
 
-          {(step === 'add_server' || step === 'add_drive' || step === 'new_student' || step === 'pin') && (
-            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.75rem', fontStyle: 'italic' }}>
-              Press ESC to cancel or Enter/Validate to proceed.
+          {step === 'new_student_org' && (
+            <div className="quick-open-item active">
+              <div className="recent-details">
+                <span className="recent-name" style={{ fontSize: '0.82rem' }}>
+                  {`Confirm Profile: ${tempStudentId} (Org: ${searchQuery.trim() || 'default'})`}
+                </span>
+                <span className="recent-path" style={{ fontSize: '0.7rem', opacity: 0.6 }}>
+                  Step 2: Press Enter to save profile and proceed
+                </span>
+              </div>
             </div>
+          )}
+
+          {(step === 'pin' || step === 'new_pin' || step === 'confirm_drive') && (
+            getConfirmItems().map((item, idx) => (
+              <div 
+                key={idx}
+                className={`quick-open-item ${selectedIndex === idx ? 'active' : ''}`}
+                onClick={() => {
+                  if (item.action === 'submit') {
+                    if (step === 'pin') {
+                      const cleanPin = searchQuery.trim();
+                      if (!cleanPin) {
+                        setValidationError('PIN code is required');
+                        return;
+                      }
+                      setPin(cleanPin);
+                    } else if (step === 'new_pin') {
+                      const cleanNewPin = searchQuery.trim();
+                      setNewPin(cleanNewPin);
+                    }
+                    handleFinalSubmit();
+                  } else if (item.action === 'change_pin') {
+                    setStep('new_pin');
+                    setSearchQuery('');
+                    setSelectedIndex(0);
+                    setValidationError('');
+                  } else if (item.action === 'cancel') {
+                    onClose();
+                  }
+                }}
+                onMouseEnter={() => setSelectedIndex(idx)}
+                style={{ borderBottom: '1px solid var(--border-color)' }}
+              >
+                <div className="recent-details">
+                  <span className="recent-name" style={{ fontSize: '0.82rem' }}>
+                    {item.label}
+                  </span>
+                  {item.desc && (
+                    <span className="recent-path" style={{ fontSize: '0.7rem', opacity: 0.6 }}>
+                      {item.desc}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+
+          {step === 'submitting' && (
+            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'spin 1.5s linear infinite', color: 'var(--primary)' }}>
+                <circle cx="12" cy="12" r="10" strokeDasharray="30" strokeDashoffset="10" />
+              </svg>
+              <span>Submitting package and executing remote grading targets...</span>
+            </div>
+          )}
+
+          {step === 'result' && (
+            <>
+              {getResultOptions().map((item, idx) => (
+                <div 
+                  key={idx}
+                  className={`quick-open-item ${selectedIndex === idx ? 'active' : ''}`}
+                  onClick={() => {
+                    if (item.action === 'copy') {
+                      handleCopyPath();
+                    } else if (item.action === 'close') {
+                      onClose();
+                    }
+                  }}
+                  onMouseEnter={() => setSelectedIndex(idx)}
+                  style={{ borderBottom: '1px solid var(--border-color)' }}
+                >
+                  <div className="recent-details">
+                    <span className="recent-name" style={{ fontSize: '0.82rem' }}>
+                      {item.label}
+                    </span>
+                    {item.desc && (
+                      <span className="recent-path" style={{ fontSize: '0.7rem', opacity: 0.6 }}>
+                        {item.desc}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              {submitResult && (() => {
+                try {
+                  const parsed = JSON.parse(submitResult);
+                  if (parsed && parsed.earned_points !== undefined) {
+                    return (
+                      <div style={{ padding: '12px 14px', backgroundColor: 'var(--bg-main)', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
+                          Evaluation Feedback
+                        </div>
+                        {parsed.results && parsed.results.map((tr, idx) => (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ color: 'var(--text-secondary)' }}>{tr.command}</span>
+                            <span style={{ color: tr.status === 'pass' ? 'var(--accent)' : 'var(--accent-red)', fontWeight: 600 }}>
+                              {tr.status === 'pass' ? `PASSED (${tr.points_earned}/${tr.points_possible})` : 'FAILED'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+                } catch {}
+                return null;
+              })()}
+            </>
           )}
         </div>
       </div>
