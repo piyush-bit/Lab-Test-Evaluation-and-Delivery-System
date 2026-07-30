@@ -21,7 +21,7 @@ Before you begin, make sure the following tools are installed:
 |---|---|---|
 | **Go** | 1.25+ | Building the `euc2` CLI *(skip if downloading a pre-built binary)* |
 | **Docker** | Any recent version | Sandboxed exercise execution and grading |
-| **Node.js & npm** | 18+ | *(Optional)* Only needed if building or modifying the Web UI |
+| **Node.js & npm** | 18+ | Building frontend assets embedded in `euc2` |
 
 > **Tip:** Verify Docker is running with `docker info`. The evaluator and `euc2 run` both require a reachable Docker daemon.
 
@@ -39,18 +39,17 @@ Extract it, place it in your `PATH`, and skip ahead to [Step 2](#2-build-a-runne
 
 ### Option B: Build from Source
 
+
 ```bash
 git clone https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System.git
-cd Lab-Test-Evaluation-and-Delivery-System/TDES
-go build -o euc2 ./cmd/euc2
-```
+cd Lab-Test-Evaluation-and-Delivery-System
 
-*(Optional)* Build the Web UI into the binary:
-
-```bash
-cd ../frontend
+# 1. Build frontend assets (REQUIRED)
+cd frontend
 npm install
 npm run build     # outputs to TDES/cmd/euc2/ui_dist
+
+# 2. Build the euc2 CLI
 cd ../TDES
 go build -o euc2 ./cmd/euc2
 ```

@@ -38,32 +38,23 @@ Extract it, place it in your `PATH`, and you're ready to go.
 
 ### Build from Source
 
-**Prerequisites:** Go 1.25+, Docker, Node.js 18+ (optional, for Web UI)
+**Prerequisites:** Go 1.25+, Docker, Node.js 18+
+
 
 ```bash
-# Clone
+# Clone repository
 git clone https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System.git
 cd Lab-Test-Evaluation-and-Delivery-System
 
-# Build the euc2 CLI
-cd TDES
-go build -o euc2 ./cmd/euc2
-
-# Build the registry server
-go build -o registry-server ./cmd/server
-```
-
-### (Optional) Build with the Web UI
-
-```bash
-# Build frontend assets
-cd ../frontend
+# 1. Build frontend assets (REQUIRED)
+cd frontend
 npm install
 npm run build     # outputs to TDES/cmd/euc2/ui_dist
 
-# Rebuild euc2 to embed the UI
+# 2. Build the euc2 CLI and registry server
 cd ../TDES
 go build -o euc2 ./cmd/euc2
+go build -o registry-server ./cmd/server
 ```
 
 ### Build a Runner Image
