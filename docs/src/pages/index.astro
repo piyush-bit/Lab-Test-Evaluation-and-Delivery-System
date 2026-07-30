@@ -1,182 +1,616 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Navbar from '../components/Navbar.astro';
-import TerminalSimulator from '../components/TerminalSimulator.astro';
 import Footer from '../components/Footer.astro';
 ---
 <BaseLayout title="TDES - Next-Gen CSE Lab Infrastructure">
-    <Navbar />
+  <Navbar isHome={true} />
 
-    <main class="main-content">
-        <!-- Hero Section -->
-        <section class="hero-section">
-            <div class="hero-info">
-                <div class="badge">
-                    <span class="badge-dot"></span>
-                    Next-Generation CSE Lab System
-                </div>
-                <h1 class="hero-title">
-                    The Modern Lab Infrastructure for <span class="gradient-text">Computer Science</span>.
-                </h1>
-                <p class="hero-subtitle">
-                    Empower your CS faculty and students with automated evaluations, containerized sandboxes, and encrypted submission delivery. Built to eliminate grading overhead and environment inconsistencies.
-                </p>
-                <div class="hero-ctas">
-                    <a href="/docs/student-cli-reference" class="btn btn-primary">Try CLI Commands</a>
-                    <a href="/docs/quick-start" class="btn btn-secondary">Documentation</a>
-                </div>
-            </div>
+  <main class="home-container">
+    <!-- Hero Section -->
+    <section class="hero-full-section">
+      <div class="hero-info-col">
+        <h1 class="hero-title">
+          The modern lab infrastructure for computer science.
+        </h1>
+        <p class="hero-subtitle">
+          Empower your CS faculty and students with automated evaluations, containerized sandboxes, and encrypted submission delivery. Built to eliminate grading overhead and environment inconsistencies.
+        </p>
+        <div class="hero-actions">
+          <a href="/docs/student-cli-reference" class="btn-mono-filled">try cli commands</a>
+          <a href="/docs/quick-start" class="btn-mono-outline">documentation</a>
+        </div>
+      </div>
+    </section>
 
-            <!-- Pre-rendered Terminal Console -->
-            <TerminalSimulator />
-        </section>
+    <!-- Divider Line -->
+    <hr class="section-divider" />
 
-        <!-- How It Works Section (SaaS Marketing Timeline) -->
-        <section id="lifecycle" class="how-it-works-section">
-            <div class="section-header">
-                <h2>From Curriculum to Grades: The Automated Journey</h2>
-                <p>A frictionless, step-by-step cycle that bridges the gap between active student coding and reliable host evaluation.</p>
-            </div>
-            <div class="marketing-timeline">
-                <!-- Step 1 -->
-                <div class="timeline-card glass-card">
-                    <div class="card-step-indicator">
-                        <span class="step-label">01</span>
-                        <div class="card-step-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                        </div>
-                    </div>
-                    <h3>Pick or Define</h3>
-                    <p>Select from our standard CS curriculum libraries, author custom templates following the open standard, or request custom exercises tailored for your classroom.</p>
-                </div>
-                <!-- Step 2 -->
-                <div class="timeline-card glass-card">
-                    <div class="card-step-indicator">
-                        <span class="step-label">02</span>
-                        <div class="card-step-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 8 16 13"></polyline><line x1="21" y1="8" x2="9" y2="8"></line><polyline points="8 21 3 16 8 11"></polyline><line x1="3" y1="16" x2="15" y2="16"></line></svg>
-                        </div>
-                    </div>
-                    <h3>Distribute Files</h3>
-                    <p>Deliver the public package files to student machines instantly. Works over local network folders, central registries, or simple USB pen drives for air-gapped rooms.</p>
-                </div>
-                <!-- Step 3 -->
-                <div class="timeline-card glass-card">
-                    <div class="card-step-indicator">
-                        <span class="step-label">03</span>
-                        <div class="card-step-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                        </div>
-                    </div>
-                    <h3>Solve & Submit</h3>
-                    <p>Students write code in their favorite editor, verify logic locally with instant tests, and seal submissions in one click using secure X25519-encrypted envelopes.</p>
-                </div>
-                <!-- Step 4 -->
-                <div class="timeline-card glass-card">
-                    <div class="card-step-indicator">
-                        <span class="step-label">04</span>
-                        <div class="card-step-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                        </div>
-                    </div>
-                    <h3>Sandbox Grading</h3>
-                    <p>The host system extracts code, runs hidden private tests in isolated container sandboxes, calculates scores, and generates structured grading reports instantly.</p>
-                </div>
-            </div>
-        </section>
+    <!-- Timeline/Lifecycle Section -->
+    <section id="lifecycle" class="timeline-section">
+      <div class="timeline-header-block">
+        <h2 class="timeline-section-title">From curriculum to grades</h2>
+        <p class="timeline-section-subtitle">
+          A frictionless, step-by-step cycle that bridges the gap between active student coding and reliable host evaluation.
+        </p>
+      </div>
 
-        <!-- Digital Migration Advantages Section -->
-        <section id="problem" class="digital-migration-section">
-            <div class="section-header">
-                <h2>Advantages of Moving from Physical Records to a Digital Lab System</h2>
-                <p>Ditch the paper registers, subjective desk checks, and repetitive software setups. Upgrade to a modern digital workflow built for real Computer Science education.</p>
-            </div>
-            
-            <div class="migration-list">
-                <!-- Advantage 1 -->
-                <div class="migration-item">
-                    <div class="migration-number-col">
-                        <div class="migration-number">01</div>
-                    </div>
-                    <div class="migration-content-col">
-                        <h3>Standardized & 100% Objective Grading</h3>
-                    </div>
-                </div>
+      <div class="timeline-grid">
+        <!-- Step 1 -->
+        <div class="timeline-col">
+          <div class="step-num-mono">01</div>
+          <h3 class="step-title">Pick or define</h3>
+          <p class="step-desc">
+            Select from our standard CS curriculum libraries, author custom templates following the open standard, or request custom exercises tailored for your classroom.
+          </p>
+        </div>
+        <!-- Step 2 -->
+        <div class="timeline-col">
+          <div class="step-num-mono">02</div>
+          <h3 class="step-title">Distribute files</h3>
+          <p class="step-desc">
+            Deliver the public package files to student machines instantly. Works over local network folders, central registries, or simple USB pen drives for air-gapped rooms.
+          </p>
+        </div>
+        <!-- Step 3 -->
+        <div class="timeline-col">
+          <div class="step-num-mono">03</div>
+          <h3 class="step-title">Solve & submit</h3>
+          <p class="step-desc">
+            Students write code in their favorite editor, verify logic locally with instant tests, and seal submissions in one click using secure X25519-encrypted envelopes.
+          </p>
+        </div>
+        <!-- Step 4 -->
+        <div class="timeline-col">
+          <div class="step-num-mono">04</div>
+          <h3 class="step-title">Sandbox grading</h3>
+          <p class="step-desc">
+            The host system extracts code, runs hidden private tests in isolated container sandboxes, calculates scores, and generates structured grading reports instantly.
+          </p>
+        </div>
+      </div>
+    </section>
 
-                <!-- Advantage 2 -->
-                <div class="migration-item">
-                    <div class="migration-number-col">
-                        <div class="migration-number">02</div>
-                    </div>
-                    <div class="migration-content-col">
-                        <h3>Error-Free Digital Record Keeping</h3>
-                    </div>
-                </div>
+    <!-- Divider Line -->
+    <hr class="section-divider" />
 
-                <!-- Advantage 3 -->
-                <div class="migration-item">
-                    <div class="migration-number-col">
-                        <div class="migration-number">03</div>
-                    </div>
-                    <div class="migration-content-col">
-                        <h3>Avoid the Hassle of Configuring Every Machine</h3>
-                    </div>
-                </div>
+    <!-- Digital Migration Section -->
+    <section id="problem" class="migration-stack-section">
+      <div class="migration-header-block">
+        <h2 class="migration-section-title">Advantages of moving to a digital lab system</h2>
+        <p class="migration-section-subtitle">
+          Ditch paper registers, subjective desk checks, and repetitive software setups.
+        </p>
+      </div>
 
-                <!-- Advantage 4 -->
-                <div class="migration-item">
-                    <div class="migration-number-col">
-                        <div class="migration-number">04</div>
-                    </div>
-                    <div class="migration-content-col">
-                        <h3>Eliminating Unproductive Student Paperwork</h3>
-                    </div>
-                </div>
-            </div>
-        </section>
+      <div class="migration-stack">
+        <!-- Row 1 -->
+        <div class="migration-row">
+          <span class="migration-num-mono">01</span>
+          <span class="migration-row-title">Standardized & 100% objective grading</span>
+        </div>
+        <!-- Row 2 -->
+        <div class="migration-row">
+          <span class="migration-num-mono">02</span>
+          <span class="migration-row-title">Error-free digital record keeping</span>
+        </div>
+        <!-- Row 3 -->
+        <div class="migration-row">
+          <span class="migration-num-mono">03</span>
+          <span class="migration-row-title">Avoid the hassle of configuring every machine</span>
+        </div>
+        <!-- Row 4 -->
+        <div class="migration-row">
+          <span class="migration-num-mono">04</span>
+          <span class="migration-row-title">Eliminating unproductive student paperwork</span>
+        </div>
+      </div>
+    </section>
 
-        <!-- Why Choose TDES Section -->
-        <section id="why-choose" class="why-choose-section">
-            <div class="section-header">
-                <h2>Why CS Departments Choose TDES</h2>
-                <p>A lightweight, offline-first grading engine designed to seamlessly fit into your existing laboratory workflow.</p>
-            </div>
-            <div class="why-choose-grid">
-                <!-- Card 1 -->
-                <div class="why-choose-card">
-                    <div class="why-choose-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                    </div>
-                    <h3>Lightweight & Minimal Setup</h3>
-                    <p>Avoid the headache of deploying heavy database servers, configuring user authentication, or maintaining complex cloud instances. TDES runs as a single, compiled tool with zero background dependencies. Just copy it over and start grading.</p>
-                </div>
-                <!-- Card 2 -->
-                <div class="why-choose-card">
-                    <div class="why-choose-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-                    </div>
-                    <h3>Free & Fully Open Source</h3>
-                    <p>Built with absolute transparency. TDES is entirely free to use under an open-source license, meaning no vendor lock-in, zero subscription costs, and full freedom to audit and customize the code to fit your university's exact curriculum needs.</p>
-                </div>
-                <!-- Card 3 -->
-                <div class="why-choose-card">
-                    <div class="why-choose-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.5M5 12.5a10.94 10.94 0 0 1 5.83-2.84M8.5 16a4.89 4.89 0 0 1 7 0M12 20h.01"></path></svg>
-                    </div>
-                    <h3>Works 100% Offline</h3>
-                    <p>Protect your exams from server crashes, slow Wi-Fi networks, and local outages. TDES executes and grades submissions completely offline, making it the perfect fit for secure, air-gapped computer labs.</p>
-                </div>
-                <!-- Card 4 -->
-                <div class="why-choose-card">
-                    <div class="why-choose-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-                    </div>
-                    <h3>Complements Your Existing Workflow</h3>
-                    <p>You don't need to rebuild your curriculum or throw away your current systems. TDES acts as a lightweight, secure helper that integrates directly into your existing command-line setups, file directories, or lab submission portals without friction.</p>
-                </div>
-            </div>
-        </section>
-    </main>
+    <!-- Divider Line -->
+    <hr class="section-divider" />
 
-    <Footer />
+    <!-- Why Choose TDES Section -->
+    <section id="why-choose" class="reasons-section">
+      <div class="reasons-header-block">
+        <h2 class="reasons-section-title">Why CS departments choose TDES</h2>
+        <p class="reasons-section-subtitle">
+          A lightweight, offline-first grading engine built to fit your existing lab workflow.
+        </p>
+      </div>
+
+      <div class="reasons-grid">
+        <!-- Reason 1 -->
+        <div class="reasons-col">
+          <div class="reason-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="reason-icon"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          </div>
+          <h3 class="reason-title">Lightweight & minimal setup</h3>
+          <p class="reason-desc">
+            Runs as a single compiled tool with zero background dependencies. No databases, no auth servers to configure.
+          </p>
+        </div>
+        <!-- Reason 2 -->
+        <div class="reasons-col">
+          <div class="reason-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="reason-icon"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+          </div>
+          <h3 class="reason-title">Free & fully open source</h3>
+          <p class="reason-desc">
+            Entirely free under an open-source license — no vendor lock-in, no subscription costs, full auditability.
+          </p>
+        </div>
+        <!-- Reason 3 -->
+        <div class="reasons-col">
+          <div class="reason-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="reason-icon"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.5"></path><path d="M5 12.5a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+          </div>
+          <h3 class="reason-title">Works 100% offline</h3>
+          <p class="reason-desc">
+            Executes and grades submissions completely offline — protects exams from server crashes and outages.
+          </p>
+        </div>
+        <!-- Reason 4 -->
+        <div class="reasons-col">
+          <div class="reason-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="reason-icon"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          </div>
+          <h3 class="reason-title">Complements your existing workflow</h3>
+          <p class="reason-desc">
+            Acts as a lightweight helper that integrates into your current command-line setups and submission portals.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer isHome={true} />
 </BaseLayout>
+
+<style>
+  /* Global page-level style overrides to force pure black background */
+  :global(body) {
+    background-color: #000000 !important;
+  }
+  :global(.grid-lines-container) {
+    display: none !important;
+  }
+
+  .home-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 120px 40px 40px 40px;
+    background-color: #000000;
+  }
+
+  /* Full Width Hero Layout */
+  .hero-full-section {
+    width: 100%;
+    padding: 80px 0 100px 0;
+  }
+
+  .hero-info-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    text-align: center;
+  }
+
+  .hero-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.8px;
+    color: #ffffff;
+    margin-bottom: 24px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .hero-subtitle {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #a3a3a3;
+    margin-bottom: 36px;
+    width: 100%;
+    max-width: 800px;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .btn-mono-filled {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    color: #000000;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+  }
+
+  .btn-mono-filled:hover {
+    background-color: #eaeaea;
+  }
+
+  .btn-mono-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background-color: transparent;
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+
+  .btn-mono-outline:hover {
+    border-color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  /* Status Dashboard Column */
+  .status-col {
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    padding-left: 60px;
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    justify-content: flex-start;
+    padding-top: 10px;
+  }
+
+  .console-box {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 24px;
+    background-color: #000000;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+  }
+
+  .terminal-window-header {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+
+  .terminal-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .dot-red { background-color: #ef4444; }
+  .dot-yellow { background-color: #f59e0b; }
+  .dot-green { background-color: #10b981; }
+
+  .console-command {
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    letter-spacing: 0.2px;
+  }
+
+  .console-section {
+    margin-bottom: 12px;
+  }
+
+  .console-text-muted {
+    color: #737373;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  .console-text-white {
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  .console-row-test {
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+    line-height: 1.4;
+  }
+
+  .console-row-metrics {
+    display: flex;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: #ffffff;
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+
+  .metrics-label {
+    width: 120px;
+    color: #ffffff;
+  }
+
+  .metrics-value {
+    color: #ffffff;
+  }
+
+  .status-online {
+    color: #10b981;
+    font-weight: 700;
+  }
+
+  .console-divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin-top: 16px;
+    margin-bottom: 16px;
+    width: 100%;
+  }
+
+  .console-score-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: #ffffff;
+  }
+
+  .console-score-label {
+    font-weight: 700;
+  }
+
+  .console-score-value {
+    font-weight: 700;
+  }
+
+  /* Section Divider line */
+  .section-divider {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin: 40px 0;
+    width: 100%;
+  }
+
+  /* Migration Stack Section Styles */
+  .migration-stack-section {
+    padding: 40px 0;
+  }
+  .migration-header-block {
+    margin-bottom: 32px;
+    text-align: left;
+  }
+  .migration-section-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+  .migration-section-subtitle {
+    font-size: 0.95rem;
+    color: #737373;
+    margin: 0;
+  }
+  .migration-stack {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .migration-row {
+    display: flex;
+    align-items: center;
+    padding: 24px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .migration-num-mono {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: #525252;
+    font-weight: 700;
+    width: 60px;
+    flex-shrink: 0;
+  }
+  .migration-row-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+
+  /* Timeline/Steps Section */
+  .timeline-section {
+    padding: 40px 0;
+  }
+
+  .timeline-header-block {
+    margin-bottom: 48px;
+    text-align: left;
+  }
+
+  .timeline-section-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+
+  .timeline-section-subtitle {
+    font-size: 0.95rem;
+    color: #a3a3a3;
+    margin: 0;
+  }
+
+  .timeline-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 40px;
+  }
+
+  .timeline-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    padding-left: 20px;
+  }
+
+  .step-num-mono {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: #525252;
+    margin-bottom: 16px;
+    font-weight: 700;
+  }
+
+  .step-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 10px;
+  }
+
+  .step-desc {
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: #a3a3a3;
+    margin: 0;
+  }
+
+  /* Reasons/Why Choose Section Styles */
+  .reasons-section {
+    padding: 60px 0;
+  }
+  .reasons-header-block {
+    margin-bottom: 48px;
+    text-align: left;
+  }
+  .reasons-section-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+  .reasons-section-subtitle {
+    font-size: 0.95rem;
+    color: #737373;
+    margin: 0;
+  }
+  .reasons-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    width: 100%;
+  }
+  .reasons-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0 32px;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .reasons-col:first-child {
+    padding-left: 0;
+    border-left: none;
+  }
+  .reasons-col:last-child {
+    padding-right: 0;
+  }
+  .reason-icon-wrapper {
+    color: #737373;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .reason-icon {
+    stroke-width: 1.5;
+  }
+  .reason-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 12px;
+    line-height: 1.3;
+  }
+  .reason-desc {
+    font-size: 0.88rem;
+    color: #737373;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* Responsive styling */
+  @media (max-width: 992px) {
+    .hero-full-section {
+      padding: 40px 0;
+    }
+    .timeline-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+    }
+    .reasons-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+    }
+    .reasons-col {
+      padding: 0 16px;
+    }
+    .reasons-col:first-child {
+      padding-left: 16px;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .home-container {
+      padding: 100px 20px 20px 20px;
+    }
+    .hero-title {
+      font-size: 2.25rem;
+    }
+    .timeline-grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    .reasons-grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    .reasons-col {
+      padding: 0;
+      border-left: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 24px;
+    }
+    .reasons-col:first-child {
+      padding-left: 0;
+    }
+    .reasons-col:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+  }
+</style>

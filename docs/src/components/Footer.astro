@@ -1,21 +1,124 @@
 ---
-// Footer Component
+interface Props {
+  isHome?: boolean;
+}
+const { isHome = false } = Astro.props;
 ---
 <footer class="main-footer">
-    <div class="footer-container">
-        <div class="footer-brand">
-            <div class="footer-brand-logo">
-                <div class="brand-logo-emblem"></div>
-                <span class="footer-logo-text">TDES</span>
+    <div class={`footer-container ${isHome ? 'is-home' : ''}`}>
+        <div class="footer-top">
+            <div class="footer-brand">
+                <div class="footer-logo">
+                    <span class="footer-logo-dot"></span> tdes
+                </div>
+                <p class="footer-desc">
+                    Modernized, secure, and containerized lab<br />
+                    delivery solutions for computer science<br />
+                    colleges.
+                </p>
             </div>
-            <p>Modernized, secure, and containerized lab delivery solutions for computer science colleges.</p>
+            <div class="footer-links">
+                <a href="/docs/exercise-authoring-spec" class="footer-link">exercise spec</a>
+                <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System/releases" target="_blank" rel="noopener noreferrer" class="footer-link">releases</a>
+            </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2026 Test Delivery and Evaluation System (TDES). All rights reserved.</p>
-            <div class="footer-links">
-                <a href="/docs/exercise-authoring-spec">Exercise Spec</a>
-                <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System/releases" target="_blank" rel="noopener noreferrer">Releases</a>
-            </div>
+            <p>&copy; 2026 test delivery and evaluation system (tdes). all rights reserved.</p>
         </div>
     </div>
 </footer>
+
+<style>
+    .main-footer {
+        background-color: #000000;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 60px 0 40px 0;
+        margin-top: 80px;
+        position: relative;
+        z-index: 2;
+    }
+    .footer-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 24px;
+    }
+    .footer-container.is-home {
+        max-width: 1100px;
+        padding: 0 40px;
+    }
+    .footer-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 40px;
+    }
+    .footer-brand {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .footer-logo {
+        font-family: var(--font-mono);
+        font-size: 1rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .footer-logo-dot {
+        width: 6px;
+        height: 6px;
+        background-color: #10b981;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .footer-desc {
+        font-size: 0.85rem;
+        color: #737373;
+        line-height: 1.6;
+        margin: 0;
+    }
+    .footer-links {
+        display: flex;
+        gap: 32px;
+        padding-top: 4px;
+    }
+    .footer-link {
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        color: #737373;
+        text-decoration: none;
+        transition: color 0.15s ease;
+    }
+    .footer-link:hover {
+        color: #ffffff;
+    }
+    .footer-bottom {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        color: #525252;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding-top: 24px;
+        width: 100%;
+    }
+    .footer-bottom p {
+        margin: 0;
+    }
+
+    @media (max-width: 768px) {
+        .footer-top {
+            flex-direction: column;
+            gap: 32px;
+        }
+        .footer-links {
+            flex-direction: column;
+            gap: 16px;
+        }
+    }
+</style>
+

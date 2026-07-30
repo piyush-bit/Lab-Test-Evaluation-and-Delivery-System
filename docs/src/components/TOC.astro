@@ -10,8 +10,13 @@ const filteredHeadings = headings.filter(h => h.depth > 1 && h.depth <= 3);
 {filteredHeadings.length > 0 && (
   <aside class="docs-toc-sidebar">
     <div class="docs-toc-sticky">
-      <h4>On This Page</h4>
-      <ul>
+      <div class="toc-header-row">
+        <h4 class="toc-title">On This Page</h4>
+        <button id="toc-toggle-btn" class="toc-toggle-btn" title="Hide sidebar">
+          [hide]
+        </button>
+      </div>
+      <ul class="toc-list">
         {filteredHeadings.map(h => (
           <li class={`toc-depth-${h.depth}`}>
             <a href={`#${h.slug}`} class="toc-link" data-slug={h.slug}>{h.text}</a>
@@ -30,7 +35,27 @@ const filteredHeadings = headings.filter(h => h.depth > 1 && h.depth <= 3);
   }
   .docs-toc-sidebar {
     width: 220px;
-    flex-shrink: 0;
+    flex: 0 0 220px;
+    align-self: stretch;
+    margin-left: 40px;
+    border-left: 1px solid var(--border-color);
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                flex 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .docs-toc-sidebar.collapsed {
+    width: 24px !important;
+    flex: 0 0 24px !important;
+    margin-left: 16px !important;
+  }
+  .docs-toc-sidebar.collapsed .toc-title {
+    display: none !important;
+  }
+  .docs-toc-sidebar.collapsed .toc-list {
+    display: none !important;
+  }
+  .docs-toc-sidebar.collapsed .docs-toc-sticky {
+    padding-left: 8px !important;
   }
   .docs-toc-sticky {
     position: sticky;
@@ -39,19 +64,42 @@ const filteredHeadings = headings.filter(h => h.depth > 1 && h.depth <= 3);
     overflow-y: auto;
     scrollbar-width: none; /* Firefox */
     padding-left: 20px;
-    border-left: 1px solid var(--border-color);
+    transition: padding 0.25s ease;
   }
   .docs-toc-sticky::-webkit-scrollbar {
     display: none; /* Safari and Chrome */
   }
-  .docs-toc-sticky h4 {
+
+  
+  .toc-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .toc-title {
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--text-muted);
-    margin-bottom: 12px;
     font-weight: 700;
+    margin: 0;
   }
+  
+  .toc-toggle-btn {
+    background: transparent;
+    border: none;
+    color: #525252;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    transition: color 0.15s ease;
+  }
+  .toc-toggle-btn:hover {
+    color: #ffffff;
+  }
+
   .docs-toc-sticky ul {
     list-style: none;
     padding: 0;
@@ -81,6 +129,45 @@ const filteredHeadings = headings.filter(h => h.depth > 1 && h.depth <= 3);
 </style>
 
 <script>
+  function setupTOCActions() {
+    const sidebar = document.querySelector('.docs-toc-sidebar');
+    const toggleBtn = document.getElementById('toc-toggle-btn');
+
+    if (!sidebar || !toggleBtn) return;
+
+    // Helper to update toggle button text/state
+    function updateBtnState() {
+      if (sidebar.classList.contains('collapsed')) {
+        toggleBtn.textContent = '«';
+        toggleBtn.title = 'Show sidebar';
+      } else {
+        toggleBtn.textContent = '[hide]';
+        toggleBtn.title = 'Hide sidebar';
+      }
+    }
+
+    // Load initial state
+    const isCollapsed = localStorage.getItem('toc-collapsed') === 'true';
+    if (isCollapsed) {
+      sidebar.classList.add('collapsed');
+    } else {
+      sidebar.classList.remove('collapsed');
+    }
+    updateBtnState();
+
+    toggleBtn.addEventListener('click', () => {
+      const currentlyCollapsed = sidebar.classList.contains('collapsed');
+      if (currentlyCollapsed) {
+        sidebar.classList.remove('collapsed');
+        localStorage.setItem('toc-collapsed', 'false');
+      } else {
+        sidebar.classList.add('collapsed');
+        localStorage.setItem('toc-collapsed', 'true');
+      }
+      updateBtnState();
+    });
+  }
+
   function setupScrollSpy() {
     const tocLinks = document.querySelectorAll('.toc-link');
     if (tocLinks.length === 0) return;
@@ -119,6 +206,13 @@ const filteredHeadings = headings.filter(h => h.depth > 1 && h.depth <= 3);
     onScroll(); // initialize on load
   }
 
+  // Initialize both TOC actions and ScrollSpy
+  setupTOCActions();
   setupScrollSpy();
-  document.addEventListener('astro:page-load', setupScrollSpy);
+  
+  // Re-run on Astro navigation
+  document.addEventListener('astro:page-load', () => {
+    setupTOCActions();
+    setupScrollSpy();
+  });
 </script>

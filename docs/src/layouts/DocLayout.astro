@@ -28,23 +28,30 @@ const referenceDocs = allDocs
 const specDocs = allDocs
   .filter(d => d.data.section === 'specs')
   .sort((a, b) => a.data.order - b.data.order);
+
+// Calculate previous and next documents for pagination
+const orderedDocs = [...getStartedDocs, ...referenceDocs, ...specDocs];
+const activeIndex = orderedDocs.findIndex(d => d.id === activeSlug);
+const prevDoc = activeIndex > 0 ? orderedDocs[activeIndex - 1] : null;
+const nextDoc = activeIndex >= 0 && activeIndex < orderedDocs.length - 1 ? orderedDocs[activeIndex + 1] : null;
 ---
+
 <BaseLayout title={`${title} - TDES Docs`} description={description} activeTab="docs">
-  <Navbar activeTab="docs" />
+  <Navbar activeTab="docs" isHome={false} />
   
-  <div class="docs-layout-container" style="max-width: 1200px; margin: 100px auto 0 auto; padding: 2rem 24px; min-height: calc(100vh - 200px);">
-    <div class="docs-page-layout" style="display: flex; gap: 40px; align-items: flex-start; justify-content: space-between;">
+  <div class="docs-layout-container" style="max-width: 1200px; margin: 64px auto 0 auto; padding: 3rem 24px; min-height: calc(100vh - 164px);">
+    <div class="docs-page-layout">
       
       <!-- Left Sidebar (Nav) -->
-      <aside class="docs-nav-sidebar" style="width: 240px; flex-shrink: 0; position: sticky; top: 100px; max-height: calc(100vh - 140px); overflow-y: auto; padding-right: 20px; border-right: 1px solid var(--border-color);">
+      <aside class="docs-nav-sidebar">
         <div class="docs-nav-sticky">
           
           <div class="docs-nav-section" style="margin-bottom: 24px;">
-            <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 12px; font-weight: 700;">Get Started</h4>
+            <h4 style="font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px; color: #525252; margin-bottom: 12px; font-weight: 700;">Get Started</h4>
             <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; padding-left: 0; margin: 0;">
               {getStartedDocs.map(doc => (
                 <li>
-                  <a href={`/docs/${doc.id}`} class={`docs-nav-link ${activeSlug === doc.id ? 'active' : ''}`} style="font-size: 0.9rem; color: var(--text-secondary); transition: all 0.2s; display: block; font-weight: 500;">
+                  <a href={`/docs/${doc.id}`} class={`docs-nav-link ${activeSlug === doc.id ? 'active' : ''}`} style="font-family: var(--font-mono); font-size: 0.82rem; color: #a3a3a3; transition: all 0.2s; display: block; font-weight: 500; text-transform: lowercase;">
                     {doc.data.title}
                   </a>
                 </li>
@@ -53,11 +60,11 @@ const specDocs = allDocs
           </div>
 
           <div class="docs-nav-section" style="margin-bottom: 24px;">
-            <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 12px; font-weight: 700;">Reference Guides</h4>
+            <h4 style="font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px; color: #525252; margin-bottom: 12px; font-weight: 700;">Reference Guides</h4>
             <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; padding-left: 0; margin: 0;">
               {referenceDocs.map(doc => (
                 <li>
-                  <a href={`/docs/${doc.id}`} class={`docs-nav-link ${activeSlug === doc.id ? 'active' : ''}`} style="font-size: 0.9rem; color: var(--text-secondary); transition: all 0.2s; display: block; font-weight: 500;">
+                  <a href={`/docs/${doc.id}`} class={`docs-nav-link ${activeSlug === doc.id ? 'active' : ''}`} style="font-family: var(--font-mono); font-size: 0.82rem; color: #a3a3a3; transition: all 0.2s; display: block; font-weight: 500; text-transform: lowercase;">
                     {doc.data.title}
                   </a>
                 </li>
@@ -66,11 +73,11 @@ const specDocs = allDocs
           </div>
 
           <div class="docs-nav-section" style="margin-bottom: 24px;">
-            <h4 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 12px; font-weight: 700;">Specifications</h4>
+            <h4 style="font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px; color: #525252; margin-bottom: 12px; font-weight: 700;">Specifications</h4>
             <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; padding-left: 0; margin: 0;">
               {specDocs.map(doc => (
                 <li>
-                  <a href={`/docs/${doc.id}`} class={`docs-nav-link ${activeSlug === doc.id ? 'active' : ''}`} style="font-size: 0.9rem; color: var(--text-secondary); transition: all 0.2s; display: block; font-weight: 500;">
+                  <a href={`/docs/${doc.id}`} class={`docs-nav-link ${activeSlug === doc.id ? 'active' : ''}`} style="font-family: var(--font-mono); font-size: 0.82rem; color: #a3a3a3; transition: all 0.2s; display: block; font-weight: 500; text-transform: lowercase;">
                     {doc.data.title}
                   </a>
                 </li>
@@ -82,9 +89,32 @@ const specDocs = allDocs
       </aside>
 
       <!-- Center Main Content -->
-      <main class="docs-content-area align-left" style="flex: 1; min-width: 0; padding-bottom: 4rem;">
+      <main class="docs-content-area align-left">
         <slot />
+
+        <!-- Pagination Navigation -->
+        {(prevDoc || nextDoc) && (
+          <div class="docs-pagination">
+            {prevDoc ? (
+              <a href={`/docs/${prevDoc.id}`} class="btn-flat-outline">
+                ← previous
+              </a>
+            ) : (
+              <div class="pagination-spacer"></div>
+            )}
+            
+            {nextDoc ? (
+              <a href={`/docs/${nextDoc.id}`} class="btn-flat-outline">
+                next →
+              </a>
+            ) : (
+              <div class="pagination-spacer"></div>
+            )}
+          </div>
+        )}
       </main>
+
+
 
       <!-- Right Sidebar (TOC) -->
       <TOC headings={headings} />
@@ -92,7 +122,7 @@ const specDocs = allDocs
     </div>
   </div>
   
-  <Footer />
+  <Footer isHome={true} />
 
   <!-- Mermaid Dynamic Rendering CDN Script -->
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" is:inline></script>
@@ -139,26 +169,175 @@ const specDocs = allDocs
 </BaseLayout>
 
 <style>
+  /* Enforce pure black background and hide default grid lines */
+  :global(body) {
+    background-color: #000000 !important;
+  }
+  :global(.grid-lines-container) {
+    display: none !important;
+  }
+
+  .docs-page-layout {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+  }
+
   .docs-nav-sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 100px;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+    padding-right: 20px;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    margin-right: 40px;
     scrollbar-width: none;
   }
   .docs-nav-sidebar::-webkit-scrollbar {
     display: none;
   }
-  .docs-nav-link:hover,
-  .docs-nav-link.active {
-    color: var(--text-primary) !important;
+  
+  .docs-content-area {
+    flex: 1;
+    min-width: 0;
+    padding-bottom: 4rem;
+  }
+
+  .docs-nav-link:hover {
+
+    color: #ffffff !important;
   }
   .docs-nav-link.active {
     font-weight: 700 !important;
-    border-left: 2px solid var(--primary);
+    border-left: 2px solid #10b981 !important;
+    color: #ffffff !important;
     padding-left: 8px !important;
     margin-left: -10px;
   }
-  html.dark .docs-nav-link.active {
-    border-left-color: var(--btn-primary-bg);
-  }
   
+  /* Global subcomponent overrides for Table of Contents (TOC) */
+  :global(.docs-toc-sidebar) {
+    border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+    width: 220px;
+    flex: 0 0 220px;
+    margin-left: 40px;
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                flex 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+  :global(.docs-toc-sidebar.collapsed) {
+    width: 24px !important;
+    flex: 0 0 24px !important;
+    margin-left: 16px !important;
+  }
+  :global(.docs-toc-sticky) {
+    border-left: none !important;
+  }
+
+  :global(.docs-toc-sticky h4) {
+    font-family: var(--font-mono) !important;
+    font-size: 0.72rem !important;
+    color: #525252 !important;
+    letter-spacing: 0.8px !important;
+    text-transform: uppercase !important;
+    font-weight: 700 !important;
+  }
+  :global(.toc-link) {
+    font-family: var(--font-mono) !important;
+    font-size: 0.82rem !important;
+    color: #a3a3a3 !important;
+    text-transform: lowercase !important;
+    transition: color 0.15s ease !important;
+  }
+  :global(.toc-link:hover),
+  :global(.toc-link.active) {
+    color: #ffffff !important;
+  }
+
+  /* Content rendering adaptations for dark developer aesthetic */
+  :global(.docs-content-area h1) {
+    font-size: 2.25rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    letter-spacing: -0.6px !important;
+  }
+  :global(.docs-content-area h2) {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+  :global(.docs-content-area h3) {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+  }
+  :global(.docs-content-area p),
+  :global(.docs-content-area li) {
+    color: #a3a3a3 !important;
+  }
+  :global(.docs-content-area :not(pre) > code) {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+  }
+  :global(.docs-content-area pre) {
+    background-color: #050505 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: none !important;
+  }
+  :global(.docs-content-area blockquote) {
+    border-left: 3px solid rgba(129, 140, 248, 0.45) !important;
+  }
+  :global(.docs-callout) {
+    border-left: 3px solid rgba(129, 140, 248, 0.45) !important;
+  }
+  :global(.docs-callout.note) {
+    border-left-color: rgba(129, 140, 248, 0.45) !important;
+  }
+  :global(.docs-callout.note .docs-callout-title) {
+    color: #818cf8 !important;
+  }
+
+
+
+  /* Docs Pagination Styles */
+  .docs-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    width: 100%;
+  }
+  .docs-pagination .btn-flat-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background-color: transparent;
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+  .docs-pagination .btn-flat-outline:hover {
+    border-color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  .pagination-spacer {
+    flex: 1;
+  }
+
+
   /* Responsive styles */
   @media (max-width: 1024px) {
     .docs-page-layout {
@@ -170,7 +349,7 @@ const specDocs = allDocs
       max-height: none !important;
       position: static !important;
       border-right: none !important;
-      border-bottom: 1px solid var(--border-color);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
       padding-right: 0 !important;
       padding-bottom: 20px;
     }
@@ -186,3 +365,4 @@ const specDocs = allDocs
     }
   }
 </style>
+
