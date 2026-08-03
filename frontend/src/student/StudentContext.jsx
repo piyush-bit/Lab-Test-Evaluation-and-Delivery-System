@@ -544,7 +544,7 @@ export const StudentProvider = ({ children }) => {
 
   const [quickOpenValidDriveInfo, setQuickOpenValidDriveInfo] = useState(null);
 
-  const isFolderBrowseMode = quickOpenMode === 'browse' || quickOpenMode === 'admin_browse_prepare' || quickOpenMode === 'admin_browse_open';
+  const isFolderBrowseMode = quickOpenMode === 'browse' || quickOpenMode === 'open_workspace' || quickOpenMode === 'admin_browse_prepare' || quickOpenMode === 'admin_browse_open';
 
   // Detect baseDir transitions to fetch directories, ignoring typing filtering queries
   useEffect(() => {
@@ -585,7 +585,7 @@ export const StudentProvider = ({ children }) => {
     return () => clearTimeout(delayDebounce);
   }, [quickOpenPath, showQuickOpen, quickOpenMode]);
 
-  // Trigger folder picker modal (Quick Open style)
+  // Trigger folder picker modal for target directory selection (Category B: Init Target)
   const triggerQuickOpen = (initialPath, callbackFn) => {
     setQuickOpenMode('browse');
     const startPath = initialPath || currentCwd || '~/';
@@ -596,6 +596,20 @@ export const StudentProvider = ({ children }) => {
     fetchQuickOpenDirs(baseDir);
     
     setQuickOpenCallback(() => callbackFn);
+    setShowQuickOpen(true);
+  };
+
+  // Trigger opening existing exercise workspace modal (Category A: Icon-Based Entity Selection)
+  const triggerOpenWorkspace = (initialPath, callbackFn) => {
+    setQuickOpenMode('open_workspace');
+    const startPath = initialPath || currentCwd || '~/';
+    setQuickOpenPath(startPath);
+    
+    const { baseDir } = getPathParts(startPath);
+    lastFetchedBaseDirRef.current = baseDir;
+    fetchQuickOpenDirs(baseDir);
+    
+    setQuickOpenCallback(() => callbackFn || ((chosenPath) => handleOpenWorkspace(chosenPath)));
     setShowQuickOpen(true);
   };
 
@@ -745,7 +759,7 @@ export const StudentProvider = ({ children }) => {
 
     const delayDebounce = setTimeout(async () => {
       try {
-        if (quickOpenMode === 'admin_browse_open' || quickOpenMode === 'admin_browse_prepare') {
+        if (quickOpenMode === 'admin_browse_open') {
           const driveRes = await fetch(`/api/validate-drive?path=${encodeURIComponent(quickOpenPath)}`);
           if (driveRes.ok) {
             const driveData = await driveRes.json();
@@ -754,7 +768,7 @@ export const StudentProvider = ({ children }) => {
               return;
             }
           }
-        } else {
+        } else if (quickOpenMode === 'open_workspace') {
           const wsRes = await fetch(`/api/validate-workspace?path=${encodeURIComponent(quickOpenPath)}`);
           if (wsRes.ok) {
             const wsData = await wsRes.json();
@@ -969,21 +983,26 @@ export const StudentProvider = ({ children }) => {
         }
       }
       return;
+    } else if (quickOpenMode === 'open_workspace') {
+      const item = selectableItems[selectedIndex];
+      if (item && item.type === 'manifest' && item.data?.is_workspace) {
+        setValidationError('');
+        setShowQuickOpen(false);
+        if (quickOpenCallback) {
+          quickOpenCallback(quickOpenPath);
+        } else {
+          handleOpenWorkspace(quickOpenPath);
+        }
+        return;
+      }
+      return;
     } else if (quickOpenMode === 'admin_browse_prepare') {
       const item = selectableItems[selectedIndex];
-      if (item) {
-        if (item.type === 'manifest' && item.data?.is_drive) {
-          setValidationError('');
-          setShowQuickOpen(false);
-          handleOpenAdminDrive(quickOpenPath);
-          return;
-        }
-        if (item.type === 'select_current_dir') {
-          setValidationError('');
-          setShowQuickOpen(false);
-          handlePrepareAdminDrive(item.path);
-          return;
-        }
+      if (item && item.type === 'select_current_dir') {
+        setValidationError('');
+        setShowQuickOpen(false);
+        handlePrepareAdminDrive(item.path);
+        return;
       }
     } else if (quickOpenMode === 'admin_browse_open') {
       const item = selectableItems[selectedIndex];
@@ -1353,15 +1372,28 @@ export const StudentProvider = ({ children }) => {
     selectableItems.push({ type: 'input_confirm', label: quickOpenPath.trim() ? `Confirm Exercise ID: ${quickOpenPath}` : 'Type Exercise ID (e.g. go101-lab01) and press Enter...' });
   } else if (quickOpenMode === 'input_exercise_version') {
     selectableItems.push({ type: 'input_confirm', label: quickOpenPath.trim() ? `Confirm Version: ${quickOpenPath}` : 'Type Version (or press Enter for Latest)...' });
-  } else if (quickOpenMode === 'admin_browse_prepare') {
-    if (quickOpenActiveManifest?.is_drive) {
+  } else if (quickOpenMode === 'open_workspace') {
+    // Category A: Icon-Based Entity Selection (Open Existing Exercise Workspace)
+    if (quickOpenActiveManifest?.is_workspace) {
       manifestIdx = selectableItems.length;
       selectableItems.push({ type: 'manifest', data: quickOpenActiveManifest });
-    } else if (quickOpenPath && !quickOpenActiveManifest?.is_workspace) {
+    }
+    if (quickOpenParent) {
+      upIdx = selectableItems.length;
+      selectableItems.push({ type: 'up' });
+    }
+    filteredDirs.forEach((dir) => {
+      dirIndices.push(selectableItems.length);
+      selectableItems.push({ type: 'dir', name: dir });
+    });
+  } else if (quickOpenMode === 'admin_browse_prepare') {
+    // Category B: Folder-Based Target Selection (Prepare Drive Target)
+    if (quickOpenPath) {
+      const folderName = quickOpenPath.replace(/[/\\]+$/, '').split(/[/\\]/).pop() || quickOpenPath;
       selectableItems.push({
         type: 'select_current_dir',
         path: quickOpenPath,
-        label: `Prepare Drive: ${quickOpenPath}`
+        label: `Prepare Drive: ${folderName}`
       });
     }
     if (quickOpenParent) {
@@ -1373,6 +1405,7 @@ export const StudentProvider = ({ children }) => {
       selectableItems.push({ type: 'dir', name: dir });
     });
   } else if (quickOpenMode === 'admin_browse_open') {
+    // Category A: Icon-Based Entity Selection (Open Existing TDES Drive)
     if (quickOpenActiveManifest?.is_drive) {
       manifestIdx = selectableItems.length;
       selectableItems.push({ type: 'manifest', data: quickOpenActiveManifest });
@@ -1386,9 +1419,14 @@ export const StudentProvider = ({ children }) => {
       selectableItems.push({ type: 'dir', name: dir });
     });
   } else {
-    if (quickOpenActiveManifest?.is_workspace) {
-      manifestIdx = selectableItems.length;
-      selectableItems.push({ type: 'manifest', data: quickOpenActiveManifest });
+    // Category B: Folder-Based Target Selection (Choose Init Target Directory)
+    if (quickOpenPath) {
+      const folderName = quickOpenPath.replace(/[/\\]+$/, '').split(/[/\\]/).pop() || quickOpenPath;
+      selectableItems.push({
+        type: 'select_current_dir',
+        path: quickOpenPath,
+        label: `Select directory: ${folderName}`
+      });
     }
     if (quickOpenParent) {
       upIdx = selectableItems.length;
@@ -1449,6 +1487,8 @@ export const StudentProvider = ({ children }) => {
           handleConfirmQuickOpen();
         } else {
           if (item.type === 'manifest') {
+            handleConfirmQuickOpen();
+          } else if (item.type === 'select_current_dir') {
             handleConfirmQuickOpen();
           } else if (item.type === 'up') {
             handleGoUp();
@@ -1622,6 +1662,7 @@ export const StudentProvider = ({ children }) => {
       quickOpenRef,
       getPathParts,
       triggerQuickOpen,
+      triggerOpenWorkspace,
       triggerInitializeFlow,
       handleQuickOpenNavigate,
       handleGoUp,

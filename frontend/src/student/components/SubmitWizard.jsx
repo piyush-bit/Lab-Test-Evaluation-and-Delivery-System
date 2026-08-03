@@ -431,7 +431,7 @@ export default function SubmitWizard({ isOpen, onClose }) {
   const handleCopyPath = () => {
     if (!submitResult) return;
     navigator.clipboard.writeText(submitResult);
-    setValidationError('✓ Copied to clipboard!');
+    setValidationError('Copied to clipboard!');
     setTimeout(() => setValidationError(''), 2000);
   };
 

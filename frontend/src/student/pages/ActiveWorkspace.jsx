@@ -317,7 +317,7 @@ export default function ActiveWorkspace() {
                   )}
                   {saveStatus === 'saved' && (
                     <span style={{ color: 'var(--accent)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      ✓ Saved
+                      Saved
                     </span>
                   )}
                   <span style={{ textTransform: 'uppercase', fontWeight: 600 }}>{getLanguage(activeFilePath)}</span>

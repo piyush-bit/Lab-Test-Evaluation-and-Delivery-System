@@ -10,6 +10,12 @@ const PALETTE_CONFIGS = {
     iconType: 'drive',
     isFolderBrowse: false,
   },
+  open_workspace: {
+    headerLabel: 'OPEN EXISTING EXERCISE WORKSPACE',
+    placeholder: 'Navigate to an initialized exercise workspace folder...',
+    iconType: 'exercise',
+    isFolderBrowse: true,
+  },
   admin_browse_prepare: {
     headerLabel: 'PREPARE A NEW TDES DRIVE',
     placeholder: 'Navigate or type target folder path to prepare...',
@@ -23,8 +29,8 @@ const PALETTE_CONFIGS = {
     isFolderBrowse: true,
   },
   browse: {
-    headerLabel: 'CHOOSE INITIALIZATION DIRECTORY',
-    placeholder: 'Search folders...',
+    headerLabel: 'CHOOSE INITIALIZATION TARGET DIRECTORY',
+    placeholder: 'Navigate or type target folder path to unpack exercise...',
     iconType: 'folder',
     isFolderBrowse: true,
   },
@@ -204,9 +210,10 @@ export default function CommandPalette() {
           const isBrowseOpen = quickOpenMode === 'admin_browse_open';
           const isStudentBrowse = quickOpenMode === 'browse';
 
-          // Strictly filter card rendering by active mode target type
-          if ((isBrowseOpen || isBrowsePrepare) && !isDrive) return null;
-          if (isStudentBrowse && !isWorkspace) return null;
+          // Strictly render manifest preview card ONLY for Category A modes (Entity Opening)
+          if (quickOpenMode === 'admin_browse_open' && !isDrive) return null;
+          if (quickOpenMode === 'open_workspace' && !isWorkspace) return null;
+          if (quickOpenMode !== 'admin_browse_open' && quickOpenMode !== 'open_workspace') return null;
 
           const getLastDirName = (path) => {
             if (!path) return '';
@@ -282,7 +289,7 @@ export default function CommandPalette() {
                 >
                   <div className="recent-details">
                     <span className="recent-name" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <OpenFolderIcon size={14} /> Select directory: {item.path.split('/').pop() || item.path.split('\\').pop() || item.path}
+                      <OpenFolderIcon size={14} /> {item.label || `Select directory: ${item.path.split('/').pop() || item.path.split('\\').pop() || item.path}`}
                     </span>
                     <span className="recent-path" style={{ fontSize: '0.72rem', opacity: 0.6 }}>
                       {item.path}

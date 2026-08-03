@@ -13,6 +13,7 @@ export default function Welcome() {
     targetPath,
     currentCwd,
     triggerQuickOpen,
+    triggerOpenWorkspace,
     handleOpenWorkspace,
     triggerExercisePicker,
     handleInitWorkspace
@@ -40,7 +41,7 @@ export default function Welcome() {
                 className="vscode-action-item" 
                 onClick={() => {
                   setValidationError('');
-                  triggerQuickOpen(targetPath || currentCwd, (path) => {
+                  triggerOpenWorkspace(targetPath || currentCwd, (path) => {
                     handleOpenWorkspace(path);
                   });
                 }}
