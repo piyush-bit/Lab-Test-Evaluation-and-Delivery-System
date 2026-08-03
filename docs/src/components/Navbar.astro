@@ -13,16 +13,31 @@ const prefix = isHome ? "" : "/";
         <span class="logo-dot"></span>
         <span class="logo-text">tdes</span>
       </a>
-      <nav class="nav-links-flat">
-        <a href={`${prefix}#lifecycle`}>how it works</a>
-        <a href={`${prefix}#problem`}>challenges</a>
-        <a href={`${prefix}#why-choose`}>why tdes</a>
+      <nav class="nav-links-flat desktop-only">
         <a href="/docs/quick-start" class={activeTab === 'docs' ? 'active' : ''}>documentation</a>
         <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System/releases" target="_blank" rel="noopener noreferrer">releases</a>
       </nav>
       <div class="nav-actions-flat">
-        <a href="/docs/quick-start" class="btn-flat-outline">get started</a>
+        <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System" class="github-link-btn" aria-label="GitHub Repository" target="_blank" rel="noopener noreferrer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+        </a>
+        <button class="theme-toggle-btn" aria-label="Toggle theme">
+          <!-- Sun Icon -->
+          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <!-- Moon Icon -->
+          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+        <a href="/docs/quick-start" class="btn-flat-outline desktop-only">get started</a>
+        <button class="mobile-menu-btn" aria-label="Toggle navigation menu">
+          <svg class="hamburger-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          <svg class="close-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
+    </div>
+    <div class="mobile-nav-dropdown">
+      <a href="/docs/quick-start" class={activeTab === 'docs' ? 'active' : ''}>documentation</a>
+      <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System/releases" target="_blank" rel="noopener noreferrer">releases</a>
+      <a href="/docs/quick-start" class="btn-mobile-action">get started</a>
     </div>
   </header>
 ) : (
@@ -33,10 +48,7 @@ const prefix = isHome ? "" : "/";
         <div class="brand-logo-emblem"></div>
         <span class="brand-text">TDES</span>
       </a>
-      <nav class="nav-links">
-        <a href="/#lifecycle" class={activeTab === 'lifecycle' ? 'active' : ''}>How It Works</a>
-        <a href="/#problem" class={activeTab === 'problem' ? 'active' : ''}>Challenges</a>
-        <a href="/#why-choose" class={activeTab === 'why-choose' ? 'active' : ''}>Why TDES</a>
+      <nav class="nav-links desktop-only">
         <a href="/docs/quick-start" class={activeTab === 'docs' ? 'active' : ''}>Documentation</a>
         <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System/releases" target="_blank" rel="noopener noreferrer">Releases</a>
       </nav>
@@ -44,42 +56,103 @@ const prefix = isHome ? "" : "/";
         <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System" class="github-link-btn" aria-label="GitHub Repository" target="_blank" rel="noopener noreferrer">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
         </a>
-        <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle theme">
+        <button class="theme-toggle-btn" aria-label="Toggle theme">
           <!-- Sun Icon -->
           <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
           <!-- Moon Icon -->
           <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
         </button>
-        <a href="/docs/quick-start" class="btn btn-primary btn-sm">Get Started</a>
+        <a href="/docs/quick-start" class="btn btn-primary btn-sm desktop-only">Get Started</a>
+        <button class="mobile-menu-btn" aria-label="Toggle navigation menu">
+          <svg class="hamburger-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          <svg class="close-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
+    </div>
+    <div class="mobile-nav-dropdown">
+      <a href="/docs/quick-start" class={activeTab === 'docs' ? 'active' : ''}>Documentation</a>
+      <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System/releases" target="_blank" rel="noopener noreferrer">Releases</a>
+      <a href="/docs/quick-start" class="btn-mobile-action">Get Started</a>
     </div>
   </header>
 )}
 
-<script>
-  // Theme Toggle Functionality (only active when not on isHome variant or if the button exists)
-  const themeToggleBtn = document.getElementById('theme-toggle');
-  const htmlElement = document.documentElement;
+<script is:inline>
+  function setupNavScripts() {
+    // Theme Toggle
+    const themeButtons = document.querySelectorAll('.theme-toggle-btn');
+    themeButtons.forEach(btn => {
+      btn.onclick = () => {
+        const htmlElement = document.documentElement;
+        if (htmlElement.classList.contains('dark')) {
+          htmlElement.classList.remove('dark');
+          localStorage.setItem('theme', 'light');
+        } else {
+          htmlElement.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+        }
+      };
+    });
 
-  if (themeToggleBtn) {
-    themeToggleBtn.addEventListener('click', () => {
-      if (htmlElement.classList.contains('dark')) {
-        htmlElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-      } else {
-        htmlElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
+    // Mobile Menu Toggle
+    const headers = document.querySelectorAll('header');
+    headers.forEach(header => {
+      const menuBtn = header.querySelector('.mobile-menu-btn');
+      const dropdown = header.querySelector('.mobile-nav-dropdown');
+      if (menuBtn && dropdown) {
+        const hamburger = menuBtn.querySelector('.hamburger-icon');
+        const close = menuBtn.querySelector('.close-icon');
+
+        menuBtn.onclick = (e) => {
+          e.stopPropagation();
+          const isOpen = dropdown.classList.toggle('open');
+          if (hamburger && close) {
+            hamburger.style.display = isOpen ? 'none' : 'block';
+            close.style.display = isOpen ? 'block' : 'none';
+          }
+        };
+
+        dropdown.querySelectorAll('a').forEach(link => {
+          link.onclick = () => {
+            dropdown.classList.remove('open');
+            if (hamburger && close) {
+              hamburger.style.display = 'block';
+              close.style.display = 'none';
+            }
+          };
+        });
       }
     });
+
+    // Close when clicking outside
+    document.onclick = (e) => {
+      document.querySelectorAll('.mobile-nav-dropdown.open').forEach(dropdown => {
+        const parentHeader = dropdown.closest('header');
+        const menuBtn = parentHeader ? parentHeader.querySelector('.mobile-menu-btn') : null;
+        if (!dropdown.contains(e.target) && (!menuBtn || !menuBtn.contains(e.target))) {
+          dropdown.classList.remove('open');
+          if (menuBtn) {
+            const hamburger = menuBtn.querySelector('.hamburger-icon');
+            const close = menuBtn.querySelector('.close-icon');
+            if (hamburger && close) {
+              hamburger.style.display = 'block';
+              close.style.display = 'none';
+            }
+          }
+        }
+      });
+    };
   }
+
+  setupNavScripts();
+  document.addEventListener('astro:page-load', setupNavScripts);
 </script>
 
 <style>
-  /* Flat navbar for the homepage */
   .navbar-flat {
     width: 100%;
-    background-color: #000000;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background-color: var(--bg-main);
+    border-bottom: 1px solid var(--border-color);
     height: 64px;
     display: flex;
     align-items: center;
@@ -88,6 +161,7 @@ const prefix = isHome ? "" : "/";
     left: 0;
     z-index: 100;
     padding: 0 40px;
+    transition: background-color 0.2s, border-color 0.2s;
   }
   .navbar-container {
     width: 100%;
@@ -101,7 +175,7 @@ const prefix = isHome ? "" : "/";
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #ffffff;
+    color: var(--text-primary);
     font-family: var(--font-mono);
     font-size: 0.95rem;
     font-weight: 700;
@@ -111,19 +185,19 @@ const prefix = isHome ? "" : "/";
   .logo-dot {
     width: 6px;
     height: 6px;
-    background-color: #10b981; /* Green dot matching the screenshot */
+    background-color: #10b981;
     border-radius: 50%;
     display: inline-block;
   }
   .logo-text {
-    color: #ffffff;
+    color: var(--text-primary);
   }
   .nav-links-flat {
     display: flex;
     gap: 32px;
   }
   .nav-links-flat a {
-    color: #a3a3a3;
+    color: var(--text-secondary);
     font-family: var(--font-mono);
     font-size: 0.82rem;
     letter-spacing: 0.2px;
@@ -132,20 +206,21 @@ const prefix = isHome ? "" : "/";
   }
   .nav-links-flat a:hover,
   .nav-links-flat a.active {
-    color: #ffffff;
+    color: var(--text-primary);
   }
 
-  .nav-actions-flat {
+  .nav-actions-flat, .nav-actions {
     display: flex;
     align-items: center;
+    gap: 16px;
   }
   .btn-flat-outline {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid var(--border-color);
     background-color: transparent;
-    color: #ffffff;
+    color: var(--text-primary);
     font-family: var(--font-mono);
     font-size: 0.82rem;
     font-weight: 600;
@@ -155,8 +230,85 @@ const prefix = isHome ? "" : "/";
     transition: all 0.15s ease;
   }
   .btn-flat-outline:hover {
-    border-color: #ffffff;
-    background-color: rgba(255, 255, 255, 0.05);
+    border-color: var(--text-primary);
+    background-color: var(--border-color);
+  }
+
+  /* Mobile Navigation Styles */
+  .mobile-menu-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 4px;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease;
+  }
+
+  .mobile-nav-dropdown {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    background-color: var(--bg-main);
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px 24px 20px 24px;
+    gap: 12px;
+    position: absolute;
+    top: 64px;
+    left: 0;
+    z-index: 99;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .mobile-nav-dropdown.open {
+    display: flex;
+  }
+
+  .mobile-nav-dropdown a {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 6px 0;
+    transition: color 0.15s ease;
+  }
+
+  .mobile-nav-dropdown a:hover,
+  .mobile-nav-dropdown a.active {
+    color: var(--text-primary);
+  }
+
+  .btn-mobile-action {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text) !important;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 8px 16px !important;
+    border-radius: 6px;
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  @media (max-width: 768px) {
+    .navbar-flat {
+      padding: 0 20px;
+    }
+    .desktop-only {
+      display: none !important;
+    }
+    .mobile-menu-btn {
+      display: inline-flex;
+    }
+    .nav-actions-flat, .nav-actions {
+      gap: 12px;
+    }
   }
 </style>
 

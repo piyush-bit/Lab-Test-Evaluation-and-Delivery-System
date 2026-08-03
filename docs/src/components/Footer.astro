@@ -20,6 +20,7 @@ const { isHome = false } = Astro.props;
             <div class="footer-links">
                 <a href="/docs/exercise-authoring-spec" class="footer-link">exercise spec</a>
                 <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System/releases" target="_blank" rel="noopener noreferrer" class="footer-link">releases</a>
+                <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System" target="_blank" rel="noopener noreferrer" class="footer-link">github repository</a>
             </div>
         </div>
         <div class="footer-bottom">
@@ -30,12 +31,13 @@ const { isHome = false } = Astro.props;
 
 <style>
     .main-footer {
-        background-color: #000000;
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        background-color: var(--bg-main);
+        border-top: 1px solid var(--border-color);
         padding: 60px 0 40px 0;
         margin-top: 80px;
         position: relative;
         z-index: 2;
+        transition: background-color 0.2s, border-color 0.2s;
     }
     .footer-container {
         max-width: 1200px;
@@ -61,7 +63,7 @@ const { isHome = false } = Astro.props;
         font-family: var(--font-mono);
         font-size: 1rem;
         font-weight: 700;
-        color: #ffffff;
+        color: var(--text-primary);
         margin-bottom: 16px;
         display: flex;
         align-items: center;
@@ -76,7 +78,7 @@ const { isHome = false } = Astro.props;
     }
     .footer-desc {
         font-size: 0.85rem;
-        color: #737373;
+        color: var(--text-secondary);
         line-height: 1.6;
         margin: 0;
     }
@@ -88,12 +90,12 @@ const { isHome = false } = Astro.props;
     .footer-link {
         font-family: var(--font-mono);
         font-size: 0.85rem;
-        color: #737373;
+        color: var(--text-secondary);
         text-decoration: none;
         transition: color 0.15s ease;
     }
     .footer-link:hover {
-        color: #ffffff;
+        color: var(--text-primary);
     }
     .footer-bottom {
         display: flex;
@@ -101,8 +103,8 @@ const { isHome = false } = Astro.props;
         align-items: center;
         font-family: var(--font-mono);
         font-size: 0.8rem;
-        color: #525252;
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--text-muted);
+        border-top: 1px solid var(--border-color);
         padding-top: 24px;
         width: 100%;
     }

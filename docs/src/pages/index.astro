@@ -10,6 +10,7 @@ import Footer from '../components/Footer.astro';
     <!-- Hero Section -->
     <section class="hero-full-section">
       <div class="hero-info-col">
+        <div class="hero-tagline-mono" style="font-family: 'Fira Code', var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">// test delivery and evaluation system</div>
         <h1 class="hero-title">
           The modern lab infrastructure for computer science.
         </h1>
@@ -17,14 +18,11 @@ import Footer from '../components/Footer.astro';
           Empower your CS faculty and students with automated evaluations, containerized sandboxes, and encrypted submission delivery. Built to eliminate grading overhead and environment inconsistencies.
         </p>
         <div class="hero-actions">
-          <a href="/docs/student-cli-reference" class="btn-mono-filled">try cli commands</a>
-          <a href="/docs/quick-start" class="btn-mono-outline">documentation</a>
+          <a href="/docs/quick-start" class="btn-mono-filled">quick start</a>
+          <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System" target="_blank" rel="noopener noreferrer" class="btn-mono-outline">github ↗</a>
         </div>
       </div>
     </section>
-
-    <!-- Divider Line -->
-    <hr class="section-divider" />
 
     <!-- Timeline/Lifecycle Section -->
     <section id="lifecycle" class="timeline-section">
@@ -71,9 +69,6 @@ import Footer from '../components/Footer.astro';
       </div>
     </section>
 
-    <!-- Divider Line -->
-    <hr class="section-divider" />
-
     <!-- Digital Migration Section -->
     <section id="problem" class="migration-stack-section">
       <div class="migration-header-block">
@@ -106,9 +101,6 @@ import Footer from '../components/Footer.astro';
         </div>
       </div>
     </section>
-
-    <!-- Divider Line -->
-    <hr class="section-divider" />
 
     <!-- Why Choose TDES Section -->
     <section id="why-choose" class="reasons-section">
@@ -168,10 +160,6 @@ import Footer from '../components/Footer.astro';
 </BaseLayout>
 
 <style>
-  /* Global page-level style overrides to force pure black background */
-  :global(body) {
-    background-color: #000000 !important;
-  }
   :global(.grid-lines-container) {
     display: none !important;
   }
@@ -180,7 +168,7 @@ import Footer from '../components/Footer.astro';
     max-width: 1200px;
     margin: 0 auto;
     padding: 120px 40px 40px 40px;
-    background-color: #000000;
+    background-color: var(--bg-main);
   }
 
   /* Full Width Hero Layout */
@@ -192,9 +180,18 @@ import Footer from '../components/Footer.astro';
   .hero-info-col {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     width: 100%;
-    text-align: center;
+    text-align: left;
+  }
+
+  .hero-tagline-mono {
+    font-family: 'Fira Code', var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    letter-spacing: 0.2px;
+    text-align: left;
   }
 
   .hero-title {
@@ -202,36 +199,36 @@ import Footer from '../components/Footer.astro';
     font-weight: 700;
     line-height: 1.15;
     letter-spacing: -0.8px;
-    color: #ffffff;
+    color: var(--text-primary);
     margin-bottom: 24px;
     width: 100%;
-    text-align: center;
+    text-align: left;
   }
 
   .hero-subtitle {
     font-size: 1.1rem;
     line-height: 1.6;
-    color: #a3a3a3;
+    color: var(--text-secondary);
     margin-bottom: 36px;
     width: 100%;
     max-width: 800px;
-    text-align: center;
-    margin-left: auto;
+    text-align: left;
+    margin-left: 0;
     margin-right: auto;
   }
 
   .hero-actions {
     display: flex;
     gap: 12px;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .btn-mono-filled {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background-color: #ffffff;
-    color: #000000;
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
     font-family: var(--font-mono);
     font-size: 0.82rem;
     font-weight: 700;
@@ -242,16 +239,16 @@ import Footer from '../components/Footer.astro';
   }
 
   .btn-mono-filled:hover {
-    background-color: #eaeaea;
+    background-color: var(--btn-primary-hover);
   }
 
   .btn-mono-outline {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid var(--border-color);
     background-color: transparent;
-    color: #ffffff;
+    color: var(--text-primary);
     font-family: var(--font-mono);
     font-size: 0.82rem;
     font-weight: 700;
@@ -262,13 +259,13 @@ import Footer from '../components/Footer.astro';
   }
 
   .btn-mono-outline:hover {
-    border-color: #ffffff;
-    background-color: rgba(255, 255, 255, 0.05);
+    border-color: var(--text-primary);
+    background-color: var(--border-color);
   }
 
   /* Status Dashboard Column */
   .status-col {
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 1px solid var(--border-color);
     padding-left: 60px;
     display: flex;
     flex-direction: column;
@@ -278,10 +275,10 @@ import Footer from '../components/Footer.astro';
   }
 
   .console-box {
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 24px;
-    background-color: #000000;
+    background-color: var(--bg-terminal);
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -364,7 +361,7 @@ import Footer from '../components/Footer.astro';
   }
 
   .console-divider {
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--border-color);
     margin-top: 16px;
     margin-bottom: 16px;
     width: 100%;
@@ -390,7 +387,7 @@ import Footer from '../components/Footer.astro';
   /* Section Divider line */
   .section-divider {
     border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--border-color);
     margin: 40px 0;
     width: 100%;
   }
@@ -406,30 +403,30 @@ import Footer from '../components/Footer.astro';
   .migration-section-title {
     font-size: 1.8rem;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-primary);
     margin-bottom: 8px;
   }
   .migration-section-subtitle {
     font-size: 0.95rem;
-    color: #737373;
+    color: var(--text-secondary);
     margin: 0;
   }
   .migration-stack {
     display: flex;
     flex-direction: column;
     width: 100%;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--border-color);
   }
   .migration-row {
     display: flex;
     align-items: center;
     padding: 24px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--border-color);
   }
   .migration-num-mono {
     font-family: var(--font-mono);
     font-size: 0.85rem;
-    color: #525252;
+    color: var(--text-muted);
     font-weight: 700;
     width: 60px;
     flex-shrink: 0;
@@ -437,7 +434,7 @@ import Footer from '../components/Footer.astro';
   .migration-row-title {
     font-size: 1.05rem;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-primary);
   }
 
 
@@ -454,13 +451,13 @@ import Footer from '../components/Footer.astro';
   .timeline-section-title {
     font-size: 1.8rem;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-primary);
     margin-bottom: 8px;
   }
 
   .timeline-section-subtitle {
     font-size: 0.95rem;
-    color: #a3a3a3;
+    color: var(--text-secondary);
     margin: 0;
   }
 
@@ -475,14 +472,14 @@ import Footer from '../components/Footer.astro';
     flex-direction: column;
     align-items: flex-start;
     text-align: left;
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 1px solid var(--border-color);
     padding-left: 20px;
   }
 
   .step-num-mono {
     font-family: var(--font-mono);
     font-size: 0.85rem;
-    color: #525252;
+    color: var(--text-muted);
     margin-bottom: 16px;
     font-weight: 700;
   }
@@ -490,14 +487,14 @@ import Footer from '../components/Footer.astro';
   .step-title {
     font-size: 0.95rem;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-primary);
     margin-bottom: 10px;
   }
 
   .step-desc {
     font-size: 0.82rem;
     line-height: 1.6;
-    color: #a3a3a3;
+    color: var(--text-secondary);
     margin: 0;
   }
 
@@ -512,12 +509,12 @@ import Footer from '../components/Footer.astro';
   .reasons-section-title {
     font-size: 1.8rem;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-primary);
     margin-bottom: 8px;
   }
   .reasons-section-subtitle {
     font-size: 0.95rem;
-    color: #737373;
+    color: var(--text-secondary);
     margin: 0;
   }
   .reasons-grid {
@@ -530,7 +527,7 @@ import Footer from '../components/Footer.astro';
     flex-direction: column;
     align-items: flex-start;
     padding: 0 32px;
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 1px solid var(--border-color);
   }
   .reasons-col:first-child {
     padding-left: 0;
@@ -540,7 +537,7 @@ import Footer from '../components/Footer.astro';
     padding-right: 0;
   }
   .reason-icon-wrapper {
-    color: #737373;
+    color: var(--text-secondary);
     margin-bottom: 24px;
     display: flex;
     align-items: center;
@@ -552,13 +549,13 @@ import Footer from '../components/Footer.astro';
   .reason-title {
     font-size: 1.1rem;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-primary);
     margin-bottom: 12px;
     line-height: 1.3;
   }
   .reason-desc {
     font-size: 0.88rem;
-    color: #737373;
+    color: var(--text-secondary);
     line-height: 1.5;
     margin: 0;
   }

@@ -119,22 +119,21 @@ body {
 .theme-toggle-btn,
 .github-link-btn {
     background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    border: none;
+    color: var(--text-secondary);
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    padding: 0;
+    transition: color 0.15s ease;
     text-decoration: none;
 }
 
 .theme-toggle-btn:hover,
 .github-link-btn:hover {
-    background-color: var(--border-color);
+    background: transparent;
+    color: var(--text-primary);
 }
 
 .sun-icon { display: none; }

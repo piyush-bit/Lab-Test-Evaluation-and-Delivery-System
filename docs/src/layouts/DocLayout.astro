@@ -85,6 +85,13 @@ const nextDoc = activeIndex >= 0 && activeIndex < orderedDocs.length - 1 ? order
             </ul>
           </div>
 
+          <div class="docs-nav-section" style="margin-top: 32px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+            <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System" target="_blank" rel="noopener noreferrer" class="docs-nav-link" style="font-family: var(--font-mono); font-size: 0.82rem; color: #a3a3a3; transition: all 0.2s; display: flex; align-items: center; gap: 6px; font-weight: 500; text-transform: lowercase;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+              github repository ↗
+            </a>
+          </div>
+
         </div>
       </aside>
 
@@ -169,10 +176,7 @@ const nextDoc = activeIndex >= 0 && activeIndex < orderedDocs.length - 1 ? order
 </BaseLayout>
 
 <style>
-  /* Enforce pure black background and hide default grid lines */
-  :global(body) {
-    background-color: #000000 !important;
-  }
+<style>
   :global(.grid-lines-container) {
     display: none !important;
   }
@@ -191,7 +195,7 @@ const nextDoc = activeIndex >= 0 && activeIndex < orderedDocs.length - 1 ? order
     max-height: calc(100vh - 140px);
     overflow-y: auto;
     padding-right: 20px;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    border-right: 1px solid var(--border-color);
     margin-right: 40px;
     scrollbar-width: none;
   }
@@ -206,20 +210,19 @@ const nextDoc = activeIndex >= 0 && activeIndex < orderedDocs.length - 1 ? order
   }
 
   .docs-nav-link:hover {
-
-    color: #ffffff !important;
+    color: var(--text-primary) !important;
   }
   .docs-nav-link.active {
     font-weight: 700 !important;
     border-left: 2px solid #10b981 !important;
-    color: #ffffff !important;
+    color: var(--text-primary) !important;
     padding-left: 8px !important;
     margin-left: -10px;
   }
   
   /* Global subcomponent overrides for Table of Contents (TOC) */
   :global(.docs-toc-sidebar) {
-    border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-left: 1px solid var(--border-color) !important;
     width: 220px;
     flex: 0 0 220px;
     margin-left: 40px;
@@ -239,7 +242,7 @@ const nextDoc = activeIndex >= 0 && activeIndex < orderedDocs.length - 1 ? order
   :global(.docs-toc-sticky h4) {
     font-family: var(--font-mono) !important;
     font-size: 0.72rem !important;
-    color: #525252 !important;
+    color: var(--text-muted) !important;
     letter-spacing: 0.8px !important;
     text-transform: uppercase !important;
     font-weight: 700 !important;
@@ -247,45 +250,45 @@ const nextDoc = activeIndex >= 0 && activeIndex < orderedDocs.length - 1 ? order
   :global(.toc-link) {
     font-family: var(--font-mono) !important;
     font-size: 0.82rem !important;
-    color: #a3a3a3 !important;
+    color: var(--text-secondary) !important;
     text-transform: lowercase !important;
     transition: color 0.15s ease !important;
   }
   :global(.toc-link:hover),
   :global(.toc-link.active) {
-    color: #ffffff !important;
+    color: var(--text-primary) !important;
   }
 
-  /* Content rendering adaptations for dark developer aesthetic */
+  /* Content rendering adaptations for developer aesthetic */
   :global(.docs-content-area h1) {
     font-size: 2.25rem !important;
     font-weight: 700 !important;
-    color: #ffffff !important;
+    color: var(--text-primary) !important;
     letter-spacing: -0.6px !important;
   }
   :global(.docs-content-area h2) {
     font-size: 1.5rem !important;
     font-weight: 700 !important;
-    color: #ffffff !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
   }
   :global(.docs-content-area h3) {
     font-size: 1.15rem !important;
     font-weight: 700 !important;
-    color: #ffffff !important;
+    color: var(--text-primary) !important;
   }
   :global(.docs-content-area p),
   :global(.docs-content-area li) {
-    color: #a3a3a3 !important;
+    color: var(--text-secondary) !important;
   }
   :global(.docs-content-area :not(pre) > code) {
-    background-color: rgba(255, 255, 255, 0.06) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    color: #ffffff !important;
+    background-color: var(--grid-line-color) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
   }
   :global(.docs-content-area pre) {
-    background-color: #050505 !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background-color: var(--bg-terminal) !important;
+    border: 1px solid var(--border-color) !important;
     box-shadow: none !important;
   }
   :global(.docs-content-area blockquote) {
@@ -301,8 +304,6 @@ const nextDoc = activeIndex >= 0 && activeIndex < orderedDocs.length - 1 ? order
     color: #818cf8 !important;
   }
 
-
-
   /* Docs Pagination Styles */
   .docs-pagination {
     display: flex;
@@ -311,16 +312,16 @@ const nextDoc = activeIndex >= 0 && activeIndex < orderedDocs.length - 1 ? order
     gap: 20px;
     margin-top: 4rem;
     padding-top: 2rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--border-color);
     width: 100%;
   }
   .docs-pagination .btn-flat-outline {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid var(--border-color);
     background-color: transparent;
-    color: #ffffff;
+    color: var(--text-primary);
     font-family: var(--font-mono);
     font-size: 0.82rem;
     font-weight: 600;
@@ -330,8 +331,8 @@ const nextDoc = activeIndex >= 0 && activeIndex < orderedDocs.length - 1 ? order
     transition: all 0.15s ease;
   }
   .docs-pagination .btn-flat-outline:hover {
-    border-color: #ffffff;
-    background-color: rgba(255, 255, 255, 0.05);
+    border-color: var(--text-primary);
+    background-color: var(--border-color);
   }
   .pagination-spacer {
     flex: 1;
