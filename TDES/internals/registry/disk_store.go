@@ -19,7 +19,7 @@ type DiskArtifactStore struct {
 }
 
 // NewDiskArtifactStore creates and initializes a new DiskArtifactStore.
-func NewDiskArtifactStore(root string) (*DiskArtifactStore, error) {
+func NewDiskArtifactStore(root string) (ArtifactStore, error) {
 	if root == "" {
 		return nil, fmt.Errorf("artifact root is required")
 	}

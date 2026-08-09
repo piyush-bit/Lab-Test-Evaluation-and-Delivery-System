@@ -34,6 +34,8 @@ type ArtifactStore interface {
 
 // Repository abstracts registry metadata and database operations.
 type Repository interface {
+	io.Closer
+
 	// UpsertArtifact registers/updates artifact metadata in the index.
 	UpsertArtifact(ctx context.Context, artifact Artifact) error
 

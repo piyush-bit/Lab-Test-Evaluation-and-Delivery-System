@@ -243,23 +243,17 @@ func TestSaveEvaluation(t *testing.T) {
 		t.Fatalf("SaveEvaluation failed: %v", err)
 	}
 
-	// Verify database record by directly querying the repo's db
-	var count int
-	err = repo.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM submissions WHERE id = ?", "test-eval-id").Scan(&count)
+	// Verify database record via service
+	subs, err := service.ListSubmissions(ctx, "acme", "go101-lab01")
 	if err != nil {
 		t.Fatalf("query submissions: %v", err)
 	}
-	if count != 1 {
-		t.Errorf("Expected 1 submission record, got %d", count)
+	if len(subs) != 1 {
+		t.Fatalf("Expected 1 submission record, got %d", len(subs))
 	}
 
-	var storedEarnedPoints int
-	err = repo.db.QueryRowContext(ctx, "SELECT earned_points FROM submissions WHERE id = ?", "test-eval-id").Scan(&storedEarnedPoints)
-	if err != nil {
-		t.Fatalf("query earned_points: %v", err)
-	}
-	if storedEarnedPoints != 8 {
-		t.Errorf("Expected earned_points to be 8, got %d", storedEarnedPoints)
+	if subs[0].EarnedPoints != 8 {
+		t.Errorf("Expected earned_points to be 8, got %d", subs[0].EarnedPoints)
 	}
 }
 
@@ -368,4 +362,81 @@ func TestListSubmissions(t *testing.T) {
 		t.Errorf("expected id-1, got %s", both[0].ID)
 	}
 }
+
+func TestInMemoryRegistryService(t *testing.T) {
+	repo := NewInMemoryRepository()
+	defer repo.Close()
+
+	store := NewInMemoryArtifactStore()
+	service, err := NewService(repo, store)
+	if err != nil {
+		t.Fatalf("NewService failed: %v", err)
+	}
+
+	tempDir, err := os.MkdirTemp("", "tdes-inmemory-test-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	manifestJSON := `{
+		"lab_id": "inmem01",
+		"version": "1.0.0",
+		"title": "In Memory Lab",
+		"language": "python",
+		"runner_image": "python:3.11",
+		"local_entrypoint": "make test-public",
+		"grading": [{"command": "pytest", "points": 50}],
+		"submission": {"include_paths": ["solution.py"]},
+		"limits": {"memory_mb": 256, "timeout_seconds": 5, "pids_limit": 50}
+	}`
+
+	pubPkg := createMockPackage(t, tempDir, "public.tar.gz", true, manifestJSON)
+	privPkg := createMockPackage(t, tempDir, "private.tar", false, manifestJSON)
+
+	ctx := context.Background()
+	req := PublishRequest{
+		OrgID:               "org-inmem",
+		ExerciseID:          "inmem01",
+		Version:             "1.0.0",
+		Status:              "published",
+		PublicArtifactPath:  pubPkg,
+		PrivateArtifactPath: privPkg,
+	}
+
+	ev, created, err := service.Publish(ctx, req)
+	if err != nil {
+		t.Fatalf("Publish to in-memory store failed: %v", err)
+	}
+	if !created {
+		t.Errorf("Expected created to be true")
+	}
+
+	fetched, err := service.GetExerciseVersion(ctx, "org-inmem", "inmem01", "1.0.0")
+	if err != nil {
+		t.Fatalf("GetExerciseVersion failed: %v", err)
+	}
+	if fetched.Title != "In Memory Lab" || fetched.PublicArtifactSHA != ev.PublicArtifactSHA {
+		t.Errorf("Fetched version mismatch: %+v", fetched)
+	}
+
+	// Test student credentials
+	cred := StudentCredential{
+		OrgID:     "org-inmem",
+		StudentID: "s12345",
+		PinHash:   "hashed-pin-value",
+	}
+	if err := service.SaveStudentCredential(ctx, cred); err != nil {
+		t.Fatalf("SaveStudentCredential failed: %v", err)
+	}
+
+	fetchedCred, err := service.GetStudentCredential(ctx, "org-inmem", "s12345")
+	if err != nil {
+		t.Fatalf("GetStudentCredential failed: %v", err)
+	}
+	if fetchedCred.PinHash != "hashed-pin-value" {
+		t.Errorf("Expected pin_hash 'hashed-pin-value', got %s", fetchedCred.PinHash)
+	}
+}
+
 

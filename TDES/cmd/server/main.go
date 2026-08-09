@@ -32,12 +32,38 @@ type Config struct {
 }
 
 func loadConfig() Config {
+	loadDotEnv(".env", "TDES/.env", filepath.Join("..", ".env"))
 	dataRoot := getEnv("REGISTRY_DATA_ROOT", "./data")
 	return Config{
 		Port:         getEnv("PORT", "8080"),
 		DataRoot:     dataRoot,
 		DBPath:       getEnv("REGISTRY_DB_PATH", filepath.Join(dataRoot, "registry.db")),
 		ArtifactRoot: getEnv("REGISTRY_ARTIFACT_ROOT", filepath.Join(dataRoot, "objects")),
+	}
+}
+
+func loadDotEnv(envFiles ...string) {
+	for _, envFile := range envFiles {
+		data, err := os.ReadFile(envFile)
+		if err != nil {
+			continue
+		}
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				val := strings.TrimSpace(parts[1])
+				val = strings.Trim(val, `"'`)
+				if os.Getenv(key) == "" {
+					_ = os.Setenv(key, val)
+				}
+			}
+		}
 	}
 }
 

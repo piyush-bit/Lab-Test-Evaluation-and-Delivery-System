@@ -3,3 +3,5 @@
 TDES/euc2
 ui_dist
 experiment-dir
+.env
+*.env

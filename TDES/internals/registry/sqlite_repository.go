@@ -21,7 +21,7 @@ type SQLiteRepository struct {
 }
 
 // NewSQLiteRepository creates a new SQLiteRepository and initializes its database schemas.
-func NewSQLiteRepository(dbPath string) (*SQLiteRepository, error) {
+func NewSQLiteRepository(dbPath string) (Repository, error) {
 	if dbPath == "" {
 		return nil, fmt.Errorf("database path is required")
 	}

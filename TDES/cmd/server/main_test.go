@@ -225,12 +225,12 @@ func TestHandleSubmissions(t *testing.T) {
 	}
 
 	// 7. Verify database entry was persisted
-	count, err := repo.GetSubmissionsCountForTesting(context.Background())
+	subs, err := service.ListSubmissions(context.Background(), "acme", "lab1")
 	if err != nil {
 		t.Fatalf("get submissions count failed: %v", err)
 	}
-	if count != 1 {
-		t.Errorf("expected 1 submission record in database, got %d", count)
+	if len(subs) != 1 {
+		t.Errorf("expected 1 submission record in database, got %d", len(subs))
 	}
 }
 
