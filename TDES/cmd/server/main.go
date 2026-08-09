@@ -32,7 +32,7 @@ type Config struct {
 }
 
 func loadConfig() Config {
-	loadDotEnv(".env", "TDES/.env", filepath.Join("..", ".env"))
+	loadDotEnv(".env")
 	dataRoot := getEnv("REGISTRY_DATA_ROOT", "./data")
 	return Config{
 		Port:         getEnv("PORT", "8080"),
@@ -48,6 +48,7 @@ func loadDotEnv(envFiles ...string) {
 		if err != nil {
 			continue
 		}
+		log.Printf("Loaded environment configuration from %s", envFile)
 		lines := strings.Split(string(data), "\n")
 		for _, line := range lines {
 			line = strings.TrimSpace(line)
@@ -57,13 +58,39 @@ func loadDotEnv(envFiles ...string) {
 			parts := strings.SplitN(line, "=", 2)
 			if len(parts) == 2 {
 				key := strings.TrimSpace(parts[0])
+				key = strings.TrimPrefix(key, "export ")
+				key = strings.TrimSpace(key)
+
 				val := strings.TrimSpace(parts[1])
-				val = strings.Trim(val, `"'`)
+				// Strip inline comments if not enclosed in quotes
+				if idx := strings.Index(val, " #"); idx != -1 {
+					quoteCount := 0
+					for i := 0; i < idx; i++ {
+						if val[i] == '"' || val[i] == '\'' {
+							quoteCount++
+						}
+					}
+					if quoteCount%2 == 0 {
+						val = strings.TrimSpace(val[:idx])
+					}
+				}
+
+				if (strings.HasPrefix(val, `"`) && strings.HasSuffix(val, `"`)) ||
+					(strings.HasPrefix(val, `'`) && strings.HasSuffix(val, `'`)) {
+					if len(val) >= 2 {
+						val = val[1 : len(val)-1]
+					}
+				} else {
+					val = strings.Trim(val, `"'`)
+				}
+
 				if os.Getenv(key) == "" {
 					_ = os.Setenv(key, val)
 				}
 			}
 		}
+		// Stop checking other files once a valid .env file has been found and loaded
+		break
 	}
 }
 
@@ -358,13 +385,17 @@ func main() {
 	})
 
 	// 10. Remote Submission Evaluator
+		// 10. Remote Submission Evaluator
 	mux.HandleFunc("POST /v1/submissions", handleSubmissions(service, nil))
 
 	// 11. Get/Export Submissions
 	mux.HandleFunc("GET /v1/submissions", handleGetSubmissions(service))
 
-	// 12. Onboard Students
+	// 9. Admin Onboard Students Roster
 	mux.HandleFunc("POST /v1/admin/onboard", handleAdminOnboard(service))
+
+	// 10. Admin List Student Roster & Credentials
+	mux.HandleFunc("GET /v1/admin/students", handleGetStudents(service))
 
 	server := &http.Server{
 		Addr:    ":" + cfg.Port,
@@ -790,5 +821,28 @@ func hashPin(studentID, pin string) string {
 	}
 	hash := sha256.Sum256([]byte(studentID + ":" + pin + ":" + salt))
 	return hex.EncodeToString(hash[:])
+}
+
+func handleGetStudents(service *registry.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		var token string
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			token = strings.TrimPrefix(authHeader, "Bearer ")
+		}
+		if !isInstructorTokenValid(token) {
+			respondError(w, http.StatusUnauthorized, "invalid bearer token")
+			return
+		}
+
+		orgID := r.URL.Query().Get("org_id")
+		students, err := service.ListStudentCredentials(r.Context(), orgID)
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, "failed to query students: "+err.Error())
+			return
+		}
+
+		respondJSON(w, http.StatusOK, students)
+	}
 }
 

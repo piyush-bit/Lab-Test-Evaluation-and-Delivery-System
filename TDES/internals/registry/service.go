@@ -164,3 +164,8 @@ func (s *Service) GetStudentCredential(ctx context.Context, orgID, studentID str
 func (s *Service) SaveStudentCredential(ctx context.Context, cred StudentCredential) error {
 	return s.repo.SaveStudentCredential(ctx, cred)
 }
+
+// ListStudentCredentials queries student credentials, optionally filtering by orgID.
+func (s *Service) ListStudentCredentials(ctx context.Context, orgID string) ([]StudentCredential, error) {
+	return s.repo.ListStudentCredentials(ctx, orgID)
+}

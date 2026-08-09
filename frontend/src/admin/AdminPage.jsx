@@ -4,14 +4,19 @@ import { useStudent } from '../student/StudentContext';
 import { HistoryIcon, DriveIcon, PackageIcon, LockIcon, WrenchIcon, ZapIcon, CheckIcon } from '../student/components/Icons';
 import SystemStatus from '../student/components/SystemStatus';
 import CommandPalette from '../student/components/CommandPalette';
+import ServerManager from './ServerManager';
 
 export default function AdminPage() {
   const location = useLocation();
+  const [adminView, setAdminView] = useState('dashboard'); // 'dashboard' | 'registry'
   const {
     validationError,
     setValidationError,
     recentDrives,
+    recentRemotes,
     triggerAdminDriveFlow,
+    triggerConnectRegistryFlow,
+    activeRegistryServer,
     handleOpenAdminDrive,
     activeAdminDrivePath,
     setActiveAdminDrivePath,
@@ -47,9 +52,11 @@ export default function AdminPage() {
     setExpandedLogs(prev => ({ ...prev, [idx]: !prev[idx] }));
   };
 
-  // When visiting /admin/drive directly, trigger the admin drive Command Palette flow automatically
+  // When visiting /admin/drive or /admin/server directly
   useEffect(() => {
-    if (location.pathname === '/admin/drive' || location.pathname === '/admin/drive/') {
+    if (location.pathname.includes('/server') || location.pathname.includes('/registry')) {
+      setAdminView('registry');
+    } else if (location.pathname === '/admin/drive' || location.pathname === '/admin/drive/') {
       triggerAdminDriveFlow();
     }
   }, [location.pathname]);
@@ -154,69 +161,107 @@ export default function AdminPage() {
       {/* Main Viewport Content */}
       <main className="main-viewport-content">
         {!activeAdminDrivePath ? (
-          /* ADMIN DASHBOARD (Matches Student Welcome Dashboard exactly) */
-          <div className="vscode-welcome-container">
-            <header className="vscode-header">
-              <h1>TDES Admin Console</h1>
-              <p>Administrative delivery drive and lab evaluation dashboard</p>
-              {validationError && (
-                <div className="validation-alert-error" style={{ marginTop: '14px' }}>
-                  {validationError}
-                </div>
-              )}
-            </header>
+          adminView === 'registry' ? (
+            /* REGISTRY MANAGEMENT VIEW */
+            <ServerManager onBack={() => setAdminView('dashboard')} />
+          ) : (
+            /* ADMIN DASHBOARD (Matches Student Welcome Dashboard design language) */
+            <div className="vscode-welcome-container">
+              <header className="vscode-header">
+                <h1>TDES Admin Console</h1>
+                <p>Administrative delivery drive and lab evaluation dashboard</p>
+                {validationError && (
+                  <div className="validation-alert-error" style={{ marginTop: '14px' }}>
+                    {validationError}
+                  </div>
+                )}
+              </header>
 
-            <div className="vscode-columns-grid">
-              {/* LEFT COLUMN: Start & Recent Disks */}
-              <div className="vscode-left-col">
-                <div className="vscode-section">
-                  <h2>Start</h2>
-                  <div className="vscode-action-list">
-                    <div 
-                      className="vscode-action-item" 
-                      onClick={() => {
-                        setValidationError('');
-                        triggerAdminDriveFlow();
-                      }}
-                    >
-                      <span className="action-icon"><DriveIcon /></span>
-                      <div className="action-details">
-                        <span className="action-title">Drive Management</span>
-                        <span className="action-desc">Prepare delivery drives, open disks & manage exercises</span>
+              <div className="vscode-columns-grid">
+                {/* LEFT COLUMN: Start & Recent Disks */}
+                <div className="vscode-left-col">
+                  <div className="vscode-section">
+                    <h2>Start</h2>
+                    <div className="vscode-action-list">
+                      <div 
+                        className="vscode-action-item" 
+                        onClick={() => {
+                          setValidationError('');
+                          triggerAdminDriveFlow();
+                        }}
+                      >
+                        <span className="action-icon"><DriveIcon /></span>
+                        <div className="action-details">
+                          <span className="action-title">Drive Management</span>
+                          <span className="action-desc">Prepare delivery drives, open disks & manage exercises</span>
+                        </div>
                       </div>
+
+                      <div 
+                        className="vscode-action-item" 
+                        onClick={() => {
+                          setValidationError('');
+                          triggerConnectRegistryFlow(() => setAdminView('registry'));
+                        }}
+                      >
+                        <span className="action-icon"><ZapIcon /></span>
+                        <div className="action-details">
+                          <span className="action-title">Registry Management</span>
+                          <span className="action-desc">Connect registry server, onboard rosters & inspect grades</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* RECENT SECTION */}
+                  <div className="vscode-section" style={{ marginTop: '28px' }}>
+                    <h2>Recent</h2>
+                    <div className="vscode-recents-list">
+                      {recentRemotes.length === 0 && recentDrives.length === 0 ? (
+                        <div className="empty-recents-msg">No recent servers or drives.</div>
+                      ) : (
+                        <>
+                          {recentRemotes.map((serverUrl, idx) => (
+                            <div 
+                              key={`server-${idx}`} 
+                              className="vscode-recent-item"
+                              onClick={() => {
+                                setValidationError('');
+                                triggerConnectRegistryFlow(serverUrl, () => setAdminView('registry'));
+                              }}
+                            >
+                              <span className="recent-icon"><ZapIcon /></span>
+                              <div className="recent-details">
+                                <span className="recent-name">{serverUrl}</span>
+                                <span className="recent-path">Registry Server</span>
+                              </div>
+                            </div>
+                          ))}
+
+                          {recentDrives.map((diskPath, idx) => (
+                            <div 
+                              key={`drive-${idx}`} 
+                              className="vscode-recent-item"
+                              onClick={() => handleOpenAdminDrive(diskPath)}
+                            >
+                              <span className="recent-icon"><HistoryIcon /></span>
+                              <div className="recent-details">
+                                <span className="recent-name">{diskPath.split('/').pop() || diskPath.split('\\').pop()}</span>
+                                <span className="recent-path">{diskPath}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* RECENT DISKS SECTION */}
-                <div className="vscode-section" style={{ marginTop: '28px' }}>
-                  <h2>Recent Disks</h2>
-                  <div className="vscode-recents-list">
-                    {recentDrives.length === 0 ? (
-                      <div className="empty-recents-msg">No recent disks opened or prepared.</div>
-                    ) : (
-                      recentDrives.map((diskPath, idx) => (
-                        <div 
-                          key={idx} 
-                          className="vscode-recent-item"
-                          onClick={() => handleOpenAdminDrive(diskPath)}
-                        >
-                          <span className="recent-icon"><HistoryIcon /></span>
-                          <div className="recent-details">
-                            <span className="recent-name">{diskPath.split('/').pop() || diskPath.split('\\').pop()}</span>
-                            <span className="recent-path">{diskPath}</span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
+                {/* RIGHT COLUMN: System Status */}
+                <SystemStatus />
               </div>
-
-              {/* RIGHT COLUMN: System Status */}
-              <SystemStatus />
             </div>
-          </div>
+          )
         ) : (
           /* ACTIVE DRIVE DETAILS VIEW (Minimal VS Code Dashboard Design Language) */
           <div className="vscode-welcome-container">

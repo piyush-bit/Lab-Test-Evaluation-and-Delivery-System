@@ -731,4 +731,44 @@ func TestPINVerificationFlow(t *testing.T) {
 	}
 }
 
+func TestLoadDotEnv(t *testing.T) {
+	tempDir := t.TempDir()
+	envPath := filepath.Join(tempDir, ".env")
+
+	content := []byte(`# Comment line
+TEST_PORT=9090
+export TEST_EXPORT_VAR=exported_value
+TEST_QUOTED="quoted value"
+TEST_SINGLE_QUOTED='single quoted value'
+TEST_COMMENT=val_comment # inline comment
+`)
+	if err := os.WriteFile(envPath, content, 0644); err != nil {
+		t.Fatalf("failed to write test .env file: %v", err)
+	}
+
+	// Ensure env vars are unset before test
+	keys := []string{"TEST_PORT", "TEST_EXPORT_VAR", "TEST_QUOTED", "TEST_SINGLE_QUOTED", "TEST_COMMENT"}
+	for _, k := range keys {
+		os.Unsetenv(k)
+		defer os.Unsetenv(k)
+	}
+
+	loadDotEnv(envPath)
+
+	expected := map[string]string{
+		"TEST_PORT":          "9090",
+		"TEST_EXPORT_VAR":    "exported_value",
+		"TEST_QUOTED":        "quoted value",
+		"TEST_SINGLE_QUOTED": "single quoted value",
+		"TEST_COMMENT":       "val_comment",
+	}
+
+	for k, exp := range expected {
+		if got := os.Getenv(k); got != exp {
+			t.Errorf("expected env %s to be %q, got %q", k, exp, got)
+		}
+	}
+}
+
+
 

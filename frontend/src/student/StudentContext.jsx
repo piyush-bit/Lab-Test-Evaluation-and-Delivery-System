@@ -46,6 +46,60 @@ export const StudentProvider = ({ children }) => {
 
   const [remoteServerStatuses, setRemoteServerStatuses] = useState({});
 
+  // Active connected registry server context
+  const [activeRegistryServer, setActiveRegistryServer] = useState(null); // { url, token, online }
+  const [registryPendingUrl, setRegistryPendingUrl] = useState('');
+
+  const triggerConnectRegistryFlow = (initialUrl, onSuccessCallback) => {
+    let urlToUse = '';
+    let callbackFn = onSuccessCallback;
+    if (typeof initialUrl === 'function') {
+      callbackFn = initialUrl;
+      urlToUse = '';
+    } else if (typeof initialUrl === 'string') {
+      urlToUse = initialUrl.trim();
+    }
+
+    setValidationError('');
+    setQuickOpenCallback(() => callbackFn);
+
+    if (urlToUse) {
+      const typedUrl = normalizeServerUrl(urlToUse);
+      setRegistryPendingUrl(typedUrl);
+      setQuickOpenPath(typedUrl);
+      setQuickOpenMode('registry_checking_health');
+      setSelectedIndex(0);
+      setShowQuickOpen(true);
+      setLoading(true);
+
+      (async () => {
+        try {
+          const res = await fetch(`/api/remote/health?url=${encodeURIComponent(typedUrl)}`);
+          const data = await res.json();
+          if (data.online) {
+            addRemoteToRecents(typedUrl);
+            setQuickOpenMode('registry_input_token');
+            setQuickOpenPath('');
+            setSelectedIndex(0);
+          } else {
+            setQuickOpenMode('registry_health_error');
+            setSelectedIndex(0);
+          }
+        } catch {
+          setQuickOpenMode('registry_health_error');
+          setSelectedIndex(0);
+        } finally {
+          setLoading(false);
+        }
+      })();
+    } else {
+      setQuickOpenPath('');
+      setQuickOpenMode('registry_input_url');
+      setSelectedIndex(0);
+      setShowQuickOpen(true);
+    }
+  };
+
   const normalizeServerUrl = (url) => {
     let cleaned = (url || '').trim();
     if (!cleaned) return '';
@@ -1150,6 +1204,55 @@ export const StudentProvider = ({ children }) => {
         latest: true
       };
       handleExecuteFetchInline(manualEx, fetchSelectedSourceType, fetchSelectedSourceValue);
+    } else if (quickOpenMode === 'registry_input_url') {
+      // STATE 1 -> STATE 2 -> STATE 3 / STATE 4
+      const typedUrl = normalizeServerUrl(quickOpenPath.trim() || 'http://localhost:8080');
+      setRegistryPendingUrl(typedUrl);
+      setQuickOpenMode('registry_checking_health');
+      setLoading(true);
+
+      (async () => {
+        try {
+          const res = await fetch(`/api/remote/health?url=${encodeURIComponent(typedUrl)}`);
+          const data = await res.json();
+          if (data.online) {
+            // Success -> Store in Recent & proceed to State 3 (Token Input)
+            addRemoteToRecents(typedUrl);
+            setQuickOpenMode('registry_input_token');
+            setQuickOpenPath('');
+            setSelectedIndex(0);
+          } else {
+            // Failure -> State 4 (Error + Options)
+            setQuickOpenMode('registry_health_error');
+            setSelectedIndex(0);
+          }
+        } catch {
+          // Failure -> State 4 (Error + Options)
+          setQuickOpenMode('registry_health_error');
+          setSelectedIndex(0);
+        } finally {
+          setLoading(false);
+        }
+      })();
+    } else if (quickOpenMode === 'registry_input_token') {
+      // STATE 3 -> Open Registry Page
+      const token = quickOpenPath.trim();
+      const newServerState = { url: registryPendingUrl, token, online: true };
+      setActiveRegistryServer(newServerState);
+      setShowQuickOpen(false);
+      if (quickOpenCallback) {
+        quickOpenCallback(newServerState);
+      }
+    } else if (quickOpenMode === 'registry_health_error') {
+      // STATE 4 -> Renter (State 1) or Close
+      const item = selectableItems[selectedIndex];
+      if (item && item.action === 'renter_url') {
+        setQuickOpenMode('registry_input_url');
+        setQuickOpenPath('');
+        setSelectedIndex(0);
+      } else {
+        setShowQuickOpen(false);
+      }
     } else {
       setShowQuickOpen(false);
       quickOpenCallback(quickOpenPath);
@@ -1372,6 +1475,24 @@ export const StudentProvider = ({ children }) => {
     selectableItems.push({ type: 'input_confirm', label: quickOpenPath.trim() ? `Confirm Exercise ID: ${quickOpenPath}` : 'Type Exercise ID (e.g. go101-lab01) and press Enter...' });
   } else if (quickOpenMode === 'input_exercise_version') {
     selectableItems.push({ type: 'input_confirm', label: quickOpenPath.trim() ? `Confirm Version: ${quickOpenPath}` : 'Type Version (or press Enter for Latest)...' });
+  } else if (quickOpenMode === 'registry_input_url') {
+    selectableItems.push({
+      type: 'input_confirm',
+      label: quickOpenPath.trim() ? `Connect to: ${quickOpenPath.trim()}` : 'Connect to: http://localhost:8080'
+    });
+  } else if (quickOpenMode === 'registry_checking_health') {
+    selectableItems.push({
+      type: 'input_confirm',
+      label: `Testing connection to: ${registryPendingUrl}`
+    });
+  } else if (quickOpenMode === 'registry_input_token') {
+    selectableItems.push({
+      type: 'input_confirm',
+      label: quickOpenPath.trim() ? `Save Instructor Token: ••••••••` : `Skip Token (Unauthenticated Connection)`
+    });
+  } else if (quickOpenMode === 'registry_health_error') {
+    selectableItems.push({ type: 'action', action: 'renter_url', label: '↻ Renter URL' });
+    selectableItems.push({ type: 'action', action: 'close', label: '✕ Close' });
   } else if (quickOpenMode === 'open_workspace') {
     // Category A: Icon-Based Entity Selection (Open Existing Exercise Workspace)
     if (quickOpenActiveManifest?.is_workspace) {
@@ -1483,7 +1604,7 @@ export const StudentProvider = ({ children }) => {
           } else if (item.type === 'recent_source') {
             handleConfirmQuickOpen();
           }
-        } else if (quickOpenMode === 'input_remote' || quickOpenMode === 'input_drive' || quickOpenMode === 'input_exercise_id' || quickOpenMode === 'input_exercise_version') {
+        } else if (quickOpenMode === 'input_remote' || quickOpenMode === 'input_drive' || quickOpenMode === 'input_exercise_id' || quickOpenMode === 'input_exercise_version' || quickOpenMode === 'registry_input_url' || quickOpenMode === 'registry_checking_health' || quickOpenMode === 'registry_input_token' || quickOpenMode === 'registry_health_error') {
           handleConfirmQuickOpen();
         } else {
           if (item.type === 'manifest') {
@@ -1734,7 +1855,10 @@ export const StudentProvider = ({ children }) => {
       addRemoteServer,
       removeRemoteServer,
       checkAllRemoteServersHealth,
-      checkRemoteServerHealth
+      checkRemoteServerHealth,
+      activeRegistryServer,
+      setActiveRegistryServer,
+      triggerConnectRegistryFlow
     }}>
       {children}
     </StudentContext.Provider>

@@ -288,3 +288,27 @@ func (r *InMemoryRepository) SaveStudentCredential(ctx context.Context, cred Stu
 	}
 	return nil
 }
+
+func (r *InMemoryRepository) ListStudentCredentials(ctx context.Context, orgID string) ([]StudentCredential, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	if r.closed {
+		return nil, fmt.Errorf("repository is closed")
+	}
+
+	var list []StudentCredential
+	for _, cred := range r.studentCredentials {
+		if orgID == "" || cred.OrgID == orgID {
+			list = append(list, cred)
+		}
+	}
+
+	sort.Slice(list, func(i, j int) bool {
+		if list[i].OrgID == list[j].OrgID {
+			return list[i].StudentID < list[j].StudentID
+		}
+		return list[i].OrgID < list[j].OrgID
+	})
+
+	return list, nil
+}

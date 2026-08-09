@@ -7,6 +7,7 @@ import (
 	exercise "TDES/internals/exercise"
 	evaluatorcore "TDES/internals/evaluator-core"
 	runtests "TDES/internals/run"
+	"bytes"
 	"crypto/ecdh"
 	cryptoRand "crypto/rand"
 	"embed"
@@ -16,6 +17,7 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -294,6 +296,60 @@ var uiCmd = &cobra.Command{
 			_, _ = io.Copy(w, resp.Body)
 		})
 
+		// 4f4. API: Server Proxy - Get Student Roster
+		mux.HandleFunc("GET /api/server/students", func(w http.ResponseWriter, r *http.Request) {
+			remoteURL := strings.TrimSpace(r.URL.Query().Get("remote_url"))
+			bearerToken := strings.TrimSpace(r.URL.Query().Get("bearer_token"))
+			orgID := strings.TrimSpace(r.URL.Query().Get("org_id"))
+
+			if remoteURL == "" {
+				respondError(w, http.StatusBadRequest, "remote_url parameter is required")
+				return
+			}
+			if !strings.HasPrefix(remoteURL, "http://") && !strings.HasPrefix(remoteURL, "https://") {
+				remoteURL = "http://" + remoteURL
+			}
+
+			parsedURL, err := url.Parse(strings.TrimSuffix(remoteURL, "/") + "/v1/admin/students")
+			if err != nil {
+				respondError(w, http.StatusBadRequest, "invalid remote_url: "+err.Error())
+				return
+			}
+
+			q := parsedURL.Query()
+			if orgID != "" {
+				q.Set("org_id", orgID)
+			}
+			parsedURL.RawQuery = q.Encode()
+
+			req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, parsedURL.String(), nil)
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, "failed to create request: "+err.Error())
+				return
+			}
+			if bearerToken != "" {
+				req.Header.Set("Authorization", "Bearer "+bearerToken)
+			}
+
+			client := &http.Client{Timeout: 10 * time.Second}
+			resp, err := client.Do(req)
+			if err != nil {
+				respondError(w, http.StatusBadGateway, "failed to connect to server: "+err.Error())
+				return
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				respBody, _ := io.ReadAll(resp.Body)
+				respondError(w, resp.StatusCode, fmt.Sprintf("Server returned %s: %s", resp.Status, string(respBody)))
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = io.Copy(w, resp.Body)
+		})
+
 		// 4f. API: Check Remote Server Health (pings <remoteURL>/healthz)
 		mux.HandleFunc("GET /api/remote/health", func(w http.ResponseWriter, r *http.Request) {
 			rawURL := strings.TrimSpace(r.URL.Query().Get("url"))
@@ -352,6 +408,142 @@ var uiCmd = &cobra.Command{
 				})
 			}
 		})
+
+		// 4f2. API: Server Proxy - Onboard Roster CSV
+		mux.HandleFunc("POST /api/server/onboard", func(w http.ResponseWriter, r *http.Request) {
+			if err := r.ParseMultipartForm(32 << 20); err != nil {
+				respondError(w, http.StatusBadRequest, "failed to parse form: "+err.Error())
+				return
+			}
+
+			remoteURL := strings.TrimSpace(r.FormValue("remote_url"))
+			bearerToken := strings.TrimSpace(r.FormValue("bearer_token"))
+
+			if remoteURL == "" {
+				respondError(w, http.StatusBadRequest, "remote_url is required")
+				return
+			}
+			if !strings.HasPrefix(remoteURL, "http://") && !strings.HasPrefix(remoteURL, "https://") {
+				remoteURL = "http://" + remoteURL
+			}
+
+			file, fileHeader, err := r.FormFile("roster_csv")
+			if err != nil {
+				respondError(w, http.StatusBadRequest, "roster_csv file is required")
+				return
+			}
+			defer file.Close()
+
+			bodyBuffer := &bytes.Buffer{}
+			writer := multipart.NewWriter(bodyBuffer)
+			part, err := writer.CreateFormFile("roster_csv", fileHeader.Filename)
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, "failed to create form file: "+err.Error())
+				return
+			}
+			if _, err := io.Copy(part, file); err != nil {
+				respondError(w, http.StatusInternalServerError, "failed to copy file content: "+err.Error())
+				return
+			}
+			writer.Close()
+
+			targetURL := strings.TrimSuffix(remoteURL, "/") + "/v1/admin/onboard"
+			req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, targetURL, bodyBuffer)
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, "failed to create request: "+err.Error())
+				return
+			}
+			req.Header.Set("Content-Type", writer.FormDataContentType())
+			if bearerToken != "" {
+				req.Header.Set("Authorization", "Bearer "+bearerToken)
+			}
+
+			client := &http.Client{Timeout: 10 * time.Second}
+			resp, err := client.Do(req)
+			if err != nil {
+				respondError(w, http.StatusBadGateway, "failed to connect to server: "+err.Error())
+				return
+			}
+			defer resp.Body.Close()
+
+			respBody, _ := io.ReadAll(resp.Body)
+			if resp.StatusCode != http.StatusOK {
+				respondError(w, resp.StatusCode, fmt.Sprintf("Server returned %s: %s", resp.Status, string(respBody)))
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write(respBody)
+		})
+
+		// 4f3. API: Server Proxy - Get Submissions / Grades
+		mux.HandleFunc("GET /api/server/submissions", func(w http.ResponseWriter, r *http.Request) {
+			remoteURL := strings.TrimSpace(r.URL.Query().Get("remote_url"))
+			bearerToken := strings.TrimSpace(r.URL.Query().Get("bearer_token"))
+			orgID := strings.TrimSpace(r.URL.Query().Get("org_id"))
+			labID := strings.TrimSpace(r.URL.Query().Get("lab_id"))
+			format := strings.TrimSpace(r.URL.Query().Get("format"))
+
+			if remoteURL == "" {
+				respondError(w, http.StatusBadRequest, "remote_url parameter is required")
+				return
+			}
+			if !strings.HasPrefix(remoteURL, "http://") && !strings.HasPrefix(remoteURL, "https://") {
+				remoteURL = "http://" + remoteURL
+			}
+
+			parsedURL, err := url.Parse(strings.TrimSuffix(remoteURL, "/") + "/v1/submissions")
+			if err != nil {
+				respondError(w, http.StatusBadRequest, "invalid remote_url: "+err.Error())
+				return
+			}
+
+			q := parsedURL.Query()
+			if orgID != "" {
+				q.Set("org_id", orgID)
+			}
+			if labID != "" {
+				q.Set("lab_id", labID)
+			}
+			if format != "" {
+				q.Set("format", format)
+			}
+			parsedURL.RawQuery = q.Encode()
+
+			req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, parsedURL.String(), nil)
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, "failed to create request: "+err.Error())
+				return
+			}
+			if bearerToken != "" {
+				req.Header.Set("Authorization", "Bearer "+bearerToken)
+			}
+
+			client := &http.Client{Timeout: 10 * time.Second}
+			resp, err := client.Do(req)
+			if err != nil {
+				respondError(w, http.StatusBadGateway, "failed to connect to server: "+err.Error())
+				return
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				respBody, _ := io.ReadAll(resp.Body)
+				respondError(w, resp.StatusCode, fmt.Sprintf("Server returned %s: %s", resp.Status, string(respBody)))
+				return
+			}
+
+			if format == "csv" {
+				w.Header().Set("Content-Type", "text/csv")
+				w.Header().Set("Content-Disposition", `attachment; filename="submissions.csv"`)
+			} else {
+				w.Header().Set("Content-Type", "application/json")
+			}
+			w.WriteHeader(http.StatusOK)
+			_, _ = io.Copy(w, resp.Body)
+		})
+
 
 		// 4f. API: Admin - Prepare Drive
 		mux.HandleFunc("POST /api/drive/prepare", func(w http.ResponseWriter, r *http.Request) {

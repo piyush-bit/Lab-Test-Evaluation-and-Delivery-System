@@ -100,6 +100,30 @@ const PALETTE_CONFIGS = {
     iconType: 'wrench',
     isFolderBrowse: false,
   },
+  registry_input_url: {
+    headerLabel: 'CONNECT TO REGISTRY SERVER',
+    placeholder: 'e.g. http://localhost:8080 (press Enter to connect)...',
+    iconType: 'wrench',
+    isFolderBrowse: false,
+  },
+  registry_checking_health: {
+    headerLabel: 'CHECKING SERVER HEALTH...',
+    placeholder: 'Validating registry server connection...',
+    iconType: 'wrench',
+    isFolderBrowse: false,
+  },
+  registry_input_token: {
+    headerLabel: 'ENTER INSTRUCTOR BEARER TOKEN (OPTIONAL)',
+    placeholder: 'e.g. secret-token-123 (press Enter to skip or save)...',
+    iconType: 'wrench',
+    isFolderBrowse: false,
+  },
+  registry_health_error: {
+    headerLabel: 'SERVER UNREACHABLE / INACTIVE',
+    placeholder: 'Select Renter URL or Close...',
+    iconType: 'wrench',
+    isFolderBrowse: false,
+  },
 };
 
 export default function CommandPalette() {
@@ -196,7 +220,7 @@ export default function CommandPalette() {
         </div>
 
         {/* Validation Errors */}
-        {validationError && (
+        {validationError && quickOpenMode !== 'registry_health_error' && (
           <div className="validation-alert-error" style={{ margin: '10px 18px 0 18px', textAlign: 'left' }}>
             {validationError}
           </div>

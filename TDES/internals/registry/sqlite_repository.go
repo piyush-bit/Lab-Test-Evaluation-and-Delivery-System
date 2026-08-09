@@ -529,3 +529,32 @@ func (r *SQLiteRepository) SaveStudentCredential(ctx context.Context, cred Stude
 	}
 	return nil
 }
+
+func (r *SQLiteRepository) ListStudentCredentials(ctx context.Context, orgID string) ([]StudentCredential, error) {
+	query := `SELECT org_id, student_id, pin_hash, created_at, updated_at FROM student_credentials WHERE (? = '' OR org_id = ?) ORDER BY org_id, student_id`
+	rows, err := r.db.QueryContext(ctx, query, orgID, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("db list student credentials: %w", err)
+	}
+	defer rows.Close()
+
+	var result []StudentCredential
+	for rows.Next() {
+		var cred StudentCredential
+		var pinHash sql.NullString
+		var createdAt, updatedAt string
+		if err := rows.Scan(&cred.OrgID, &cred.StudentID, &pinHash, &createdAt, &updatedAt); err != nil {
+			return nil, fmt.Errorf("db scan student credential: %w", err)
+		}
+		if pinHash.Valid {
+			cred.PinHash = pinHash.String
+		}
+		cred.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+		cred.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
+		result = append(result, cred)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("db rows student credentials: %w", err)
+	}
+	return result, nil
+}
