@@ -1,9 +1,81 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStudent } from '../StudentContext';
-import { BackIcon, CheckIcon, ZapIcon } from '../components/Icons';
+import { BackIcon, CheckIcon, ZapIcon, EyeIcon, CodeIcon } from '../components/Icons';
 import Editor from '@monaco-editor/react';
 import FileTree from '../components/FileTree';
+import MarkdownPreview from '../components/MarkdownPreview';
+
+// Define custom Monaco themes matching Option 1 (Soft Pastel Pro design system)
+const handleEditorWillMount = (monaco) => {
+  monaco.editor.defineTheme('app-dark', {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      { token: '', foreground: 'e2e8f0' },
+      { token: 'comment', foreground: '64748b', fontStyle: 'italic' },
+      { token: 'keyword', foreground: 'e879f9', fontStyle: 'normal' },
+      { token: 'string', foreground: '6ee7b7' },
+      { token: 'number', foreground: 'fda4af' },
+      { token: 'type', foreground: '7dd3fc' },
+      { token: 'class', foreground: '7dd3fc' },
+      { token: 'function', foreground: 'a5b4fc' },
+      { token: 'variable', foreground: 'e2e8f0' },
+      { token: 'constant', foreground: 'fda4af' },
+      { token: 'operator', foreground: 'cbd5e1' },
+    ],
+    colors: {
+      'editor.background': '#000000',                  // Pitch black matching --bg-main
+      'editor.foreground': '#e2e8f0',                  // Soft off-white
+      'editorGutter.background': '#000000',            // Matching pitch black gutter
+      'minimap.background': '#000000',                 // Pitch black minimap
+      'editorLineNumber.foreground': '#475569',        // Soft Slate line numbers
+      'editorLineNumber.activeForeground': '#94a3b8',  // Active line number accent
+      'editorCursor.foreground': '#818cf8',            // Soft Indigo accent
+      'editor.selectionBackground': '#6366f125',       // Translucent Soft Indigo selection
+      'editor.inactiveSelectionBackground': '#6366f115',
+      'editor.lineHighlightBackground': '#111827',      // Soft dark line highlight
+      'editorOverviewRuler.border': '#000000',
+      'scrollbarSlider.background': '#ffffff12',
+      'scrollbarSlider.hoverBackground': '#ffffff25',
+      'scrollbarSlider.activeBackground': '#ffffff40',
+    }
+  });
+
+  monaco.editor.defineTheme('app-light', {
+    base: 'vs',
+    inherit: true,
+    rules: [
+      { token: '', foreground: '1e293b' },
+      { token: 'comment', foreground: '64748b', fontStyle: 'italic' },
+      { token: 'keyword', foreground: '8b5cf6', fontStyle: 'normal' },
+      { token: 'string', foreground: '0d9488' },
+      { token: 'number', foreground: 'd97706' },
+      { token: 'type', foreground: '0284c7' },
+      { token: 'class', foreground: '0284c7' },
+      { token: 'function', foreground: '4f46e5' },
+      { token: 'variable', foreground: '1e293b' },
+      { token: 'constant', foreground: 'd97706' },
+      { token: 'operator', foreground: '475569' },
+    ],
+    colors: {
+      'editor.background': '#fcfcfd',                  // Off-white matching --bg-main
+      'editor.foreground': '#1e293b',                  // Soft Dark Slate
+      'editorGutter.background': '#fcfcfd',            // Matching off-white gutter
+      'minimap.background': '#fcfcfd',                 // Matching off-white minimap
+      'editorLineNumber.foreground': '#94a3b8',        // Soft Slate line numbers
+      'editorLineNumber.activeForeground': '#475569',  // Active line number
+      'editorCursor.foreground': '#6366f1',            // Soft Indigo cursor
+      'editor.selectionBackground': '#6366f118',       // Translucent Soft Indigo selection
+      'editor.inactiveSelectionBackground': '#6366f108',
+      'editor.lineHighlightBackground': '#f1f5f9',      // Soft slate line highlight
+      'editorOverviewRuler.border': '#fcfcfd',
+      'scrollbarSlider.background': '#0f172a12',
+      'scrollbarSlider.hoverBackground': '#0f172a25',
+      'scrollbarSlider.activeBackground': '#0f172a40',
+    }
+  });
+};
 
 export default function ActiveWorkspace() {
   const navigate = useNavigate();
@@ -23,6 +95,7 @@ export default function ActiveWorkspace() {
 
   const [files, setFiles] = useState([]);
   const [openTabs, setOpenTabs] = useState([]);
+  const [viewModes, setViewModes] = useState({}); // { [filePath]: 'preview' | 'code' }
   const [selectedTestIdx, setSelectedTestIdx] = useState(0);
   const [copied, setCopied] = useState(false);
 
@@ -55,6 +128,23 @@ export default function ActiveWorkspace() {
   const lastLoadedContentRef = useRef('');
   const debounceTimerRef = useRef(null);
 
+  // Helper to find README file recursively in workspace tree
+  const findReadmeFile = (nodes) => {
+    if (!nodes || !Array.isArray(nodes)) return null;
+    for (const node of nodes) {
+      if (!node.isDir && node.name && node.name.toLowerCase() === 'readme.md') {
+        return node;
+      }
+    }
+    for (const node of nodes) {
+      if (node.isDir && node.children) {
+        const found = findReadmeFile(node.children);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
   // If there's no active workspace, redirect back to welcome
   useEffect(() => {
     if (!activeWorkspacePath) {
@@ -80,11 +170,26 @@ export default function ActiveWorkspace() {
     }
   }, [activeWorkspacePath]);
 
+  // Auto-open README.md in preview mode on initial workspace load
+  useEffect(() => {
+    if (files && files.length > 0 && openTabs.length === 0 && !activeFilePath) {
+      const readmeNode = findReadmeFile(files);
+      if (readmeNode) {
+        setOpenTabs([readmeNode.path]);
+        setActiveFilePath(readmeNode.path);
+        setViewModes(prev => ({ ...prev, [readmeNode.path]: 'preview' }));
+      }
+    }
+  }, [files]);
+
   const handleFileClick = async (node) => {
     if (!openTabs.includes(node.path)) {
       setOpenTabs([...openTabs, node.path]);
     }
     setActiveFilePath(node.path);
+    if (node.path.toLowerCase().endsWith('.md') && !viewModes[node.path]) {
+      setViewModes(prev => ({ ...prev, [node.path]: 'preview' }));
+    }
   };
 
   const handleCloseTab = (pathToDelete, e) => {
@@ -224,53 +329,101 @@ export default function ActiveWorkspace() {
           {openTabs.length > 0 ? (
             <>
               {/* Tab Bar */}
-              <div className="tab-bar-container" style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', overflowX: 'auto', height: '35px' }}>
-                {openTabs.map((tabPath) => {
-                  const filename = tabPath.split('/').pop().split('\\').pop();
-                  const isActive = activeFilePath === tabPath;
-                  return (
-                    <div 
-                      key={tabPath}
-                      onClick={() => setActiveFilePath(tabPath)}
+              <div className="tab-bar-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', height: '35px', paddingRight: '8px' }}>
+                <div style={{ display: 'flex', height: '100%', overflowX: 'auto' }}>
+                  {openTabs.map((tabPath) => {
+                    const filename = tabPath.split('/').pop().split('\\').pop();
+                    const isActive = activeFilePath === tabPath;
+                    return (
+                      <div 
+                        key={tabPath}
+                        onClick={() => setActiveFilePath(tabPath)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '0 16px',
+                          height: '100%',
+                          cursor: 'pointer',
+                          fontSize: '0.78rem',
+                          fontWeight: isActive ? 600 : 400,
+                          color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
+                          backgroundColor: isActive ? 'var(--bg-main)' : 'rgba(0,0,0,0.02)',
+                          borderRight: '1px solid var(--border-color)',
+                          borderTop: isActive ? '2px solid var(--primary)' : 'none',
+                          transition: 'all 0.15s ease',
+                          position: 'relative'
+                        }}
+                      >
+                        <span>{filename}</span>
+                        <button 
+                          onClick={(e) => handleCloseTab(tabPath, e)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--text-muted)',
+                            fontSize: '0.75rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '2px',
+                            borderRadius: '4px'
+                          }}
+                          onMouseEnter={(e) => e.target.style.color = 'var(--accent-red)'}
+                          onMouseLeave={(e) => e.target.style.color = 'var(--text-muted)'}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Markdown View Toggle Mode (Preview vs Code) */}
+                {activeFilePath && activeFilePath.toLowerCase().endsWith('.md') && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px', backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', padding: '2px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                    <button
+                      onClick={() => setViewModes(prev => ({ ...prev, [activeFilePath]: 'preview' }))}
+                      title="Preview Rendered Markdown"
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px',
-                        padding: '0 16px',
-                        height: '100%',
+                        gap: '4px',
+                        padding: '3px 8px',
+                        fontSize: '0.72rem',
+                        fontWeight: (viewModes[activeFilePath] || 'preview') === 'preview' ? 600 : 400,
+                        border: 'none',
+                        borderRadius: '4px',
                         cursor: 'pointer',
-                        fontSize: '0.78rem',
-                        fontWeight: isActive ? 600 : 400,
-                        color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
-                        backgroundColor: isActive ? 'var(--bg-main)' : 'rgba(0,0,0,0.02)',
-                        borderRight: '1px solid var(--border-color)',
-                        borderTop: isActive ? '2px solid var(--primary)' : 'none',
-                        transition: 'all 0.15s ease',
-                        position: 'relative'
+                        backgroundColor: (viewModes[activeFilePath] || 'preview') === 'preview' ? 'var(--primary)' : 'transparent',
+                        color: (viewModes[activeFilePath] || 'preview') === 'preview' ? '#ffffff' : 'var(--text-secondary)',
+                        transition: 'all 0.15s ease'
                       }}
                     >
-                      <span>{filename}</span>
-                      <button 
-                        onClick={(e) => handleCloseTab(tabPath, e)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: 'var(--text-muted)',
-                          fontSize: '0.75rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '2px',
-                          borderRadius: '4px'
-                        }}
-                        onMouseEnter={(e) => e.target.style.color = 'var(--accent-red)'}
-                        onMouseLeave={(e) => e.target.style.color = 'var(--text-muted)'}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  );
-                })}
+                      <EyeIcon size={12} /> Preview
+                    </button>
+                    <button
+                      onClick={() => setViewModes(prev => ({ ...prev, [activeFilePath]: 'code' }))}
+                      title="Edit Markdown Code"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '3px 8px',
+                        fontSize: '0.72rem',
+                        fontWeight: (viewModes[activeFilePath] || 'preview') === 'code' ? 600 : 400,
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        backgroundColor: (viewModes[activeFilePath] || 'preview') === 'code' ? 'var(--primary)' : 'transparent',
+                        color: (viewModes[activeFilePath] || 'preview') === 'code' ? '#ffffff' : 'var(--text-secondary)',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <CodeIcon size={12} /> Code
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Editor Workspace */}
@@ -279,13 +432,16 @@ export default function ActiveWorkspace() {
                   <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
                     Loading file content...
                   </div>
+                ) : activeFilePath && activeFilePath.toLowerCase().endsWith('.md') && (viewModes[activeFilePath] || 'preview') === 'preview' ? (
+                  <MarkdownPreview content={fileContent} isDarkMode={isDarkMode} />
                 ) : (
                   <Editor
                     height="100%"
                     language={getLanguage(activeFilePath)}
                     value={fileContent}
                     onChange={handleEditorChange}
-                    theme={isDarkMode ? 'vs-dark' : 'light'}
+                    beforeMount={handleEditorWillMount}
+                    theme={isDarkMode ? 'app-dark' : 'app-light'}
                     options={{
                       fontSize: 14,
                       minimap: { enabled: true },

@@ -83,3 +83,48 @@ body {
   -webkit-text-fill-color: transparent;
   display: inline-block;
 }
+
+/* Monaco-style Custom Scrollbar */
+.monaco-style-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 23, 42, 0.2) transparent;
+}
+
+html.dark .monaco-style-scrollbar {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.monaco-style-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.monaco-style-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.monaco-style-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.15);
+  border-radius: 2px;
+}
+
+.monaco-style-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.3);
+}
+
+.monaco-style-scrollbar::-webkit-scrollbar-thumb:active {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+html.dark .monaco-style-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+html.dark .monaco-style-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+html.dark .monaco-style-scrollbar::-webkit-scrollbar-thumb:active {
+  background: rgba(255, 255, 255, 0.5);
+}
+
