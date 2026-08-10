@@ -33,6 +33,7 @@ var submitOrgID string
 var submitStudentID string
 var submitPin string
 var submitUpdatePin string
+var submitBearerToken string
 
 type LocalConfig struct {
 	StudentID string `json:"student_id"`
@@ -129,7 +130,7 @@ var submitCmd = &cobra.Command{
 			}
 		}
 
-		submissionPath, err := submitExercise(strategy, orgID, studentID, pin, submitUpdatePin)
+		submissionPath, err := submitExercise(strategy, orgID, studentID, pin, submitUpdatePin, submitBearerToken)
 		if err != nil {
 			cmd.Println("Error submitting to source:", strategy.name, ":", err.Error())
 			return
@@ -153,11 +154,11 @@ var submitCmd = &cobra.Command{
 	},
 }
 
-func submitExercise(strategy submitStrategy, orgID string, studentID string, pin string, updatePin string) (string, error) {
-	return submitExerciseWithPath(".", strategy, orgID, studentID, pin, updatePin)
+func submitExercise(strategy submitStrategy, orgID string, studentID string, pin string, updatePin string, bearerToken string) (string, error) {
+	return submitExerciseWithPath(".", strategy, orgID, studentID, pin, updatePin, bearerToken)
 }
 
-func submitExerciseWithPath(exercisePath string, strategy submitStrategy, orgID string, studentID string, pin string, updatePin string) (string, error) {
+func submitExerciseWithPath(exercisePath string, strategy submitStrategy, orgID string, studentID string, pin string, updatePin string, bearerToken string) (string, error) {
 	if strings.TrimSpace(exercisePath) == "" {
 		exercisePath = "."
 	}
@@ -171,11 +172,14 @@ func submitExerciseWithPath(exercisePath string, strategy submitStrategy, orgID 
 		})
 	case "remote":
 		remoteRef := remote.NewRemote(strategy.path)
+		if strings.TrimSpace(bearerToken) == "" {
+			bearerToken = os.Getenv(remote.BearerTokenEnvVar)
+		}
 		return remoteRef.SubmitRemote(remote.SubmitRequest{
 			ExercisePath: exercisePath,
 			OrgID:        orgID,
 			StudentID:    studentID,
-			BearerToken:  os.Getenv(remote.BearerTokenEnvVar),
+			BearerToken:  bearerToken,
 			Pin:          pin,
 			NewPin:       updatePin,
 		})
@@ -243,5 +247,11 @@ func init() {
 		"update-pin",
 		"",
 		"Updates current student PIN to this new value on successful submission",
+	)
+	submitCmd.Flags().StringVar(
+		&submitBearerToken,
+		"bearer-token",
+		"",
+		"Bearer token for authorization (falls back to EUC2_REMOTE_BEARER_TOKEN env var)",
 	)
 }

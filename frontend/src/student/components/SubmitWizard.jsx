@@ -1,24 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStudent } from '../StudentContext';
-import { CloseIcon } from './Icons';
+import { CloseIcon, BackIcon } from './Icons';
 
 export default function SubmitWizard({ isOpen, onClose }) {
   const {
     activeWorkspacePath,
     remoteServers,
     remoteServerStatuses,
+    remoteTokens,
     recentDrives,
     addRemoteServer
   } = useStudent();
 
   // Wizard Steps: 
-  // 'target' | 'add_server' | 'add_drive' | 'student' | 'new_student_id' | 'new_student_org' | 'pin' | 'new_pin' | 'confirm_drive' | 'submitting' | 'result'
+  // 'target' | 'add_server' | 'add_server_token' | 'add_drive' | 'student' | 'new_student_id' | 'new_student_org' | 'pin' | 'new_pin' | 'confirm_drive' | 'processing' | 'error' | 'success'
   const [step, setStep] = useState('target');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Selected Data
-  const [selectedTarget, setSelectedTarget] = useState(null); // { type: 'remote'|'drive', target: string }
+  const [selectedTarget, setSelectedTarget] = useState(null); // { type: 'remote'|'drive', target: string, token?: string }
+  const [pendingServerUrl, setPendingServerUrl] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null); // { student_id: string, org_id: string }
 
   // Folder Browsing State for 'add_drive'
@@ -31,10 +33,11 @@ export default function SubmitWizard({ isOpen, onClose }) {
   const [pin, setPin] = useState('');
   const [newPin, setNewPin] = useState('');
 
-  // Results & Errors
+  // Results, Errors & Expandable Logs
   const [validationError, setValidationError] = useState('');
   const [submitResult, setSubmitResult] = useState(null);
   const [driveSubmissionsStatus, setDriveSubmissionsStatus] = useState({}); // path -> prepared (bool)
+  const [expandedTests, setExpandedTests] = useState({}); // { [testIdx]: boolean }
 
   // Saved student profiles
   const [savedProfiles, setSavedProfiles] = useState(() => {
@@ -51,15 +54,7 @@ export default function SubmitWizard({ isOpen, onClose }) {
   // Reset state when opening
   useEffect(() => {
     if (!isOpen) return;
-    setStep('target');
-    setSearchQuery('');
-    setSelectedIndex(0);
-    setSelectedTarget(null);
-    setSelectedStudent(null);
-    setPin('');
-    setNewPin('');
-    setValidationError('');
-    setSubmitResult(null);
+    handleResetToStart();
 
     // Fetch workspace submission config to preload
     fetch('/api/workspace/submit-config')
@@ -76,6 +71,9 @@ export default function SubmitWizard({ isOpen, onClose }) {
             }
             return prev;
           });
+        }
+        if (data.pin) {
+          setPin(data.pin);
         }
       })
       .catch(() => {});
@@ -100,6 +98,36 @@ export default function SubmitWizard({ isOpen, onClose }) {
       fetchBrowseDirs(currentBrowsePath);
     }
   }, [step, currentBrowsePath]);
+
+  const handleResetToStart = () => {
+    setStep('target');
+    setSearchQuery('');
+    setSelectedIndex(0);
+    setSelectedTarget(null);
+    setSelectedStudent(null);
+    setPendingServerUrl('');
+    setPin('');
+    setNewPin('');
+    setValidationError('');
+    setSubmitResult(null);
+    setExpandedTests({});
+  };
+
+  const handleGoBack = () => {
+    setValidationError('');
+    setSearchQuery('');
+    setSelectedIndex(0);
+
+    if (step === 'add_server' || step === 'add_server_token' || step === 'add_drive' || step === 'student' || step === 'error') {
+      setStep('target');
+    } else if (step === 'new_student_id' || step === 'new_student_org') {
+      setStep('student');
+    } else if (step === 'pin' || step === 'confirm_drive') {
+      setStep('student');
+    } else if (step === 'new_pin') {
+      setStep('pin');
+    }
+  };
 
   const fetchBrowseDirs = async (path) => {
     try {
@@ -256,7 +284,8 @@ export default function SubmitWizard({ isOpen, onClose }) {
       // Fetch default dir
       fetchBrowseDirs('');
     } else if (item.type === 'target_remote') {
-      setSelectedTarget({ type: 'remote', target: item.target });
+      const storedToken = remoteTokens?.[item.target] || '';
+      setSelectedTarget({ type: 'remote', target: item.target, token: storedToken });
       setStep('student');
       setSearchQuery('');
       setSelectedIndex(0);
@@ -310,8 +339,9 @@ export default function SubmitWizard({ isOpen, onClose }) {
       setSelectedIndex(0);
     } else if (item.type === 'profile') {
       setSelectedStudent(item.profile);
-      setStep(selectedTarget.type === 'remote' ? 'pin' : 'confirm_drive');
-      setSearchQuery('');
+      const nextStep = selectedTarget.type === 'remote' ? 'pin' : 'confirm_drive';
+      setStep(nextStep);
+      setSearchQuery(nextStep === 'pin' && pin ? pin : '');
       setSelectedIndex(0);
     }
   };
@@ -326,9 +356,8 @@ export default function SubmitWizard({ isOpen, onClose }) {
       if (res.ok) {
         const data = await res.json();
         if (data.online) {
-          addRemoteServer(cleanUrl);
-          setSelectedTarget({ type: 'remote', target: cleanUrl });
-          setStep('student');
+          setPendingServerUrl(cleanUrl);
+          setStep('add_server_token');
           setSearchQuery('');
           setSelectedIndex(0);
         } else {
@@ -342,9 +371,23 @@ export default function SubmitWizard({ isOpen, onClose }) {
     }
   };
 
-  const handleFinalSubmit = async () => {
+  const handleAddServerTokenConfirm = (tokenInput) => {
+    const token = (tokenInput !== undefined ? tokenInput : searchQuery).trim();
+    if (!pendingServerUrl) return;
+    addRemoteServer(pendingServerUrl, token);
+    setSelectedTarget({ type: 'remote', target: pendingServerUrl, token: token });
+    setStep('student');
+    setSearchQuery('');
+    setSelectedIndex(0);
     setValidationError('');
-    setStep('submitting');
+  };
+
+  const handleFinalSubmit = async (overridePin, overrideNewPin) => {
+    setValidationError('');
+    setStep('processing');
+
+    const pinToSubmit = (overridePin !== undefined ? overridePin : pin).trim();
+    const newPinToSubmit = (overrideNewPin !== undefined ? overrideNewPin : newPin).trim();
 
     try {
       const res = await fetch('/api/workspace/submit', {
@@ -356,22 +399,26 @@ export default function SubmitWizard({ isOpen, onClose }) {
           target: selectedTarget.target,
           student_id: selectedStudent.student_id,
           org_id: selectedStudent.org_id,
-          pin: pin.trim(),
-          new_pin: newPin.trim()
+          pin: pinToSubmit,
+          new_pin: newPinToSubmit,
+          bearer_token: selectedTarget?.token || ''
         })
       });
 
       const data = await res.json();
       if (!res.ok) {
-        setStep(selectedTarget.type === 'remote' ? 'pin' : 'confirm_drive');
         setValidationError(data.error || 'Submission failed');
+        setStep('error');
+        setSelectedIndex(0);
       } else {
         setSubmitResult(data.result);
-        setStep('result');
+        setStep('success');
+        setSelectedIndex(0);
       }
     } catch (err) {
-      setStep(selectedTarget.type === 'remote' ? 'pin' : 'confirm_drive');
       setValidationError('Connection error: ' + err.message);
+      setStep('error');
+      setSelectedIndex(0);
     }
   };
 
@@ -408,30 +455,40 @@ export default function SubmitWizard({ isOpen, onClose }) {
     return list;
   };
 
-  const getResultOptions = () => {
-    const list = [
+  const getErrorItems = () => {
+    return [
+      {
+        action: 'retry',
+        label: '↻ Retry Submission',
+        desc: 'Return to initial step to re-select target connection or profile'
+      },
       {
         action: 'close',
         label: 'Close',
         desc: 'Exit the submission wizard'
       }
     ];
+  };
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return list.filter(item => 
-        item.label.toLowerCase().includes(q) || 
-        (item.desc && item.desc.toLowerCase().includes(q))
-      );
-    }
-
-    return list;
+  const getSuccessItems = () => {
+    return [
+      {
+        action: 'copy',
+        label: 'Copy Results',
+        desc: 'Copy evaluation summary receipt to clipboard'
+      },
+      {
+        action: 'close',
+        label: 'Close',
+        desc: 'Exit the submission wizard'
+      }
+    ];
   };
 
   const handleCopyPath = () => {
     if (!submitResult) return;
     navigator.clipboard.writeText(submitResult);
-    setValidationError('Copied to clipboard!');
+    setValidationError('Copied results to clipboard!');
     setTimeout(() => setValidationError(''), 2000);
   };
 
@@ -447,7 +504,8 @@ export default function SubmitWizard({ isOpen, onClose }) {
       step === 'add_drive' ? getBrowseItems() : 
       step === 'student' ? getFilteredStudents() :
       (step === 'pin' || step === 'new_pin' || step === 'confirm_drive') ? getConfirmItems() :
-      step === 'result' ? getResultOptions() : [];
+      step === 'error' ? getErrorItems() :
+      step === 'success' ? getSuccessItems() : [];
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -463,6 +521,8 @@ export default function SubmitWizard({ isOpen, onClose }) {
         handleBrowseSelect(items[selectedIndex]);
       } else if (step === 'add_server') {
         handleAddServerConfirm();
+      } else if (step === 'add_server_token') {
+        handleAddServerTokenConfirm();
       } else if (step === 'student' && items[selectedIndex]) {
         handleStudentSelect(items[selectedIndex]);
       } else if (step === 'new_student_id') {
@@ -497,18 +557,22 @@ export default function SubmitWizard({ isOpen, onClose }) {
       } else if ((step === 'pin' || step === 'new_pin' || step === 'confirm_drive') && items[selectedIndex]) {
         const actionItem = items[selectedIndex];
         if (actionItem.action === 'submit') {
+          let currentPin = pin;
+          let currentNewPin = newPin;
           if (step === 'pin') {
-            const cleanPin = searchQuery.trim();
+            const cleanPin = searchQuery.trim() || pin;
             if (!cleanPin) {
               setValidationError('PIN code is required');
               return;
             }
             setPin(cleanPin);
+            currentPin = cleanPin;
           } else if (step === 'new_pin') {
-            const cleanNewPin = searchQuery.trim();
+            const cleanNewPin = searchQuery.trim() || newPin;
             setNewPin(cleanNewPin);
+            currentNewPin = cleanNewPin;
           }
-          handleFinalSubmit();
+          handleFinalSubmit(currentPin, currentNewPin);
         } else if (actionItem.action === 'change_pin') {
           setStep('new_pin');
           setSearchQuery('');
@@ -517,7 +581,14 @@ export default function SubmitWizard({ isOpen, onClose }) {
         } else if (actionItem.action === 'cancel') {
           onClose();
         }
-      } else if (step === 'result' && items[selectedIndex]) {
+      } else if (step === 'error' && items[selectedIndex]) {
+        const actionItem = items[selectedIndex];
+        if (actionItem.action === 'retry') {
+          handleResetToStart();
+        } else if (actionItem.action === 'close') {
+          onClose();
+        }
+      } else if (step === 'success' && items[selectedIndex]) {
         const actionItem = items[selectedIndex];
         if (actionItem.action === 'copy') {
           handleCopyPath();
@@ -528,23 +599,80 @@ export default function SubmitWizard({ isOpen, onClose }) {
     }
   };
 
-  // Render evaluation response nicely
-  const parseResultView = (resultStr) => {
+  const toggleTestExpanded = (idx) => {
+    setExpandedTests(prev => ({
+      ...prev,
+      [idx]: !prev[idx]
+    }));
+  };
+
+  // Render parsed evaluation response nicely inside success view
+  const renderEvaluationFeedbackView = (resultStr) => {
     if (!resultStr) return null;
     try {
       const parsed = JSON.parse(resultStr);
       if (parsed && parsed.earned_points !== undefined) {
+        const totalScore = parsed.max_points > 0 ? Math.round((parsed.earned_points / parsed.max_points) * 100) : 0;
+        const isPass = totalScore >= 70;
+
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent)', marginBottom: '4px' }}>
-              Evaluation Completed: {parsed.earned_points} / {parsed.max_points} points
+          <div style={{ padding: '14px', backgroundColor: 'var(--bg-main)', borderBottom: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* Score Card Badge */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '6px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+              <div>
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Evaluation Score
+                </div>
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: isPass ? 'var(--accent)' : 'var(--accent-red)', marginTop: '2px' }}>
+                  {parsed.earned_points} / {parsed.max_points} Points ({totalScore}%)
+                </div>
+              </div>
+              <span style={{ 
+                padding: '4px 10px', 
+                borderRadius: '12px', 
+                fontSize: '0.72rem', 
+                fontWeight: 700, 
+                textTransform: 'uppercase',
+                backgroundColor: isPass ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', 
+                color: isPass ? 'var(--accent)' : 'var(--accent-red)'
+              }}>
+                {parsed.status || (isPass ? 'PASSED' : 'FAILED')}
+              </span>
             </div>
+
+            {/* Test Results Header */}
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '4px' }}>
+              Test Execution Feedback ({parsed.results ? parsed.results.length : 0} Targets)
+            </div>
+
+            {/* Individual Test Cards */}
             {parsed.results && parsed.results.map((tr, idx) => (
-              <div key={idx} style={{ padding: '6px 10px', borderRadius: '4px', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', fontFamily: 'var(--font-mono)' }}>
-                <span>{tr.command}</span>
-                <span style={{ color: tr.status === 'pass' ? 'var(--accent)' : 'var(--accent-red)', fontWeight: 600 }}>
-                  {tr.status === 'pass' ? `PASSED (${tr.points_earned}/${tr.points_possible})` : 'FAILED'}
-                </span>
+              <div key={idx} style={{ borderRadius: '6px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+                <div 
+                  onClick={() => tr.output && toggleTestExpanded(idx)}
+                  style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', fontFamily: 'var(--font-mono)', cursor: tr.output ? 'pointer' : 'default' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{tr.command}</span>
+                    {tr.output && (
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                        {expandedTests[idx] ? '▲ Hide log' : '▼ View log'}
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ color: tr.status === 'pass' ? 'var(--accent)' : 'var(--accent-red)', fontWeight: 700 }}>
+                    {tr.status === 'pass' ? `PASSED (${tr.points_earned}/${tr.points_possible})` : 'FAILED'}
+                  </span>
+                </div>
+
+                {/* Expanded Output Panel */}
+                {tr.output && expandedTests[idx] && (
+                  <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)' }}>
+                    <pre style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: '160px', overflowY: 'auto' }}>
+                      {tr.output}
+                    </pre>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -552,63 +680,39 @@ export default function SubmitWizard({ isOpen, onClose }) {
       }
     } catch {}
 
+    // Fallback for disk paths or non-JSON output
     const isPath = resultStr.includes('/') || resultStr.includes('\\');
     if (isPath) {
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div>
-            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
-              Status
-            </div>
-            <div style={{ fontSize: '0.82rem', color: 'var(--accent)', fontWeight: 600 }}>
-              Submission successfully saved to disk
-            </div>
+        <div style={{ padding: '14px', backgroundColor: 'var(--bg-main)', borderBottom: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--accent)', fontWeight: 600 }}>
+            ✓ Submission package successfully saved to drive storage
           </div>
-          <div>
-            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
-              Manifest Path
-            </div>
-            <div style={{ 
-              fontFamily: 'var(--font-mono)', 
-              fontSize: '0.75rem', 
-              color: 'var(--text-primary)', 
-              backgroundColor: 'var(--bg-main)', 
-              border: '1px solid var(--border-color)', 
-              padding: '8px 12px', 
-              borderRadius: '6px',
-              wordBreak: 'break-all',
-              lineHeight: '1.4'
-            }}>
-              {resultStr}
-            </div>
+          <div style={{ 
+            fontFamily: 'var(--font-mono)', 
+            fontSize: '0.75rem', 
+            color: 'var(--text-primary)', 
+            backgroundColor: 'var(--bg-card)', 
+            border: '1px solid var(--border-color)', 
+            padding: '8px 12px', 
+            borderRadius: '6px',
+            wordBreak: 'break-all'
+          }}>
+            {resultStr}
           </div>
         </div>
       );
     }
 
     return (
-      <div style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)', whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>
+      <div style={{ padding: '14px', backgroundColor: 'var(--bg-main)', borderBottom: '1px solid var(--border-color)', fontSize: '0.8rem', fontFamily: 'var(--font-mono)', whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>
         {resultStr}
       </div>
     );
   };
 
-  const formatSubmitResult = (resultStr) => {
-    if (!resultStr) return null;
-    const isPath = resultStr.includes('/') || resultStr.includes('\\');
-    if (!isPath) return <span>Submitted successfully: {resultStr}</span>;
-
-    const separator = resultStr.includes('/') ? '/' : '\\';
-    const parts = resultStr.split(separator);
-    const fileName = parts.pop();
-    const dirPath = parts.join(separator) + separator;
-
-    return (
-      <span>
-        Submitted as {dirPath}<strong>{fileName}</strong>
-      </span>
-    );
-  };
+  const showBackButton = step !== 'target' && step !== 'processing' && step !== 'error' && step !== 'success';
+  const hideInputRow = step === 'processing' || step === 'error' || step === 'success';
 
   return (
     <div className="quick-open-overlay-blur" style={{ zIndex: 120 }}>
@@ -631,6 +735,15 @@ export default function SubmitWizard({ isOpen, onClose }) {
         {/* Wizard Header Bar */}
         <div style={{ padding: '10px 14px', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-card)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {showBackButton && (
+              <button 
+                onClick={handleGoBack}
+                title="Go Back"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', display: 'flex', alignItems: 'center', padding: '2px', marginRight: '4px' }}
+              >
+                <BackIcon size={14} />
+              </button>
+            )}
             <span>SUBMIT EXERCISE WIZARD</span>
           </div>
           <button 
@@ -642,18 +755,14 @@ export default function SubmitWizard({ isOpen, onClose }) {
         </div>
 
         {/* Selected Flow Header Indicator */}
-        {((selectedTarget || selectedStudent) || step === 'result') && (
+        {(selectedTarget || selectedStudent) && (
           <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', fontSize: '0.75rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
-            {step === 'result' ? (
-              formatSubmitResult(submitResult)
-            ) : (
-              <span>Submitting as {selectedStudent ? `${selectedStudent.student_id}(org:${selectedStudent.org_id})` : '<id>(org:<org>)'} at {selectedTarget ? selectedTarget.target : '<location>'}</span>
-            )}
+            <span>Submitting as {selectedStudent ? `${selectedStudent.student_id}(org:${selectedStudent.org_id})` : '<id>(org:<org>)'} at {selectedTarget ? selectedTarget.target : '<location>'}</span>
           </div>
         )}
 
         {/* Input Row / Form Area */}
-        {step !== 'submitting' && (
+        {!hideInputRow && (
           <div className="quick-open-input-row" style={{ borderBottom: '1px solid var(--border-color)' }}>
             {step === 'target' && (
               <input 
@@ -677,13 +786,23 @@ export default function SubmitWizard({ isOpen, onClose }) {
               />
             )}
 
+            {step === 'add_server_token' && (
+              <input 
+                type="password" 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Type Student Bearer Token (optional - press Enter to skip or save)..."
+                className="quick-open-input"
+                autoFocus
+              />
+            )}
+
             {step === 'add_drive' && (
               <input 
                 type="text" 
                 value={searchQuery} 
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  // Allow direct typing browsing path
                   if (e.target.value.includes('/') || e.target.value.includes('\\')) {
                     setCurrentBrowsePath(e.target.value);
                   }
@@ -759,29 +878,18 @@ export default function SubmitWizard({ isOpen, onClose }) {
                 autoFocus
               />
             )}
-
-            {step === 'result' && (
-              <input 
-                type="text" 
-                value={searchQuery} 
-                onChange={(e) => { setSearchQuery(e.target.value); setSelectedIndex(0); }}
-                placeholder="Type search or choose action..."
-                className="quick-open-input"
-                autoFocus
-              />
-            )}
           </div>
         )}
 
-        {/* Validation Errors */}
-        {validationError && (
+        {/* Validation Errors in non-error step */}
+        {validationError && step !== 'error' && (
           <div className="validation-alert-error" style={{ margin: '10px 14px 4px 14px', textAlign: 'left' }}>
             {validationError}
           </div>
         )}
 
         {/* Results List / Details */}
-        <div style={{ maxHeight: '320px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ maxHeight: '380px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
           {step === 'target' && (
             getFilteredTargets().map((item, idx) => (
               <div 
@@ -868,6 +976,23 @@ export default function SubmitWizard({ isOpen, onClose }) {
             ))
           )}
 
+          {step === 'add_server_token' && (
+            <div 
+              className="quick-open-item active"
+              onClick={() => handleAddServerTokenConfirm()}
+              style={{ borderBottom: '1px solid var(--border-color)', cursor: 'pointer' }}
+            >
+              <div className="recent-details">
+                <span className="recent-name" style={{ fontSize: '0.82rem' }}>
+                  {searchQuery.trim() ? 'Save Token: ••••••••' : 'Skip Token (Unauthenticated Connection)'}
+                </span>
+                <span className="recent-path" style={{ fontSize: '0.7rem', opacity: 0.6 }}>
+                  {searchQuery.trim() ? `Save bearer token for ${pendingServerUrl} and proceed` : `No bearer token provided. Press Enter to proceed.`}
+                </span>
+              </div>
+            </div>
+          )}
+
           {step === 'new_student_id' && (
             <div className="quick-open-item active">
               <div className="recent-details">
@@ -901,18 +1026,22 @@ export default function SubmitWizard({ isOpen, onClose }) {
                 className={`quick-open-item ${selectedIndex === idx ? 'active' : ''}`}
                 onClick={() => {
                   if (item.action === 'submit') {
+                    let currentPin = pin;
+                    let currentNewPin = newPin;
                     if (step === 'pin') {
-                      const cleanPin = searchQuery.trim();
+                      const cleanPin = searchQuery.trim() || pin;
                       if (!cleanPin) {
                         setValidationError('PIN code is required');
                         return;
                       }
                       setPin(cleanPin);
+                      currentPin = cleanPin;
                     } else if (step === 'new_pin') {
-                      const cleanNewPin = searchQuery.trim();
+                      const cleanNewPin = searchQuery.trim() || newPin;
                       setNewPin(cleanNewPin);
+                      currentNewPin = cleanNewPin;
                     }
-                    handleFinalSubmit();
+                    handleFinalSubmit(currentPin, currentNewPin);
                   } else if (item.action === 'change_pin') {
                     setStep('new_pin');
                     setSearchQuery('');
@@ -939,30 +1068,40 @@ export default function SubmitWizard({ isOpen, onClose }) {
             ))
           )}
 
-          {step === 'submitting' && (
-            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'spin 1.5s linear infinite', color: 'var(--primary)' }}>
+          {step === 'processing' && (
+            <div style={{ padding: '32px 24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'spin 1.5s linear infinite', color: 'var(--primary)' }}>
                 <circle cx="12" cy="12" r="10" strokeDasharray="30" strokeDashoffset="10" />
               </svg>
-              <span>Submitting package and executing remote grading targets...</span>
+              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Submitting exercise package...</span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Uploading workspace code and executing remote evaluation sandbox targets</span>
             </div>
           )}
 
-          {step === 'result' && (
+          {step === 'error' && (
             <>
-              {getResultOptions().map((item, idx) => (
+              <div style={{ padding: '16px', backgroundColor: 'rgba(239, 68, 68, 0.08)', borderBottom: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-red)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Submission Failed
+                </div>
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-primary)', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                  {validationError || 'An error occurred while submitting.'}
+                </div>
+              </div>
+
+              {getErrorItems().map((item, idx) => (
                 <div 
                   key={idx}
                   className={`quick-open-item ${selectedIndex === idx ? 'active' : ''}`}
                   onClick={() => {
-                    if (item.action === 'copy') {
-                      handleCopyPath();
+                    if (item.action === 'retry') {
+                      handleResetToStart();
                     } else if (item.action === 'close') {
                       onClose();
                     }
                   }}
                   onMouseEnter={() => setSelectedIndex(idx)}
-                  style={{ borderBottom: '1px solid var(--border-color)' }}
+                  style={{ borderBottom: '1px solid var(--border-color)', cursor: 'pointer' }}
                 >
                   <div className="recent-details">
                     <span className="recent-name" style={{ fontSize: '0.82rem' }}>
@@ -976,30 +1115,39 @@ export default function SubmitWizard({ isOpen, onClose }) {
                   </div>
                 </div>
               ))}
-              
-              {submitResult && (() => {
-                try {
-                  const parsed = JSON.parse(submitResult);
-                  if (parsed && parsed.earned_points !== undefined) {
-                    return (
-                      <div style={{ padding: '12px 14px', backgroundColor: 'var(--bg-main)', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
-                          Evaluation Feedback
-                        </div>
-                        {parsed.results && parsed.results.map((tr, idx) => (
-                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
-                            <span style={{ color: 'var(--text-secondary)' }}>{tr.command}</span>
-                            <span style={{ color: tr.status === 'pass' ? 'var(--accent)' : 'var(--accent-red)', fontWeight: 600 }}>
-                              {tr.status === 'pass' ? `PASSED (${tr.points_earned}/${tr.points_possible})` : 'FAILED'}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  }
-                } catch {}
-                return null;
-              })()}
+            </>
+          )}
+
+          {step === 'success' && (
+            <>
+              {renderEvaluationFeedbackView(submitResult)}
+
+              {getSuccessItems().map((item, idx) => (
+                <div 
+                  key={idx}
+                  className={`quick-open-item ${selectedIndex === idx ? 'active' : ''}`}
+                  onClick={() => {
+                    if (item.action === 'copy') {
+                      handleCopyPath();
+                    } else if (item.action === 'close') {
+                      onClose();
+                    }
+                  }}
+                  onMouseEnter={() => setSelectedIndex(idx)}
+                  style={{ borderBottom: '1px solid var(--border-color)', cursor: 'pointer' }}
+                >
+                  <div className="recent-details">
+                    <span className="recent-name" style={{ fontSize: '0.82rem' }}>
+                      {item.label}
+                    </span>
+                    {item.desc && (
+                      <span className="recent-path" style={{ fontSize: '0.7rem', opacity: 0.6 }}>
+                        {item.desc}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
             </>
           )}
         </div>

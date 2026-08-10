@@ -1215,13 +1215,14 @@ var uiCmd = &cobra.Command{
 		// 7. API: Submit Workspace (Remote Server or Drive)
 		mux.HandleFunc("POST /api/workspace/submit", func(w http.ResponseWriter, r *http.Request) {
 			var req struct {
-				Path      string `json:"path"`
-				Strategy  string `json:"strategy"`  // "remote" or "drive"
-				Target    string `json:"target"`    // remote URL or drive path
-				StudentID string `json:"student_id"`
-				OrgID     string `json:"org_id"`
-				Pin       string `json:"pin"`
-				NewPin    string `json:"new_pin"`
+				Path        string `json:"path"`
+				Strategy    string `json:"strategy"` // "remote" or "drive"
+				Target      string `json:"target"`   // remote URL or drive path
+				StudentID   string `json:"student_id"`
+				OrgID       string `json:"org_id"`
+				Pin         string `json:"pin"`
+				NewPin      string `json:"new_pin"`
+				BearerToken string `json:"bearer_token"`
 			}
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 				respondError(w, http.StatusBadRequest, "Invalid submission request payload")
@@ -1261,7 +1262,7 @@ var uiCmd = &cobra.Command{
 				path: req.Target,
 			}
 
-			resultStr, err := submitExerciseWithPath(req.Path, strat, orgID, studentID, pin, req.NewPin)
+			resultStr, err := submitExerciseWithPath(req.Path, strat, orgID, studentID, pin, req.NewPin, req.BearerToken)
 			if err != nil {
 				respondError(w, http.StatusBadRequest, err.Error())
 				return

@@ -4,16 +4,18 @@ import (
 	"TDES/internals/remote"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 var (
-	publishRemoteURL  string
-	publishOrgID      string
-	publishExerciseID string
-	publishVersion    string
-	publishStatus     string
+	publishRemoteURL   string
+	publishOrgID       string
+	publishExerciseID  string
+	publishVersion     string
+	publishStatus      string
+	publishBearerToken string
 )
 
 var publishCmd = &cobra.Command{
@@ -35,6 +37,11 @@ var publishCmd = &cobra.Command{
 			return
 		}
 
+		bearerToken := strings.TrimSpace(publishBearerToken)
+		if bearerToken == "" {
+			bearerToken = os.Getenv(remote.BearerTokenEnvVar)
+		}
+
 		remoteRef := remote.NewRemote(publishRemoteURL)
 		response, err := remoteRef.PublishRemote(remote.PublishRequest{
 			ExercisePath: exerciseDir,
@@ -42,7 +49,7 @@ var publishCmd = &cobra.Command{
 			ExerciseID:   publishExerciseID,
 			Version:      publishVersion,
 			Status:       publishStatus,
-			BearerToken:  os.Getenv(remote.BearerTokenEnvVar),
+			BearerToken:  bearerToken,
 		})
 		if err != nil {
 			fmt.Println("Error publishing exercise:", err.Error())
@@ -60,4 +67,5 @@ func init() {
 	publishCmd.Flags().StringVar(&publishExerciseID, "exercise-id", "", "Optional override for exercise ID")
 	publishCmd.Flags().StringVar(&publishVersion, "version", "", "Optional override for exercise version")
 	publishCmd.Flags().StringVar(&publishStatus, "status", "", "Optional exercise status (default 'published')")
+	publishCmd.Flags().StringVar(&publishBearerToken, "bearer-token", "", "Bearer token for authorization (falls back to EUC2_REMOTE_BEARER_TOKEN env var)")
 }

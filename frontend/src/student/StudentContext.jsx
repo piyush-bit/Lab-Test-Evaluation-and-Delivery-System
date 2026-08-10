@@ -45,6 +45,14 @@ export const StudentProvider = ({ children }) => {
   });
 
   const [remoteServerStatuses, setRemoteServerStatuses] = useState({});
+  const [remoteTokens, setRemoteTokens] = useState(() => {
+    try {
+      const stored = localStorage.getItem('remote_server_tokens');
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
 
   // Active connected registry server context
   const [activeRegistryServer, setActiveRegistryServer] = useState(null); // { url, token, online }
@@ -146,7 +154,7 @@ export const StudentProvider = ({ children }) => {
     });
   };
 
-  const addRemoteServer = (url) => {
+  const addRemoteServer = (url, token = '') => {
     const normUrl = normalizeServerUrl(url);
     if (!normUrl) return;
 
@@ -159,6 +167,14 @@ export const StudentProvider = ({ children }) => {
       return updated;
     });
 
+    if (token !== undefined) {
+      setRemoteTokens(prev => {
+        const updated = { ...prev, [normUrl]: token };
+        localStorage.setItem('remote_server_tokens', JSON.stringify(updated));
+        return updated;
+      });
+    }
+
     checkRemoteServerHealth(normUrl);
   };
 
@@ -170,6 +186,13 @@ export const StudentProvider = ({ children }) => {
       localStorage.setItem('recent_remotes', JSON.stringify(updated));
       setRecentRemotes(updated);
       return updated;
+    });
+
+    setRemoteTokens(prev => {
+      const copy = { ...prev };
+      delete copy[normUrl];
+      localStorage.setItem('remote_server_tokens', JSON.stringify(copy));
+      return copy;
     });
 
     setRemoteServerStatuses(prev => {
@@ -1852,6 +1875,7 @@ export const StudentProvider = ({ children }) => {
       remoteServers,
       setRemoteServers,
       remoteServerStatuses,
+      remoteTokens,
       addRemoteServer,
       removeRemoteServer,
       checkAllRemoteServersHealth,

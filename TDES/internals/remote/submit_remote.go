@@ -2,6 +2,7 @@ package remote
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -116,7 +117,12 @@ func (r *Remote) SubmitRemote(request SubmitRequest) (string, error) {
 
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
 		message := strings.TrimSpace(string(responseBody))
-		if message == "" {
+		var errResp struct {
+			Error string `json:"error"`
+		}
+		if json.Unmarshal(responseBody, &errResp) == nil && strings.TrimSpace(errResp.Error) != "" {
+			message = strings.TrimSpace(errResp.Error)
+		} else if message == "" {
 			message = response.Status
 		}
 		return "", fmt.Errorf("submit submission package: %s", message)

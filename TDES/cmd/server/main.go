@@ -457,11 +457,14 @@ type serviceArtifactProvider struct {
 func (p *serviceArtifactProvider) OpenPrivateArtifact(ctx context.Context, orgID, labID, version string) (io.ReadCloser, error) {
 	ev, err := p.service.GetExerciseVersion(ctx, orgID, labID, version)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, registry.ErrNotFound) {
+			return nil, fmt.Errorf("exercise version %s/%s@%s not found on server (the exercise must be published to the registry server using 'euc2 publish' before student submissions can be evaluated)", orgID, labID, version)
+		}
+		return nil, fmt.Errorf("query exercise version %s/%s@%s: %w", orgID, labID, version, err)
 	}
 	handle, err := p.service.OpenArtifact(ctx, ev.PrivateArtifactSHA)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("open private artifact %s: %w", ev.PrivateArtifactSHA, err)
 	}
 	return handle.File, nil
 }
