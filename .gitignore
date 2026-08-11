@@ -5,3 +5,4 @@ ui_dist
 experiment-dir
 .env
 *.env
+__pycache__

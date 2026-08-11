@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MODE="${1:-public}"
+
+case "$MODE" in
+  public) make test-public ;;
+  clean)  make clean ;;
+  *)
+    echo "Usage: ./run [public|clean]"
+    echo "  Grading is performed by the evaluator via manifest.json -> grading commands."
+    exit 1
+    ;;
+esac

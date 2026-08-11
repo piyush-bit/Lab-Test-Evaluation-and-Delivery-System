@@ -1,0 +1,34 @@
+{
+  "lab_id": "cs1287-lab01",
+  "title": "Smart Grid Telemetry Quality & Tariff Auditor",
+  "version": "1.0.0",
+  "language": "python",
+  "runner_image": "lab-python-runner:v1.0",
+  "local_entrypoint": "make test-public",
+  "grading": [
+    { "command": "make test-public",                        "points": 0, "public": true },
+    { "command": "make test-submission-apparent-power",     "points": 2, "public": false },
+    { "command": "make test-submission-voltage-status",     "points": 2, "public": false },
+    { "command": "make test-submission-tariff-residential", "points": 2, "public": false },
+    { "command": "make test-submission-tariff-commercial",  "points": 2, "public": false },
+    { "command": "make test-submission-telemetry-quality",  "points": 2, "public": false }
+  ],
+  "submission": {
+    "include_paths": [
+      "telemetry_auditor.py"
+    ],
+    "private_globs": [
+      "reference/*",
+      "tests_private/*"
+    ],
+    "exclude_globs": [
+      "*.tar.gz",
+      "__pycache__/*",
+      "*.pyc"
+    ]
+  },
+  "limits": {
+    "memory_mb": 256,
+    "timeout_seconds": 15
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "lab_id": "cs1287-lab08",
+  "title": "Web Security & Log Audit Parser (Regular Expressions)",
+  "version": "1.0.0",
+  "language": "python",
+  "runner_image": "lab-python-runner:v1.0",
+  "local_entrypoint": "make test-public",
+  "grading": [
+    { "command": "make test-public",                    "points": 0, "public": true },
+    { "command": "make test-submission-extract-ipv4",   "points": 2, "public": false },
+    { "command": "make test-submission-parse-http",     "points": 3, "public": false },
+    { "command": "make test-submission-detect-sqli",    "points": 3, "public": false },
+    { "command": "make test-submission-redact-tokens",  "points": 2, "public": false }
+  ],
+  "submission": {
+    "include_paths": [
+      "regex_log_parser.py"
+    ],
+    "private_globs": [
+      "reference/*",
+      "tests_private/*"
+    ],
+    "exclude_globs": [
+      "*.tar.gz",
+      "__pycache__/*",
+      "*.pyc"
+    ]
+  },
+  "limits": {
+    "memory_mb": 256,
+    "timeout_seconds": 15
+  }
+}

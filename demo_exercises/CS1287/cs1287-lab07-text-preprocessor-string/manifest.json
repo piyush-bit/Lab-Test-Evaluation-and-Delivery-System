@@ -1,0 +1,34 @@
+{
+  "lab_id": "cs1287-lab07",
+  "title": "NLP Text Cleaning & Tokenization Engine (Strings)",
+  "version": "1.0.0",
+  "language": "python",
+  "runner_image": "lab-python-runner:v1.0",
+  "local_entrypoint": "make test-public",
+  "grading": [
+    { "command": "make test-public",                          "points": 0, "public": true },
+    { "command": "make test-submission-clean-text",           "points": 2, "public": false },
+    { "command": "make test-submission-tokenize-stopwords",   "points": 2, "public": false },
+    { "command": "make test-submission-generate-ngrams",       "points": 2, "public": false },
+    { "command": "make test-submission-mask-pii-email",       "points": 2, "public": false },
+    { "command": "make test-submission-mask-pii-phone",       "points": 2, "public": false }
+  ],
+  "submission": {
+    "include_paths": [
+      "text_preprocessor.py"
+    ],
+    "private_globs": [
+      "reference/*",
+      "tests_private/*"
+    ],
+    "exclude_globs": [
+      "*.tar.gz",
+      "__pycache__/*",
+      "*.pyc"
+    ]
+  },
+  "limits": {
+    "memory_mb": 256,
+    "timeout_seconds": 15
+  }
+}

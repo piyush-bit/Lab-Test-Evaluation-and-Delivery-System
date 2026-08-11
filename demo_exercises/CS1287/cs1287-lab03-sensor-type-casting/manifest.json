@@ -1,0 +1,33 @@
+{
+  "lab_id": "cs1287-lab03",
+  "title": "Heterogeneous IoT Sensor Log Sanitizer",
+  "version": "1.0.0",
+  "language": "python",
+  "runner_image": "lab-python-runner:v1.0",
+  "local_entrypoint": "make test-public",
+  "grading": [
+    { "command": "make test-public",                        "points": 0, "public": true },
+    { "command": "make test-submission-float-casting",     "points": 2, "public": false },
+    { "command": "make test-submission-boolean-flags",     "points": 2, "public": false },
+    { "command": "make test-submission-timestamp-epoch",   "points": 3, "public": false },
+    { "command": "make test-submission-record-sanitization", "points": 3, "public": false }
+  ],
+  "submission": {
+    "include_paths": [
+      "log_sanitizer.py"
+    ],
+    "private_globs": [
+      "reference/*",
+      "tests_private/*"
+    ],
+    "exclude_globs": [
+      "*.tar.gz",
+      "__pycache__/*",
+      "*.pyc"
+    ]
+  },
+  "limits": {
+    "memory_mb": 256,
+    "timeout_seconds": 15
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "lab_id": "cs1287-lab10",
+  "title": "E-Commerce Sales EDA & Visualization Dashboard",
+  "version": "1.0.0",
+  "language": "python",
+  "runner_image": "lab-python-runner:v1.0",
+  "local_entrypoint": "make test-public",
+  "grading": [
+    { "command": "make test-public",                        "points": 0, "public": true },
+    { "command": "make test-submission-create-dataframe",   "points": 2, "public": false },
+    { "command": "make test-submission-category-metrics",   "points": 2, "public": false },
+    { "command": "make test-submission-plot-revenue",       "points": 2, "public": false },
+    { "command": "make test-submission-plot-rating",        "points": 2, "public": false },
+    { "command": "make test-submission-eda-integration",    "points": 2, "public": false }
+  ],
+  "submission": {
+    "include_paths": [
+      "eda_dashboard.py"
+    ],
+    "private_globs": [
+      "reference/*",
+      "tests_private/*"
+    ],
+    "exclude_globs": [
+      "*.tar.gz",
+      "__pycache__/*",
+      "*.pyc"
+    ]
+  },
+  "limits": {
+    "memory_mb": 256,
+    "timeout_seconds": 15
+  }
+}
