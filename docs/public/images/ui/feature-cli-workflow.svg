@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="100%" height="100%">
+  <rect width="400" height="240" fill="#000000" />
+  <rect x="10" y="10" width="380" height="220" fill="#090d16" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+  <rect x="10" y="10" width="380" height="26" fill="#0d1117" />
+  <circle cx="25" cy="23" r="3" fill="#ff5f56" />
+  <circle cx="35" cy="23" r="3" fill="#ffbd2e" />
+  <circle cx="45" cy="23" r="3" fill="#27c93f" />
+  <text x="60" y="26" fill="#94a3b8" font-family="'Fira Code', monospace" font-size="10">terminal — euc2 cli</text>
+
+  <g transform="translate(25, 55)" font-family="'Fira Code', monospace" font-size="11">
+    <text x="0" y="15" fill="#38bdf8">$ euc2 init go101-lab01 ./workspace</text>
+    <text x="0" y="35" fill="#94a3b8">✓ Unpacked boilerplate into ./workspace</text>
+    <text x="0" y="60" fill="#38bdf8">$ euc2 run --sandbox=docker</text>
+    <text x="0" y="80" fill="#4ade80">✓ Public Tests: 5/5 PASSED</text>
+    <text x="0" y="105" fill="#38bdf8">$ euc2 submit --drive /Volumes/ExamUSB</text>
+    <text x="0" y="125" fill="#c084fc">✓ Envelope sealed: STU001_go101.enc</text>
+    <text x="0" y="150" fill="#34d399" font-weight="600">[DONE] Keyboard-first workflow ready.</text>
+  </g>
+</svg>

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340" width="100%" height="100%">
+  <rect width="600" height="340" fill="#090d16" />
+  <rect x="20" y="20" width="560" height="300" fill="#000000" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+  <rect x="20" y="20" width="560" height="32" fill="#0d1117" />
+  <circle cx="40" cy="36" r="4" fill="#ff5f56" />
+  <circle cx="54" cy="36" r="4" fill="#ffbd2e" />
+  <circle cx="68" cy="36" r="4" fill="#27c93f" />
+  <text x="90" y="40" fill="#94a3b8" font-family="'Fira Code', monospace" font-size="11">// Instructor &amp; Admin Dashboard (euc2 admin)</text>
+
+  <g transform="translate(40, 70)" font-family="'Fira Code', monospace" font-size="11">
+    <!-- Top Stats Bar -->
+    <rect x="0" y="0" width="160" height="60" fill="#0b1329" stroke="#1d4ed8" rx="4" />
+    <text x="15" y="25" fill="#93c5fd" font-size="10">REGISTERED EXERCISES</text>
+    <text x="15" y="48" fill="#ffffff" font-size="16" font-weight="700">14 Published</text>
+
+    <rect x="180" y="0" width="160" height="60" fill="#062e1b" stroke="#15803d" rx="4" />
+    <text x="195" y="25" fill="#86efac" font-size="10">SUBMISSIONS RECEIVED</text>
+    <text x="195" y="48" fill="#ffffff" font-size="16" font-weight="700">128 Envelopes</text>
+
+    <rect x="360" y="0" width="160" height="60" fill="#2e1065" stroke="#6d28d9" rx="4" />
+    <text x="375" y="25" fill="#d8b4fe" font-size="10">X25519 RECIPIENT KEYS</text>
+    <text x="375" y="48" fill="#ffffff" font-size="16" font-weight="700">Configured</text>
+
+    <!-- Table Roster -->
+    <g transform="translate(0, 80)">
+      <rect x="0" y="0" width="520" height="150" fill="#050810" stroke="rgba(255,255,255,0.08)" rx="4" />
+      <rect x="0" y="0" width="520" height="28" fill="#0f172a" />
+      <text x="15" y="18" fill="#94a3b8" font-size="10" font-weight="600">STUDENT_ID   LAB_EXERCISE          STATUS         TIME    ACTION</text>
+
+      <text x="15" y="48" fill="#f8fafc">STU_9021     cs101_lab02_tree      SEALED &amp; VALID  14:02   [DECRYPT]</text>
+      <text x="15" y="73" fill="#f8fafc">STU_9022     cs101_lab02_tree      SEALED &amp; VALID  14:05   [DECRYPT]</text>
+      <text x="15" y="98" fill="#f8fafc">STU_9023     cs101_lab02_tree      SEALED &amp; VALID  14:08   [DECRYPT]</text>
+      <text x="15" y="123" fill="#94a3b8">STU_9024     cs101_lab02_tree      PENDING         --:--   [WAITING]</text>
+    </g>
+  </g>
+</svg>

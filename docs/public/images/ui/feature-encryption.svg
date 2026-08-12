@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340" width="100%" height="100%">
+  <rect width="600" height="340" fill="#090d16" rx="0" />
+  <rect x="20" y="20" width="560" height="300" fill="#000000" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+  <!-- Header -->
+  <rect x="20" y="20" width="560" height="32" fill="#0d1117" />
+  <circle cx="40" cy="36" r="4" fill="#ff5f56" />
+  <circle cx="54" cy="36" r="4" fill="#ffbd2e" />
+  <circle cx="68" cy="36" r="4" fill="#27c93f" />
+  <text x="90" y="40" fill="#94a3b8" font-family="'Fira Code', monospace" font-size="11">// crypto-envelope (X25519 sealed)</text>
+
+  <!-- Envelope Graphic -->
+  <g transform="translate(60, 75)">
+    <rect x="0" y="0" width="480" height="210" fill="#050810" stroke="#059669" stroke-width="1.5" rx="4" />
+    <path d="M 0 0 L 240 100 L 480 0" fill="none" stroke="#059669" stroke-width="1.5" stroke-dasharray="4,4" />
+    <circle cx="240" cy="100" r="28" fill="#065f46" stroke="#34d399" stroke-width="2" />
+    <!-- Lock Icon -->
+    <path d="M234 98 V93 A6 6 0 0 1 246 93 V98 M231 98 H249 V110 H231 Z" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+    
+    <!-- Code Lines Sealed -->
+    <text x="30" y="150" fill="#34d399" font-family="'Fira Code', monospace" font-size="11" font-weight="600">PAYLOAD: sealed_envelope.enc</text>
+    <text x="30" y="172" fill="#64748b" font-family="'Fira Code', monospace" font-size="11">KEY_HASH: 0x8F92A1B7C3E4F5D67890123456789ABCDEF01234</text>
+    <text x="30" y="192" fill="#38bdf8" font-family="'Fira Code', monospace" font-size="11">STATUS: TAMPER-PROOF &amp; NON-REPUDIABLE</text>
+  </g>
+</svg>

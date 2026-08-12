@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="100%" height="100%">
+  <rect width="400" height="240" fill="#000000" />
+  <rect x="10" y="10" width="380" height="220" fill="#090d16" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+  <rect x="10" y="10" width="380" height="26" fill="#0d1117" />
+  <circle cx="25" cy="23" r="3" fill="#ff5f56" />
+  <circle cx="35" cy="23" r="3" fill="#ffbd2e" />
+  <circle cx="45" cy="23" r="3" fill="#27c93f" />
+  <text x="60" y="26" fill="#94a3b8" font-family="'Fira Code', monospace" font-size="10">First-Party Monaco Code Editor</text>
+
+  <g transform="translate(25, 55)" font-family="'Fira Code', monospace" font-size="11">
+    <rect x="0" y="0" width="350" height="155" fill="#050810" stroke="#2563eb" stroke-width="1" rx="4" />
+    <text x="15" y="25" fill="#ff7b72">package <tspan fill="#ffffff">main</tspan></text>
+    <text x="15" y="50" fill="#79c0ff">import <tspan fill="#34d399">"fmt"</tspan></text>
+    
+    <!-- Intellisense popup box -->
+    <rect x="50" y="65" width="220" height="75" fill="#0f172a" stroke="#38bdf8" stroke-width="1" rx="3" />
+    <text x="60" y="85" fill="#38bdf8" font-weight="600">Printf(format, a...)</text>
+    <text x="60" y="105" fill="#94a3b8" font-size="10">Println(a...)</text>
+    <text x="60" y="125" fill="#94a3b8" font-size="10">Sprintf(format, a...)</text>
+  </g>
+</svg>

@@ -59,6 +59,14 @@ import Footer from '../components/Footer.astro';
 
       <!-- Demo Window Frame -->
       <div class="zed-demo-frame">
+        <!-- Watch Demo Floating Pill -->
+        <button type="button" class="zed-watch-demo-btn" id="watchDemoBtn" aria-label="Watch Demo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="12" viewBox="0 0 24 24" fill="currentColor" class="play-icon">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span>Watch Demo</span>
+        </button>
+
         <div class="zed-demo-viewport">
           <!-- Light Mode Source -->
           <img
@@ -76,132 +84,112 @@ import Footer from '../components/Footer.astro';
       </div>
     </section>
 
-    <!-- Timeline/Lifecycle Section -->
-    <section id="lifecycle" class="timeline-section">
-      <div class="timeline-header-block">
-        <h2 class="timeline-section-title">From curriculum to grades</h2>
-        <p class="timeline-section-subtitle">
-          A frictionless, step-by-step cycle that bridges the gap between active student coding and reliable host evaluation.
-        </p>
-      </div>
-
-      <div class="timeline-grid">
-        <!-- Step 1 -->
-        <div class="timeline-col">
-          <div class="step-num-mono">01</div>
-          <h3 class="step-title">Pick or define</h3>
-          <p class="step-desc">
-            Select from our standard CS curriculum libraries, author custom templates following the open standard, or request custom exercises tailored for your classroom.
+    <!-- Zed-Style Box Grid Feature Section -->
+    <section id="grid-features" class="zed-box-grid-section">
+      <div class="zed-box-grid-left-line"></div>
+      <div class="zed-box-grid-right-line"></div>
+      <!-- Grid Section Header -->
+      <div class="zed-box-header-row">
+        <div class="zed-box-header-title-block">
+          <h2 class="zed-box-main-heading"><span class="serif-highlight">TDES</span> Just Works</h2>
+          <p class="zed-box-main-subtext">
+            Incredibly powerful out of the box. Built to run anywhere without configuration overhead, exam server crashes, or environment hassles.
           </p>
         </div>
-        <!-- Step 2 -->
-        <div class="timeline-col">
-          <div class="step-num-mono">02</div>
-          <h3 class="step-title">Distribute files</h3>
-          <p class="step-desc">
-            Deliver the public package files to student machines instantly. Works over local network folders, central registries, or simple USB pen drives for air-gapped rooms.
-          </p>
-        </div>
-        <!-- Step 3 -->
-        <div class="timeline-col">
-          <div class="step-num-mono">03</div>
-          <h3 class="step-title">Solve & submit</h3>
-          <p class="step-desc">
-            Students write code in their favorite editor, verify logic locally with instant tests, and seal submissions in one click using secure X25519-encrypted envelopes.
-          </p>
-        </div>
-        <!-- Step 4 -->
-        <div class="timeline-col">
-          <div class="step-num-mono">04</div>
-          <h3 class="step-title">Sandbox grading</h3>
-          <p class="step-desc">
-            The host system extracts code, runs hidden private tests in isolated container sandboxes, calculates scores, and generates structured grading reports instantly.
-          </p>
+        <div class="zed-box-header-actions">
+          <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System" target="_blank" rel="noopener noreferrer" class="zed-box-action-link">View Releases &rarr;</a>
         </div>
       </div>
-    </section>
 
-    <!-- Digital Migration Section -->
-    <section id="problem" class="migration-stack-section">
-      <div class="migration-header-block">
-        <h2 class="migration-section-title">Advantages of moving to a digital lab system</h2>
-        <p class="migration-section-subtitle">
-          Ditch paper registers, subjective desk checks, and repetitive software setups.
-        </p>
-      </div>
-
-      <div class="migration-stack">
-        <!-- Row 1 -->
-        <div class="migration-row">
-          <span class="migration-num-mono">01</span>
-          <span class="migration-row-title">Standardized & 100% objective grading</span>
-        </div>
-        <!-- Row 2 -->
-        <div class="migration-row">
-          <span class="migration-num-mono">02</span>
-          <span class="migration-row-title">Error-free digital record keeping</span>
-        </div>
-        <!-- Row 3 -->
-        <div class="migration-row">
-          <span class="migration-num-mono">03</span>
-          <span class="migration-row-title">Avoid the hassle of configuring every machine</span>
-        </div>
-        <!-- Row 4 -->
-        <div class="migration-row">
-          <span class="migration-num-mono">04</span>
-          <span class="migration-row-title">Eliminating unproductive student paperwork</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Why Choose TDES Section -->
-    <section id="why-choose" class="reasons-section">
-      <div class="reasons-header-block">
-        <h2 class="reasons-section-title">Why CS departments choose TDES</h2>
-        <p class="reasons-section-subtitle">
-          A lightweight, offline-first grading engine built to fit your existing lab workflow.
-        </p>
-      </div>
-
-      <div class="reasons-grid">
-        <!-- Reason 1 -->
-        <div class="reasons-col">
-          <div class="reason-icon-wrapper">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="reason-icon"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+      <!-- Grid Row 1: 2 Columns (Large Preview Boxes) -->
+      <div class="zed-box-row zed-box-row-2col">
+        <!-- Box 1 -->
+        <div class="zed-box-item">
+          <div class="zed-box-media-viewport">
+            <img src="/images/ui/student_colsole_light.png" alt="Student TDES Console Light Mode" class="zed-box-media box-media-light" />
+            <img src="/images/ui/student_console_dark.png" alt="Student TDES Console Dark Mode" class="zed-box-media box-media-dark" />
           </div>
-          <h3 class="reason-title">Lightweight & minimal setup</h3>
-          <p class="reason-desc">
-            Runs as a single compiled tool with zero background dependencies. No databases, no auth servers to configure.
+          <h3 class="zed-box-title">Student TDES Console</h3>
+          <p class="zed-box-desc">
+            A dedicated student workspace equipped with a built-in file browser, live test runner, and submission wizard — eliminating local toolchain setup.
           </p>
         </div>
-        <!-- Reason 2 -->
-        <div class="reasons-col">
-          <div class="reason-icon-wrapper">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="reason-icon"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+
+        <!-- Box 2 -->
+        <div class="zed-box-item">
+          <div class="zed-box-media-viewport">
+            <img src="/images/ui/admin_console_light.png" alt="Instructor & Admin Console Light Mode" class="zed-box-media box-media-light" />
+            <img src="/images/ui/admin_console_dark.png" alt="Instructor & Admin Console Dark Mode" class="zed-box-media box-media-dark" />
           </div>
-          <h3 class="reason-title">Free & fully open source</h3>
-          <p class="reason-desc">
-            Entirely free under an open-source license — no vendor lock-in, no subscription costs, full auditability.
+          <h3 class="zed-box-title">Instructor &amp; Admin Console</h3>
+          <p class="zed-box-desc">
+            Comprehensive lab control center to stage exercises, manage recipient keys, inspect submission envelopes, and track student status in real-time.
           </p>
         </div>
-        <!-- Reason 3 -->
-        <div class="reasons-col">
-          <div class="reason-icon-wrapper">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="reason-icon"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.5"></path><path d="M5 12.5a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+      </div>
+
+      <!-- Grid Row 2: 3 Columns (Medium Preview Boxes) -->
+      <div class="zed-box-row zed-box-row-3col">
+        <!-- Box 3 -->
+        <div class="zed-box-item">
+          <div class="zed-box-media-viewport">
+            <img src="/images/ui/monaco_light.png" alt="First-Party Monaco Editor Light Mode" class="zed-box-media box-media-light" />
+            <img src="/images/ui/monaco_dark.png" alt="First-Party Monaco Editor Dark Mode" class="zed-box-media box-media-dark" />
           </div>
-          <h3 class="reason-title">Works 100% offline</h3>
-          <p class="reason-desc">
-            Executes and grades submissions completely offline — protects exams from server crashes and outages.
+          <h3 class="zed-box-title">First-Party Monaco Editor</h3>
+          <p class="zed-box-desc">
+            Bundles Microsoft’s Monaco Editor directly inside the binary, giving students full syntax highlighting, autocompletion, and multi-file editing out of the box.
           </p>
         </div>
-        <!-- Reason 4 -->
-        <div class="reasons-col">
-          <div class="reason-icon-wrapper">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="reason-icon"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+
+        <!-- Box 4 -->
+        <div class="zed-box-item">
+          <div class="zed-box-media-viewport">
+            <img src="/images/ui/feature-verification-light.svg" alt="Instant Local Verification Light Mode" class="zed-box-media box-media-light" />
+            <img src="/images/ui/feature-verification-dark.svg" alt="Instant Local Verification Dark Mode" class="zed-box-media box-media-dark" />
           </div>
-          <h3 class="reason-title">Complements your existing workflow</h3>
-          <p class="reason-desc">
-            Acts as a lightweight helper that integrates into your current command-line setups and submission portals.
+          <h3 class="zed-box-title">Instant Local Verification</h3>
+          <p class="zed-box-desc">
+            Students run public tests locally inside isolated containers (<code class="mono-code">euc2 run</code>) for immediate pass/fail feedback before final submission.
+          </p>
+        </div>
+
+        <!-- Box 5 -->
+        <div class="zed-box-item">
+          <div class="zed-box-media-viewport">
+            <img src="/images/ui/feature-cli-light.svg" alt="Keyboard-First CLI Workflow Light Mode" class="zed-box-media box-media-light" />
+            <img src="/images/ui/feature-cli-dark.svg" alt="Keyboard-First CLI Workflow Dark Mode" class="zed-box-media box-media-dark" />
+          </div>
+          <h3 class="zed-box-title">Keyboard-First CLI Workflow</h3>
+          <p class="zed-box-desc">
+            Prefer terminal tools? Complete command-line toolchain (<code class="mono-code">euc2 init</code>, <code class="mono-code">run</code>, <code class="mono-code">submit</code>) engineered for fast, scriptable terminal productivity.
+          </p>
+        </div>
+      </div>
+
+      <!-- Grid Row 3: 3 Columns (Text-Only Feature Grid) -->
+      <div class="zed-box-row zed-box-row-3col zed-box-row-text">
+        <!-- Box 6 -->
+        <div class="zed-box-item zed-box-text-only">
+          <h3 class="zed-box-title">Air-Gapped Operation</h3>
+          <p class="zed-box-desc">
+            Operate 100% offline without internet connections, cloud APIs, or external authentication servers during lab exams.
+          </p>
+        </div>
+
+        <!-- Box 7 -->
+        <div class="zed-box-item zed-box-text-only">
+          <h3 class="zed-box-title">Zero-Dependency Executable</h3>
+          <p class="zed-box-desc">
+            Single compiled binary for Windows, macOS, and Linux with zero background daemons, zero databases, and zero system setup.
+          </p>
+        </div>
+
+        <!-- Box 8 -->
+        <div class="zed-box-item zed-box-text-only">
+          <h3 class="zed-box-title">Editor-Agnostic &amp; Native Workbench</h3>
+          <p class="zed-box-desc">
+            Students can code in VS Code, Zed, Neovim, or standard terminal tools — or launch TDES’s embedded Monaco browser workbench.
           </p>
         </div>
       </div>
@@ -616,27 +604,63 @@ import Footer from '../components/Footer.astro';
   .zed-demo-section {
     width: 100%;
     margin-top: 20px;
-    margin-bottom: 90px;
+    margin-bottom: 110px;
   }
 
   .zed-pillars-grid {
+    position: relative;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    border-top: 1px solid var(--border-color);
-    margin-bottom: 40px;
+    margin-top: 50px;
+    margin-bottom: 45px;
     background: transparent;
     border-radius: 0;
   }
 
+  /* Top horizontal line extending left & right */
+  .zed-pillars-grid::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -60px;
+    right: -60px;
+    height: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+    z-index: 2;
+  }
+
   .zed-pillar-col {
+    position: relative;
     padding: 24px 28px;
-    border-right: 1px solid var(--border-color);
     background: transparent;
     transition: background-color 0.2s ease;
   }
 
-  .zed-pillar-col:last-child {
-    border-right: none;
+  /* Outer left vertical line extending 30px upwards */
+  .zed-pillar-col:first-child::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    bottom: 0;
+    left: 0;
+    width: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Inner column dividers & outer right line extending 30px upwards */
+  .zed-pillar-col::after {
+    content: '';
+    position: absolute;
+    top: -30px;
+    bottom: 0;
+    right: 0;
+    width: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+    z-index: 2;
   }
 
   .zed-pillar-col:hover {
@@ -669,13 +693,63 @@ import Footer from '../components/Footer.astro';
   }
 
   .zed-demo-frame {
+    position: relative;
     width: 100%;
     border-radius: 0;
     border: none;
     background: transparent;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
     transition: box-shadow 0.3s ease;
+  }
+
+  .zed-watch-demo-btn {
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(12px);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .zed-watch-demo-btn:hover {
+    transform: translateX(-50%) translateY(-2px);
+    background: var(--bg-card-hover);
+    border-color: var(--border-hover);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  }
+
+  .play-icon {
+    width: 10px;
+    height: 12px;
+    fill: currentColor;
+  }
+
+  :global(html.dark) .zed-watch-demo-btn {
+    background: rgba(18, 18, 18, 0.85);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  }
+
+  :global(html.dark) .zed-watch-demo-btn:hover {
+    background: rgba(30, 30, 30, 0.95);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.8);
   }
 
   :global(html.dark) .zed-demo-frame {
@@ -701,23 +775,275 @@ import Footer from '../components/Footer.astro';
   }
 
   /* Light and Dark mode media visibility */
-  .demo-media-light {
-    display: block;
+  .demo-media-light,
+  .box-media-light {
+    display: block !important;
   }
 
-  .demo-media-dark {
+  .demo-media-dark,
+  .box-media-dark {
+    display: none !important;
+  }
+
+  :global(html.dark) .demo-media-light,
+  :global(html.dark) .box-media-light {
+    display: none !important;
+  }
+
+  :global(html.dark) .demo-media-dark,
+  :global(html.dark) .box-media-dark {
+    display: block !important;
+  }
+
+  /* Zed-Style Box Grid Section (Open Extended Grid) */
+  .zed-box-grid-section {
+    position: relative;
+    width: 100%;
+    margin-top: 100px;
+    margin-bottom: 120px;
+    background: transparent;
+    border-radius: 0;
+  }
+
+  /* Outer left vertical line extending top: -30px & bottom: -30px */
+  .zed-box-grid-left-line {
+    position: absolute;
+    top: -30px;
+    bottom: -30px;
+    left: 0;
+    width: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Outer right vertical line extending top: -30px & bottom: -30px */
+  .zed-box-grid-right-line {
+    position: absolute;
+    top: -30px;
+    bottom: -30px;
+    right: 0;
+    width: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Top over-extending horizontal grid line */
+  .zed-box-grid-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -60px;
+    right: -60px;
+    height: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Bottom over-extending horizontal grid line */
+  .zed-box-grid-section::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -60px;
+    right: -60px;
+    height: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .zed-box-header-row {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 40px 36px;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  /* Divider line below header extending past borders */
+  .zed-box-header-row::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -60px;
+    right: -60px;
+    height: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .zed-box-main-heading {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .serif-highlight {
+    font-family: 'Times New Roman', Times, serif;
+    font-style: italic;
+    font-weight: 400;
+    padding: 0 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 0;
+  }
+
+  .zed-box-main-subtext {
+    font-size: 13.12px;
+    color: var(--text-secondary);
+    max-width: 540px;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .zed-box-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .zed-box-action-link {
+    font-size: 13.12px;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    background: var(--bg-card);
+    transition: all 0.2s ease;
+    border-radius: 0;
+  }
+
+  .zed-box-action-link:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-hover);
+  }
+
+  .zed-box-row {
+    position: relative;
+    display: grid;
+    background: transparent;
+  }
+
+  /* Divider lines below rows extending past left & right borders */
+  .zed-box-row::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -60px;
+    right: -60px;
+    height: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .zed-box-row:last-child::after {
     display: none;
   }
 
-  :global(html.dark) .demo-media-light {
+  .zed-box-row-2col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .zed-box-row-3col {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .zed-box-item {
+    position: relative;
+    padding: 32px 36px;
+    transition: background-color 0.2s ease;
+  }
+
+  /* Inner column vertical dividers */
+  .zed-box-item::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .zed-box-item:last-child::after {
     display: none;
   }
 
-  :global(html.dark) .demo-media-dark {
+  /* Bottom row column dividers extending 30px downwards */
+  .zed-box-row-text .zed-box-item::after {
+    bottom: -30px;
+  }
+
+  .zed-box-item:hover {
+    background: var(--bg-card-hover);
+  }
+
+  .zed-box-media-viewport {
+    position: relative;
+    width: 100%;
+    border: none;
+    background: transparent;
+    margin-bottom: 20px;
+    overflow: visible;
+    border-radius: 0;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease;
+  }
+
+  :global(html.dark) .zed-box-media-viewport {
+    box-shadow: 0 0 120px 20px rgba(255, 255, 255, 0.025), 0 0 40px 5px rgba(255, 255, 255, 0.02), 0 0 1px rgba(255, 255, 255, 0.15);
+  }
+
+  .zed-box-media {
+    width: 100%;
+    height: auto;
     display: block;
+    object-fit: cover;
+  }
+
+  .zed-box-title {
+    font-size: 15.2px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1.35;
+  }
+
+  .zed-box-desc {
+    font-size: 13.12px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .zed-box-text-only {
+    padding: 36px 36px;
   }
 
   /* Responsive styling */
+  @media (max-width: 992px) {
+    .zed-box-row-2col,
+    .zed-box-row-3col {
+      grid-template-columns: 1fr;
+    }
+    .zed-box-item {
+      border-right: none;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .zed-box-item:last-child {
+      border-bottom: none;
+    }
+  }
   @media (max-width: 768px) {
     .zed-pillars-grid {
       grid-template-columns: 1fr;

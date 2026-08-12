@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="100%" height="100%">
+  <rect width="400" height="240" fill="#000000" />
+  <rect x="10" y="10" width="380" height="220" fill="#090d16" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+  <rect x="10" y="10" width="380" height="26" fill="#0d1117" />
+  <circle cx="25" cy="23" r="3" fill="#ff5f56" />
+  <circle cx="35" cy="23" r="3" fill="#ffbd2e" />
+  <circle cx="45" cy="23" r="3" fill="#27c93f" />
+  <text x="60" y="26" fill="#94a3b8" font-family="'Fira Code', monospace" font-size="10">// instant feedback widget</text>
+
+  <g transform="translate(30, 55)" font-family="'Fira Code', monospace" font-size="11">
+    <rect x="0" y="0" width="320" height="150" fill="#050810" stroke="#0284c7" stroke-width="1" rx="4" />
+    <text x="15" y="25" fill="#38bdf8" font-weight="600">Local Verification Output:</text>
+    <text x="15" y="50" fill="#4ade80">✓ Public Test 1: PASS</text>
+    <text x="15" y="70" fill="#4ade80">✓ Public Test 2: PASS</text>
+    <text x="15" y="90" fill="#fbbf24">⚠ Public Test 3: Edge case warning</text>
+    <line x1="15" y1="110" x2="305" y2="110" stroke="rgba(255,255,255,0.1)" />
+    <text x="15" y="132" fill="#38bdf8">Ready for submission (3/3 local)</text>
+  </g>
+</svg>

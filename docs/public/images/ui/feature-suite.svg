@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="100%" height="100%">
+  <rect width="400" height="240" fill="#000000" />
+  <rect x="10" y="10" width="380" height="220" fill="#090d16" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+  <rect x="10" y="10" width="380" height="26" fill="#0d1117" />
+  <circle cx="25" cy="23" r="3" fill="#ff5f56" />
+  <circle cx="35" cy="23" r="3" fill="#ffbd2e" />
+  <circle cx="45" cy="23" r="3" fill="#27c93f" />
+  <text x="60" y="26" fill="#94a3b8" font-family="'Fira Code', monospace" font-size="10">// test-runner.json</text>
+
+  <g transform="translate(25, 55)" font-family="'Fira Code', monospace" font-size="11">
+    <text x="0" y="15" fill="#38bdf8">[SUITE] CS101_lab02_tree.spec</text>
+    <text x="0" y="40" fill="#4ade80">✓ TestNodeInsertion ... PASS (0.01s)</text>
+    <text x="0" y="65" fill="#4ade80">✓ TestBSTBalancing ... PASS (0.02s)</text>
+    <text x="0" y="90" fill="#4ade80">✓ TestMemoryLeaks ... PASS (0.04s)</text>
+    <text x="0" y="115" fill="#4ade80">✓ TestLargeScaleScale ... PASS (0.09s)</text>
+    <line x1="0" y1="135" x2="350" y2="135" stroke="rgba(255,255,255,0.1)" />
+    <text x="0" y="155" fill="#f8fafc" font-weight="600">OVERALL SCORE: 100/100</text>
+  </g>
+</svg>

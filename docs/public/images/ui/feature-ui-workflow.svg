@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="100%" height="100%">
+  <rect width="400" height="240" fill="#000000" />
+  <rect x="10" y="10" width="380" height="220" fill="#090d16" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+  <rect x="10" y="10" width="380" height="26" fill="#0d1117" />
+  <circle cx="25" cy="23" r="3" fill="#ff5f56" />
+  <circle cx="35" cy="23" r="3" fill="#ffbd2e" />
+  <circle cx="45" cy="23" r="3" fill="#27c93f" />
+  <text x="60" y="26" fill="#94a3b8" font-family="'Fira Code', monospace" font-size="10">http://127.0.0.1:8082 (euc2 ui)</text>
+
+  <g transform="translate(20, 50)" font-family="'Fira Code', monospace" font-size="10">
+    <rect x="0" y="0" width="70" height="165" fill="#050810" stroke="rgba(255,255,255,0.08)" />
+    <text x="8" y="20" fill="#38bdf8" font-weight="600">FILES</text>
+    <text x="8" y="40" fill="#94a3b8">main.go</text>
+    <text x="8" y="58" fill="#4ade80">test.go</text>
+
+    <!-- Editor mockup -->
+    <rect x="78" y="0" width="270" height="110" fill="#000000" stroke="rgba(255,255,255,0.08)" />
+    <text x="88" y="20" fill="#ff7b72">package <tspan fill="#ffffff">main</tspan></text>
+    <text x="88" y="40" fill="#79c0ff">func <tspan fill="#ffffff">SolveLab</tspan>() {</text>
+    <text x="100" y="60" fill="#a5d6ff">fmt.Println(<tspan fill="#34d399">"UI Workbench"</tspan>)</text>
+    <text x="88" y="80" fill="#79c0ff">}</text>
+
+    <!-- UI Action Bar -->
+    <rect x="78" y="120" width="270" height="45" fill="#064e3b" rx="4" />
+    <text x="95" y="147" fill="#4ade80" font-weight="600" font-size="11">▶ RUN TESTS IN BROWSER</text>
+  </g>
+</svg>

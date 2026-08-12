@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340" width="100%" height="100%">
+  <rect width="600" height="340" fill="#ffffff" />
+  <rect x="20" y="20" width="560" height="300" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" />
+  <rect x="20" y="20" width="560" height="32" fill="#f1f5f9" />
+  <circle cx="40" cy="36" r="4" fill="#cbd5e1" />
+  <circle cx="54" cy="36" r="4" fill="#cbd5e1" />
+  <circle cx="68" cy="36" r="4" fill="#cbd5e1" />
+  <text x="90" y="40" fill="#64748b" font-family="'Fira Code', monospace" font-size="11">// euc2 run --sandbox=docker (Instant Local Verification)</text>
+
+  <g transform="translate(40, 75)" font-family="'Fira Code', monospace" font-size="11">
+    <rect x="0" y="0" width="520" height="210" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" rx="4" />
+    <rect x="0" y="0" width="520" height="32" fill="#f8fafc" />
+    <text x="15" y="21" fill="#0f172a" font-weight="600">TEST SUITE: CS101_lab02_tree.spec</text>
+    
+    <text x="15" y="60" fill="#16a34a" font-weight="600">✓ TestNodeInsertion ....... PASS (0.01s)</text>
+    <text x="15" y="85" fill="#16a34a" font-weight="600">✓ TestBSTBalancing ........ PASS (0.02s)</text>
+    <text x="15" y="110" fill="#16a34a" font-weight="600">✓ TestMemoryLeaks .......... PASS (0.04s)</text>
+    <text x="15" y="135" fill="#16a34a" font-weight="600">✓ TestLargeScaleScale ...... PASS (0.08s)</text>
+    
+    <line x1="15" y1="155" x2="505" y2="155" stroke="#e2e8f0" />
+    <rect x="15" y="170" width="220" height="28" fill="#dcfce7" rx="3" />
+    <text x="25" y="189" fill="#15803d" font-weight="600">VERIFICATION: 100% PASSED</text>
+  </g>
+</svg>
