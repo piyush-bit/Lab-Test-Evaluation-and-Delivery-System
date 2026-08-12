@@ -207,6 +207,69 @@ import Footer from '../components/Footer.astro';
         </div>
       </div>
     </section>
+
+    <!-- Quote Callout Section -->
+    <section id="quote-callout" class="zed-quote-section">
+      <blockquote class="zed-quote-text">
+        “We shape our tools, and thereafter our tools shape us.”
+      </blockquote>
+      <cite class="zed-quote-author">— John Culkin</cite>
+    </section>
+
+    <!-- Growing Exercise Library Section (Infinite Marquee) -->
+    <section id="library" class="zed-library-section">
+      <div class="zed-library-left-line"></div>
+      <div class="zed-library-right-line"></div>
+
+      <!-- Section Header -->
+      <div class="zed-box-header-row zed-library-header-row">
+        <div class="zed-box-header-title-block">
+          <h2 class="zed-library-heading">Growing Exercise Library</h2>
+          <p class="zed-box-main-subtext">
+            Pre-configured exercise suites and test templates spanning key computer science courses.
+          </p>
+        </div>
+        <div class="zed-box-header-actions">
+          <a href="https://github.com/piyush-bit/tdes-exercise-repository" target="_blank" rel="noopener noreferrer" class="zed-box-action-link">Explore Repository &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Infinite Marquee Row -->
+      <div class="marquee-viewport">
+        <div class="marquee-track">
+          <!-- First Set of Course Cards -->
+          <div class="marquee-card"><span class="marquee-course-name">Data Structures</span></div>
+          <div class="marquee-card"><span class="marquee-course-name">Design and Analysis of Algorithms</span></div>
+          <div class="marquee-card"><span class="marquee-course-name">Operating Systems</span></div>
+          <div class="marquee-card"><span class="marquee-course-name">DBMS</span></div>
+          <div class="marquee-card"><span class="marquee-course-name">Python for Machine Learning</span></div>
+          <div class="marquee-card"><span class="marquee-course-name">Theory of Computation</span></div>
+          <div class="marquee-card"><span class="marquee-course-name">Compiler Design</span></div>
+
+          <!-- Duplicate Set for Seamless Infinite Loop -->
+          <div class="marquee-card"><span class="marquee-course-name">Data Structures</span></div>
+          <div class="marquee-card"><span class="marquee-course-name">Design and Analysis of Algorithms</span></div>
+          <div class="marquee-card"><span class="marquee-course-name">Operating Systems</span></div>
+          <div class="marquee-card"><span class="marquee-course-name">DBMS</span></div>
+          <div class="marquee-card"><span class="marquee-course-name">Python for Machine Learning</span></div>
+          <div class="marquee-card"><span class="marquee-course-name">Theory of Computation</span></div>
+          <div class="marquee-card"><span class="marquee-course-name">Compiler Design</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Free & Open Source Section (Minimal Centered Callout) -->
+    <section id="open-source" class="zed-opensource-callout">
+      <h2 class="zed-opensource-title"><span class="serif-highlight">100% Free</span> &amp; Open Source</h2>
+      <p class="zed-opensource-body">
+        An open-source effort to make computer science labs more efficient.
+      </p>
+      <div class="zed-opensource-actions">
+        <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System" target="_blank" rel="noopener noreferrer" class="btn-opensource-github">
+          STAR ON GITHUB &rarr;
+        </a>
+      </div>
+    </section>
   </main>
 
   <Footer isHome={true} />
@@ -955,6 +1018,17 @@ import Footer from '../components/Footer.astro';
     z-index: 2;
   }
 
+  .zed-section-kicker {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
   .zed-box-main-heading {
     font-size: 2.2rem;
     font-weight: 700;
@@ -1033,6 +1107,30 @@ import Footer from '../components/Footer.astro';
     grid-template-columns: repeat(3, 1fr);
   }
 
+  .zed-box-row-4col {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .zed-library-item {
+    padding: 28px 24px;
+  }
+
+  .zed-library-icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 4px 10px;
+    margin-bottom: 16px;
+    border-radius: 0;
+  }
+
   .zed-box-item {
     position: relative;
     padding: 32px 36px;
@@ -1077,8 +1175,204 @@ import Footer from '../components/Footer.astro';
     transition: box-shadow 0.3s ease;
   }
 
-  :global(html.dark) .zed-box-media-viewport {
-    box-shadow: 0 0 120px 20px rgba(255, 255, 255, 0.025), 0 0 40px 5px rgba(255, 255, 255, 0.02), 0 0 1px rgba(255, 255, 255, 0.15);
+  .zed-library-section {
+    position: relative;
+    width: 100%;
+    margin-top: 60px;
+    margin-bottom: 90px;
+    background: transparent;
+    border: none;
+  }
+
+  .zed-library-heading {
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+
+  .zed-library-left-line {
+    position: absolute;
+    top: 105px;
+    bottom: 20px;
+    left: 0;
+    width: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .zed-library-right-line {
+    position: absolute;
+    top: 105px;
+    bottom: 20px;
+    right: 0;
+    width: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .zed-library-header-row {
+    position: relative;
+    border-bottom: none;
+    padding-bottom: 24px;
+  }
+
+  /* Quote Callout Section */
+  .zed-quote-section {
+    position: relative;
+    width: 100%;
+    max-width: 680px;
+    margin: 70px auto 60px auto;
+    padding: 32px 20px;
+    text-align: center;
+    background: transparent;
+  }
+
+  .zed-quote-text {
+    font-family: 'Times New Roman', Times, serif;
+    font-style: italic;
+    font-size: 1.55rem;
+    line-height: 1.45;
+    color: var(--text-primary);
+    margin: 0 0 12px 0;
+    font-weight: 400;
+  }
+
+  .zed-quote-author {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 13.12px;
+    font-weight: 500;
+    font-style: normal;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* Free & Open Source Minimal Callout */
+  .zed-opensource-callout {
+    position: relative;
+    width: 100%;
+    max-width: 720px;
+    margin-top: 70px;
+    margin-bottom: 90px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 32px 20px;
+    text-align: center;
+    background: transparent;
+  }
+
+  .zed-opensource-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+
+  .zed-opensource-body {
+    font-family: var(--font-sans);
+    font-size: 13.12px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    max-width: 620px;
+    margin: 0 auto 28px auto;
+    font-weight: 400;
+  }
+
+  .zed-opensource-actions {
+    display: flex;
+    justify-content: center;
+  }
+
+  .btn-opensource-github {
+    font-family: var(--font-sans);
+    font-size: 13.12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 8px 18px;
+    background: var(--bg-card);
+    transition: all 0.2s ease;
+    display: inline-block;
+    border-radius: 0;
+  }
+
+  .btn-opensource-github:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+  }
+
+  .zed-library-header-row::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -60px;
+    right: -60px;
+    height: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Infinite Marquee Course Carousel */
+  .marquee-viewport {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    padding: 32px 0;
+    background: transparent;
+  }
+
+  .marquee-track {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    width: max-content;
+    animation: marquee-scroll 28s linear infinite;
+  }
+
+  .marquee-viewport:hover .marquee-track {
+    animation-play-state: paused;
+  }
+
+  .marquee-card {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 0;
+    white-space: nowrap;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .marquee-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-hover);
+  }
+
+  .marquee-course-name {
+    font-size: 13.12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+
+  @keyframes marquee-scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
   }
 
   .zed-box-media {
