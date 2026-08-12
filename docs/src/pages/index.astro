@@ -84,6 +84,19 @@ import Footer from '../components/Footer.astro';
       </div>
     </section>
 
+    <!-- Open Call for University Pilot Partners Section -->
+    <section id="pilots" class="pilots-callout-section">
+      <p class="pilots-callout-label">OPEN CALL FOR UNIVERSITY PILOT PARTNERS</p>
+      <p class="pilots-callout-body">
+        Modernize your computer science laboratories with zero infrastructure overhead. TDES is seeking a limited number of university CS departments for exclusive early adopter pilot programs. Partner with us to streamline student-instructor workflows and shape the future of lab management.
+      </p>
+      <div class="pilots-callout-actions">
+        <a href="mailto:support@tdes.bypiyush.com?subject=TDES%20University%20Pilot%20Inquiry" class="btn-pilot-request">
+          REQUEST PILOT INFO
+        </a>
+      </div>
+    </section>
+
     <!-- Zed-Style Box Grid Feature Section -->
     <section id="grid-features" class="zed-box-grid-section">
       <div class="zed-box-grid-left-line"></div>
@@ -93,7 +106,7 @@ import Footer from '../components/Footer.astro';
         <div class="zed-box-header-title-block">
           <h2 class="zed-box-main-heading"><span class="serif-highlight">TDES</span> Just Works</h2>
           <p class="zed-box-main-subtext">
-            Incredibly powerful out of the box. Built to run anywhere without configuration overhead, exam server crashes, or environment hassles.
+            Incredibly powerful out of the box. Built to run anywhere without configuration overhead, or environment hassles.
           </p>
         </div>
         <div class="zed-box-header-actions">
@@ -793,6 +806,70 @@ import Footer from '../components/Footer.astro';
   :global(html.dark) .demo-media-dark,
   :global(html.dark) .box-media-dark {
     display: block !important;
+  }
+
+  /* Open Call for University Pilot Partners Section */
+  .pilots-callout-section {
+    position: relative;
+    width: 100%;
+    max-width: 720px;
+    margin-top: 50px;
+    margin-bottom: 90px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 20px 20px;
+    text-align: center;
+    background: transparent;
+  }
+
+  .pilots-callout-label {
+    font-family: var(--font-sans);
+    font-size: 15.2px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    margin-bottom: 16px;
+  }
+
+  :global(html.dark) .pilots-callout-label {
+    color: #cbd5e1;
+  }
+
+  .pilots-callout-body {
+    font-family: var(--font-sans);
+    font-size: 13.12px;
+    line-height: 1.6;
+    color: var(--text-muted);
+    max-width: 620px;
+    margin: 0 auto 24px auto;
+    font-weight: 400;
+  }
+
+  .pilots-callout-actions {
+    display: flex;
+    justify-content: center;
+  }
+
+  .btn-pilot-request {
+    font-family: var(--font-sans);
+    font-size: 13.12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    background: var(--bg-card);
+    transition: all 0.2s ease;
+    display: inline-block;
+    border-radius: 0;
+  }
+
+  .btn-pilot-request:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-hover);
+    color: var(--text-primary);
   }
 
   /* Zed-Style Box Grid Section (Open Extended Grid) */
