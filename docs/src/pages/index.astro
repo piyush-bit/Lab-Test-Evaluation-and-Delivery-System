@@ -15,11 +15,63 @@ import Footer from '../components/Footer.astro';
           The modern lab infrastructure for computer science.
         </h1>
         <p class="hero-subtitle">
-          Empower your CS faculty and students with automated evaluations, containerized sandboxes, and encrypted submission delivery. Built to eliminate grading overhead and environment inconsistencies.
+          tdes is a programming assignment delivery and evaluation system built to run anywhere, without internet or setup overhead, supporting any programming language.
         </p>
         <div class="hero-actions">
           <a href="/docs/quick-start" class="btn-mono-filled">quick start</a>
           <a href="https://github.com/piyush-bit/Lab-Test-Evaluation-and-Delivery-System" target="_blank" rel="noopener noreferrer" class="btn-mono-outline">github ↗</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Demo Showcase & Key Pillars Section (Zed Style) -->
+    <section id="demo" class="zed-demo-section">
+      <!-- 3-Column Pillars Grid -->
+      <div class="zed-pillars-grid">
+        <div class="zed-pillar-col">
+          <h3 class="zed-pillar-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="zed-pillar-icon"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.5"></path><path d="M5 12.5a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+            <span>Offline</span>
+          </h3>
+          <p class="zed-pillar-desc">
+            Works without internet — no dependency on cloud services during exams or labs.
+          </p>
+        </div>
+        <div class="zed-pillar-col">
+          <h3 class="zed-pillar-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="zed-pillar-icon"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            <span>Portable</span>
+          </h3>
+          <p class="zed-pillar-desc">
+            Runs on any machine, any lab, no fixed infrastructure required.
+          </p>
+        </div>
+        <div class="zed-pillar-col">
+          <h3 class="zed-pillar-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="zed-pillar-icon"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            <span>Language-agnostic</span>
+          </h3>
+          <p class="zed-pillar-desc">
+            Not tied to one programming language — write tests for any topic.
+          </p>
+        </div>
+      </div>
+
+      <!-- Demo Window Frame -->
+      <div class="zed-demo-frame">
+        <div class="zed-demo-viewport">
+          <!-- Light Mode Source -->
+          <img
+            src="/images/ui/demo-light.svg"
+            alt="TDES Demo Light Mode"
+            class="demo-media demo-media-light"
+          />
+          <!-- Dark Mode Source -->
+          <img
+            src="/images/ui/demo-dark.svg"
+            alt="TDES Demo Dark Mode"
+            class="demo-media demo-media-dark"
+          />
         </div>
       </div>
     </section>
@@ -560,7 +612,126 @@ import Footer from '../components/Footer.astro';
     margin: 0;
   }
 
+  /* Zed-Style Demo & Pillars Section */
+  .zed-demo-section {
+    width: 100%;
+    margin-top: 20px;
+    margin-bottom: 90px;
+  }
+
+  .zed-pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--border-color);
+    margin-bottom: 40px;
+    background: transparent;
+    border-radius: 0;
+  }
+
+  .zed-pillar-col {
+    padding: 24px 28px;
+    border-right: 1px solid var(--border-color);
+    background: transparent;
+    transition: background-color 0.2s ease;
+  }
+
+  .zed-pillar-col:last-child {
+    border-right: none;
+  }
+
+  .zed-pillar-col:hover {
+    background: var(--bg-card-hover);
+  }
+
+  .zed-pillar-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15.2px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .zed-pillar-icon {
+    width: 15.2px;
+    height: 15.2px;
+    stroke: currentColor;
+    flex-shrink: 0;
+  }
+
+  .zed-pillar-desc {
+    font-size: 13.12px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .zed-demo-frame {
+    width: 100%;
+    border-radius: 0;
+    border: none;
+    background: transparent;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease;
+  }
+
+  :global(html.dark) .zed-demo-frame {
+    box-shadow: 0 0 120px 20px rgba(255, 255, 255, 0.025), 0 0 40px 5px rgba(255, 255, 255, 0.02), 0 0 1px rgba(255, 255, 255, 0.15);
+  }
+
+  .zed-demo-viewport {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: #ffffff;
+  }
+
+  :global(html.dark) .zed-demo-viewport {
+    background: #000000;
+  }
+
+  .demo-media {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+  }
+
+  /* Light and Dark mode media visibility */
+  .demo-media-light {
+    display: block;
+  }
+
+  .demo-media-dark {
+    display: none;
+  }
+
+  :global(html.dark) .demo-media-light {
+    display: none;
+  }
+
+  :global(html.dark) .demo-media-dark {
+    display: block;
+  }
+
   /* Responsive styling */
+  @media (max-width: 768px) {
+    .zed-pillars-grid {
+      grid-template-columns: 1fr;
+    }
+    .zed-pillar-col {
+      border-right: none;
+      border-bottom: 1px solid var(--border-color);
+      padding: 20px;
+    }
+    .zed-pillar-col:last-child {
+      border-bottom: none;
+    }
+  }
+
   @media (max-width: 992px) {
     .hero-full-section {
       padding: 40px 0;

@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .sidebar-bg { fill: #f8fafc; }
+      .border { stroke: #e2e8f0; stroke-width: 1; }
+      .editor-bg { fill: #ffffff; }
+      .terminal-bg { fill: #f8fafc; }
+      .text-primary { fill: #0f172a; font-family: system-ui, -apple-system, sans-serif; }
+      .text-muted { fill: #64748b; font-family: system-ui, -apple-system, sans-serif; }
+      .text-code { font-family: 'Fira Code', monospace, Consolas; font-size: 13px; }
+      .keyword { fill: #d97706; font-weight: 600; }
+      .func { fill: #2563eb; }
+      .str { fill: #059669; }
+      .num { fill: #7c3aed; }
+      .comment { fill: #94a3b8; font-style: italic; }
+      .pass { fill: #16a34a; font-weight: 600; }
+      .badge { fill: #e0e7ff; }
+      .badge-text { fill: #4338ca; font-weight: 600; font-size: 11px; }
+    </style>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="1200" height="675" class="bg" />
+
+  <!-- Sidebar -->
+  <rect x="0" y="0" width="220" height="675" class="sidebar-bg" />
+  <line x1="220" y1="0" x2="220" y2="675" class="border" />
+
+  <!-- Sidebar Header -->
+  <text x="18" y="32" class="text-primary" font-size="12" font-weight="700" letter-spacing="1">EXPLORER</text>
+  
+  <!-- File Tree -->
+  <g transform="translate(18, 55)">
+    <!-- Folder -->
+    <path d="M2 4 L8 4 L10 6 L18 6 L18 14 L2 14 Z" fill="#94a3b8" />
+    <text x="26" y="12" class="text-primary text-code" font-size="12" font-weight="600">src/lab01</text>
+    
+    <!-- Files -->
+    <g transform="translate(12, 26)">
+      <circle cx="4" cy="6" r="3" fill="#2563eb" />
+      <text x="16" y="10" class="text-primary text-code" font-size="12">main.go</text>
+    </g>
+    <g transform="translate(12, 48)">
+      <circle cx="4" cy="6" r="3" fill="#059669" />
+      <text x="16" y="10" class="text-primary text-code" font-size="12">solution_test.go</text>
+    </g>
+    <g transform="translate(12, 70)">
+      <circle cx="4" cy="6" r="3" fill="#d97706" />
+      <text x="16" y="10" class="text-primary text-code" font-size="12">tdes.json</text>
+    </g>
+  </g>
+
+  <!-- Editor Header Tabs -->
+  <rect x="220" y="0" width="980" height="38" class="sidebar-bg" />
+  <line x1="220" y1="38" x2="1200" y2="38" class="border" />
+  
+  <!-- Tab Active -->
+  <rect x="220" y="0" width="160" height="38" class="editor-bg" />
+  <line x1="380" y1="0" x2="380" y2="38" class="border" />
+  <circle cx="240" cy="19" r="4" fill="#2563eb" />
+  <text x="252" y="23" class="text-primary text-code" font-size="12">main.go</text>
+  
+  <!-- Tab Inactive -->
+  <circle cx="400" cy="19" r="4" fill="#059669" />
+  <text x="412" y="23" class="text-muted text-code" font-size="12">solution_test.go</text>
+
+  <!-- Code View -->
+  <g transform="translate(240, 60)" class="text-code">
+    <!-- Line Numbers -->
+    <g fill="#94a3b8" font-size="12">
+      <text x="0" y="20">1</text>
+      <text x="0" y="44">2</text>
+      <text x="0" y="68">3</text>
+      <text x="0" y="92">4</text>
+      <text x="0" y="116">5</text>
+      <text x="0" y="140">6</text>
+      <text x="0" y="164">7</text>
+      <text x="0" y="188">8</text>
+      <text x="0" y="212">9</text>
+      <text x="0" y="236">10</text>
+      <text x="0" y="260">11</text>
+      <text x="0" y="284">12</text>
+      <text x="0" y="308">13</text>
+      <text x="0" y="332">14</text>
+    </g>
+
+    <!-- Code Content -->
+    <g transform="translate(30, 0)">
+      <text x="0" y="20"><tspan class="keyword">package</tspan> main</text>
+      <text x="0" y="44"><tspan class="keyword">import</tspan> (<tspan class="str">"fmt"</tspan>; <tspan class="str">"testing"</tspan>)</text>
+      <text x="0" y="68" class="comment">// EvaluateSubmission runs test suites inside isolated sandboxes</text>
+      <text x="0" y="92"><tspan class="keyword">func</tspan> <tspan class="func">EvaluateSubmission</tspan>(studentCode <tspan class="keyword">string</tspan>) <tspan class="keyword">bool</tspan> {</text>
+      <text x="24" y="116">suite := <tspan class="func">LoadTestSuite</tspan>(<tspan class="str">"tdes.json"</tspan>)</text>
+      <text x="24" y="140">res := suite.<tspan class="func">RunIsolated</tspan>(studentCode)</text>
+      <text x="24" y="164"><tspan class="keyword">if</tspan> res.PassedCount == suite.Total {</text>
+      <text x="48" y="188">fmt.<tspan class="func">Println</tspan>(<tspan class="str">"[TDES] All tests passed! Sealing envelope..."</tspan>)</text>
+      <text x="48" y="212"><tspan class="keyword">return</tspan> <tspan class="num">true</tspan></text>
+      <text x="24" y="236">}</text>
+      <text x="24" y="260"><tspan class="keyword">return</tspan> <tspan class="num">false</tspan></text>
+      <text x="0" y="284">}</text>
+      <text x="0" y="332" class="comment">// Offline evaluation engine ready.</text>
+    </g>
+  </g>
+
+  <!-- Terminal / Output Drawer -->
+  <rect x="220" y="420" width="980" height="255" class="terminal-bg" />
+  <line x1="220" y1="420" x2="1200" y2="420" stroke="#e2e8f0" stroke-width="1" />
+
+  <!-- Terminal Header -->
+  <g transform="translate(240, 442)">
+    <text x="0" y="0" fill="#64748b" font-family="system-ui" font-size="11" font-weight="700" letter-spacing="1">TERMINAL (TDES EXECUTION ENGINE)</text>
+    <rect x="780" y="-12" width="120" height="20" rx="4" fill="#dcfce7" />
+    <text x="792" y="2" fill="#15803d" font-family="system-ui" font-size="11" font-weight="600">PASSED: 12/12</text>
+  </g>
+
+  <!-- Terminal Output -->
+  <g transform="translate(240, 475)" class="text-code" font-size="12">
+    <text x="0" y="0" fill="#0284c7">$ euc2 test --sandbox=docker --offline</text>
+    <text x="0" y="22" fill="#64748b">[17:15:02] Loading test specs from ./tdes.json ...</text>
+    <text x="0" y="44" fill="#16a34a">✓ TestDataStructure (0.012s) - PASS</text>
+    <text x="0" y="66" fill="#16a34a">✓ TestBoundaryConditions (0.018s) - PASS</text>
+    <text x="0" y="88" fill="#16a34a">✓ TestConcurrencySafety (0.025s) - PASS</text>
+    <text x="0" y="110" fill="#0284c7">────────────────────────────────────────────────────────────────</text>
+    <text x="0" y="132" fill="#0f172a" font-weight="600">RESULT: 100% Score | Encrypted payload saved to submission.enc</text>
+  </g>
+</svg>
