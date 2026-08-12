@@ -984,8 +984,8 @@ html.dark .navbar-pill {
 .docs-page-layout {
     display: flex;
     justify-content: space-between;
-    align-items: start;
-    gap: 48px;
+    align-items: stretch;
+    gap: 56px;
     width: 100%;
     padding-top: 20px;
 }
@@ -1026,9 +1026,11 @@ html.dark .navbar-pill {
 .docs-content-area {
     flex: 1;
     min-width: 0;
+    max-width: 820px;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    padding: 0 48px;
+    padding: 0;
 }
 .docs-section-block {
     scroll-margin-top: 100px;
@@ -1463,18 +1465,28 @@ html.dark .docs-content-area :not(pre) > code {
     border: none;
 }
 .docs-content-area table {
+    display: block;
     width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     border-collapse: collapse;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     font-size: 0.9rem;
     border: 1px solid var(--border-color);
     border-radius: 6px;
 }
 .docs-content-area th,
 .docs-content-area td {
-    padding: 10px 14px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border-color);
     text-align: left;
+    vertical-align: top;
+}
+.docs-content-area td code {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 .docs-content-area th {
     font-weight: 700;
@@ -1489,15 +1501,6 @@ html.dark .docs-content-area th {
 }
 html.dark .docs-content-area tr:hover {
     background-color: rgba(255, 255, 255, 0.01);
-}
-
-@media (max-width: 768px) {
-    .docs-content-area table {
-        display: block;
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
 }
 
 

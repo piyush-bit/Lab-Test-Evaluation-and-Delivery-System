@@ -12,9 +12,6 @@ const filteredHeadings = headings.filter(h => h.depth > 1 && h.depth <= 3);
     <div class="docs-toc-sticky">
       <div class="toc-header-row">
         <h4 class="toc-title">On This Page</h4>
-        <button id="toc-toggle-btn" class="toc-toggle-btn" title="Hide sidebar">
-          [hide]
-        </button>
       </div>
       <ul class="toc-list">
         {filteredHeadings.map(h => (
@@ -39,38 +36,19 @@ const filteredHeadings = headings.filter(h => h.depth > 1 && h.depth <= 3);
     align-self: stretch;
     margin-left: 40px;
     border-left: 1px solid var(--border-color);
-    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-                flex 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-                margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .docs-toc-sidebar.collapsed {
-    width: 24px !important;
-    flex: 0 0 24px !important;
-    margin-left: 16px !important;
-  }
-  .docs-toc-sidebar.collapsed .toc-title {
-    display: none !important;
-  }
-  .docs-toc-sidebar.collapsed .toc-list {
-    display: none !important;
-  }
-  .docs-toc-sidebar.collapsed .docs-toc-sticky {
-    padding-left: 8px !important;
   }
   .docs-toc-sticky {
     position: sticky;
     top: 100px;
-    max-height: calc(100vh - 140px);
+    max-height: calc(100vh - 120px);
     overflow-y: auto;
     scrollbar-width: none; /* Firefox */
     padding-left: 20px;
-    transition: padding 0.25s ease;
   }
   .docs-toc-sticky::-webkit-scrollbar {
     display: none; /* Safari and Chrome */
   }
 
-  
   .toc-header-row {
     display: flex;
     justify-content: space-between;
@@ -84,20 +62,6 @@ const filteredHeadings = headings.filter(h => h.depth > 1 && h.depth <= 3);
     color: var(--text-muted);
     font-weight: 700;
     margin: 0;
-  }
-  
-  .toc-toggle-btn {
-    background: transparent;
-    border: none;
-    color: #525252;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    cursor: pointer;
-    padding: 2px 4px;
-    transition: color 0.15s ease;
-  }
-  .toc-toggle-btn:hover {
-    color: #ffffff;
   }
 
   .docs-toc-sticky ul {
@@ -129,45 +93,6 @@ const filteredHeadings = headings.filter(h => h.depth > 1 && h.depth <= 3);
 </style>
 
 <script>
-  function setupTOCActions() {
-    const sidebar = document.querySelector('.docs-toc-sidebar');
-    const toggleBtn = document.getElementById('toc-toggle-btn');
-
-    if (!sidebar || !toggleBtn) return;
-
-    // Helper to update toggle button text/state
-    function updateBtnState() {
-      if (sidebar.classList.contains('collapsed')) {
-        toggleBtn.textContent = '«';
-        toggleBtn.title = 'Show sidebar';
-      } else {
-        toggleBtn.textContent = '[hide]';
-        toggleBtn.title = 'Hide sidebar';
-      }
-    }
-
-    // Load initial state
-    const isCollapsed = localStorage.getItem('toc-collapsed') === 'true';
-    if (isCollapsed) {
-      sidebar.classList.add('collapsed');
-    } else {
-      sidebar.classList.remove('collapsed');
-    }
-    updateBtnState();
-
-    toggleBtn.addEventListener('click', () => {
-      const currentlyCollapsed = sidebar.classList.contains('collapsed');
-      if (currentlyCollapsed) {
-        sidebar.classList.remove('collapsed');
-        localStorage.setItem('toc-collapsed', 'false');
-      } else {
-        sidebar.classList.add('collapsed');
-        localStorage.setItem('toc-collapsed', 'true');
-      }
-      updateBtnState();
-    });
-  }
-
   function setupScrollSpy() {
     const tocLinks = document.querySelectorAll('.toc-link');
     if (tocLinks.length === 0) return;
@@ -206,13 +131,11 @@ const filteredHeadings = headings.filter(h => h.depth > 1 && h.depth <= 3);
     onScroll(); // initialize on load
   }
 
-  // Initialize both TOC actions and ScrollSpy
-  setupTOCActions();
+  // Initialize ScrollSpy
   setupScrollSpy();
   
   // Re-run on Astro navigation
   document.addEventListener('astro:page-load', () => {
-    setupTOCActions();
     setupScrollSpy();
   });
 </script>

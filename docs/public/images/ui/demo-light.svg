@@ -9,14 +9,12 @@
       .text-primary { fill: #0f172a; font-family: system-ui, -apple-system, sans-serif; }
       .text-muted { fill: #64748b; font-family: system-ui, -apple-system, sans-serif; }
       .text-code { font-family: 'Fira Code', monospace, Consolas; font-size: 13px; }
-      .keyword { fill: #d97706; font-weight: 600; }
-      .func { fill: #2563eb; }
+      .keyword { fill: #2563eb; font-weight: 600; }
+      .func { fill: #0f172a; font-weight: 600; }
       .str { fill: #059669; }
-      .num { fill: #7c3aed; }
-      .comment { fill: #94a3b8; font-style: italic; }
-      .pass { fill: #16a34a; font-weight: 600; }
-      .badge { fill: #e0e7ff; }
-      .badge-text { fill: #4338ca; font-weight: 600; font-size: 11px; }
+      .num { fill: #2563eb; }
+      .comment { fill: #64748b; font-style: italic; }
+      .pass { fill: #059669; font-weight: 600; }
     </style>
   </defs>
 
@@ -33,7 +31,7 @@
   <!-- File Tree -->
   <g transform="translate(18, 55)">
     <!-- Folder -->
-    <path d="M2 4 L8 4 L10 6 L18 6 L18 14 L2 14 Z" fill="#94a3b8" />
+    <path d="M2 4 L8 4 L10 6 L18 6 L18 14 L2 14 Z" fill="#64748b" />
     <text x="26" y="12" class="text-primary text-code" font-size="12" font-weight="600">src/lab01</text>
     
     <!-- Files -->
@@ -46,7 +44,7 @@
       <text x="16" y="10" class="text-primary text-code" font-size="12">solution_test.go</text>
     </g>
     <g transform="translate(12, 70)">
-      <circle cx="4" cy="6" r="3" fill="#d97706" />
+      <circle cx="4" cy="6" r="3" fill="#2563eb" />
       <text x="16" y="10" class="text-primary text-code" font-size="12">tdes.json</text>
     </g>
   </g>
@@ -62,13 +60,13 @@
   <text x="252" y="23" class="text-primary text-code" font-size="12">main.go</text>
   
   <!-- Tab Inactive -->
-  <circle cx="400" cy="19" r="4" fill="#059669" />
+  <circle cx="400" cy="19" r="4" fill="#64748b" />
   <text x="412" y="23" class="text-muted text-code" font-size="12">solution_test.go</text>
 
   <!-- Code View -->
   <g transform="translate(240, 60)" class="text-code">
     <!-- Line Numbers -->
-    <g fill="#94a3b8" font-size="12">
+    <g fill="#64748b" font-size="12">
       <text x="0" y="20">1</text>
       <text x="0" y="44">2</text>
       <text x="0" y="68">3</text>
@@ -87,18 +85,18 @@
 
     <!-- Code Content -->
     <g transform="translate(30, 0)">
-      <text x="0" y="20"><tspan class="keyword">package</tspan> main</text>
+      <text x="0" y="20"><tspan class="keyword">package</tspan> <tspan fill="#0f172a">main</tspan></text>
       <text x="0" y="44"><tspan class="keyword">import</tspan> (<tspan class="str">"fmt"</tspan>; <tspan class="str">"testing"</tspan>)</text>
       <text x="0" y="68" class="comment">// EvaluateSubmission runs test suites inside isolated sandboxes</text>
-      <text x="0" y="92"><tspan class="keyword">func</tspan> <tspan class="func">EvaluateSubmission</tspan>(studentCode <tspan class="keyword">string</tspan>) <tspan class="keyword">bool</tspan> {</text>
-      <text x="24" y="116">suite := <tspan class="func">LoadTestSuite</tspan>(<tspan class="str">"tdes.json"</tspan>)</text>
-      <text x="24" y="140">res := suite.<tspan class="func">RunIsolated</tspan>(studentCode)</text>
-      <text x="24" y="164"><tspan class="keyword">if</tspan> res.PassedCount == suite.Total {</text>
-      <text x="48" y="188">fmt.<tspan class="func">Println</tspan>(<tspan class="str">"[TDES] All tests passed! Sealing envelope..."</tspan>)</text>
+      <text x="0" y="92"><tspan class="keyword">func</tspan> <tspan fill="#0f172a" font-weight="600">EvaluateSubmission</tspan>(<tspan fill="#0f172a">studentCode</tspan> <tspan class="keyword">string</tspan>) <tspan class="keyword">bool</tspan> {</text>
+      <text x="24" y="116"><tspan fill="#0f172a">suite</tspan> := <tspan fill="#0f172a">LoadTestSuite</tspan>(<tspan class="str">"tdes.json"</tspan>)</text>
+      <text x="24" y="140"><tspan fill="#0f172a">res</tspan> := <tspan fill="#0f172a">suite.RunIsolated</tspan>(<tspan fill="#0f172a">studentCode</tspan>)</text>
+      <text x="24" y="164"><tspan class="keyword">if</tspan> <tspan fill="#0f172a">res.PassedCount == suite.Total</tspan> {</text>
+      <text x="48" y="188"><tspan fill="#0f172a">fmt.Println</tspan>(<tspan class="str">"[TDES] All tests passed! Sealing envelope..."</tspan>)</text>
       <text x="48" y="212"><tspan class="keyword">return</tspan> <tspan class="num">true</tspan></text>
-      <text x="24" y="236">}</text>
+      <text x="24" y="236"><tspan fill="#0f172a">}</tspan></text>
       <text x="24" y="260"><tspan class="keyword">return</tspan> <tspan class="num">false</tspan></text>
-      <text x="0" y="284">}</text>
+      <text x="0" y="284"><tspan fill="#0f172a">}</tspan></text>
       <text x="0" y="332" class="comment">// Offline evaluation engine ready.</text>
     </g>
   </g>
@@ -110,18 +108,18 @@
   <!-- Terminal Header -->
   <g transform="translate(240, 442)">
     <text x="0" y="0" fill="#64748b" font-family="system-ui" font-size="11" font-weight="700" letter-spacing="1">TERMINAL (TDES EXECUTION ENGINE)</text>
-    <rect x="780" y="-12" width="120" height="20" rx="4" fill="#dcfce7" />
-    <text x="792" y="2" fill="#15803d" font-family="system-ui" font-size="11" font-weight="600">PASSED: 12/12</text>
+    <rect x="780" y="-12" width="120" height="20" rx="4" fill="#ecfdf5" stroke="rgba(5, 150, 105, 0.25)" stroke-width="1" />
+    <text x="792" y="2" fill="#059669" font-family="system-ui" font-size="11" font-weight="600">PASSED: 12/12</text>
   </g>
 
   <!-- Terminal Output -->
   <g transform="translate(240, 475)" class="text-code" font-size="12">
-    <text x="0" y="0" fill="#0284c7">$ euc2 test --sandbox=docker --offline</text>
+    <text x="0" y="0" fill="#2563eb">$ euc2 test --sandbox=docker --offline</text>
     <text x="0" y="22" fill="#64748b">[17:15:02] Loading test specs from ./tdes.json ...</text>
-    <text x="0" y="44" fill="#16a34a">✓ TestDataStructure (0.012s) - PASS</text>
-    <text x="0" y="66" fill="#16a34a">✓ TestBoundaryConditions (0.018s) - PASS</text>
-    <text x="0" y="88" fill="#16a34a">✓ TestConcurrencySafety (0.025s) - PASS</text>
-    <text x="0" y="110" fill="#0284c7">────────────────────────────────────────────────────────────────</text>
+    <text x="0" y="44" fill="#059669">✓ TestDataStructure (0.012s) - PASS</text>
+    <text x="0" y="66" fill="#059669">✓ TestBoundaryConditions (0.018s) - PASS</text>
+    <text x="0" y="88" fill="#059669">✓ TestConcurrencySafety (0.025s) - PASS</text>
+    <text x="0" y="110" fill="#64748b">────────────────────────────────────────────────────────────────</text>
     <text x="0" y="132" fill="#0f172a" font-weight="600">RESULT: 100% Score | Encrypted payload saved to submission.enc</text>
   </g>
 </svg>
